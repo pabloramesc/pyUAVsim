@@ -10,7 +10,7 @@ from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 import numpy as np
 import time
 
-from simulator.common.angles import rot_matrix_zyx, ned2xyz
+from simulator.utils.angles import rot_matrix_zyx, ned2xyz
 
 SPAN = 14.0
 CHORD = 2.0

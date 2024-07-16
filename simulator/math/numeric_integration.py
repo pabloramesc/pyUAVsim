@@ -7,6 +7,28 @@
 
 import numpy as np
 
+def euler(f: callable, t: float, y: np.ndarray, dt: float) -> np.ndarray:
+    """
+    Performs a single step of the Euler method.
+
+    Parameters:
+    -----------
+    f : callable
+        The function that defines the ODE (dy/dt = f(t, y)).
+    t : float
+        Current time.
+    y : float or np.ndarray
+        Current value of the dependent variable.
+    dt : float
+        Time step.
+
+    Returns:
+    --------
+    float or np.ndarray
+        Incremental change (dy) after time step dt.
+    """
+    dy = f(t, y) * dt
+    return dy
 
 def rk4(f: callable, t: float, y: np.ndarray, dt: float) -> np.ndarray:
     """

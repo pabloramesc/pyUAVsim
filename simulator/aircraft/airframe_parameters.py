@@ -9,6 +9,8 @@ import json
 import toml
 import yaml
 
+import numpy as np
+
 from typing import Dict
 from dataclasses import dataclass, asdict
 
@@ -129,6 +131,7 @@ class AirframeParameters:
     Cn_delta_r : float
         Yawing moment coefficient due to rudder deflection (dimensionless).
     """
+
     # Physical parameters
     m: float  # mass in kg
     Jx: float  # moment of inertia about x-axis in kg-m^2
@@ -185,6 +188,31 @@ class AirframeParameters:
     Cn_delta_a: float  # yawing moment coefficient due to aileron deflection
     Cl_delta_r: float  # rolling moment coefficient due to rudder deflection
     Cn_delta_r: float  # yawing moment coefficient due to rudder deflection
+
+    def __post_init__(self):
+        self._calculate_gamma()
+        self._calculate_inertia_matrix()
+
+    def _calculate_inertia_matrix(self):
+        self.J = np.array(
+            [
+                [self.Jx, 0.0, -self.Jxz],
+                [0.0, self.Jy, 0.0],
+                [-self.Jxz, 0.0, self.Jz],
+            ]
+        )
+        self.Jinv = np.linalg.inv(self.J)
+
+    def _calculate_gamma(self):
+        self.Gamma = self.Jx * self.Jz - self.Jxz**2
+        self.Gamma1 = (self.Jxz * (self.Jx - self.Jy + self.Jz)) / self.Gamma
+        self.Gamma2 = (self.Jz * (self.Jz - self.Jy) + self.Jxz**2) / self.Gamma
+        self.Gamma3 = self.Jz / self.Gamma
+        self.Gamma4 = self.Jxz / self.Gamma
+        self.Gamma5 = (self.Jz - self.Jx) / self.Jy
+        self.Gamma6 = self.Jxz / self.Jy
+        self.Gamma7 = ((self.Jx - self.Jy) * self.Jx + self.Jxz**2) / self.Gamma
+        self.Gamma8 = self.Jx / self.Gamma
 
     def __str__(self):
         params_dict = asdict(self)

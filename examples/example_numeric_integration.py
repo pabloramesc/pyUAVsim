@@ -7,7 +7,7 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
-from simulator.common.numeric_integration import rk4, crank_nicolson
+from simulator.math.numeric_integration import rk4, crank_nicolson
 
 # Time vector
 t0 = 0.0
