@@ -7,7 +7,7 @@
 
 import numpy as np
 from simulator.aircraft.airframe_parameters import AirframeParameters
-from simulator.math.angles import rot_matrix_zyx, attitude_dt
+from simulator.math.rotation import rot_matrix_zyx, attitude_dt
 from simulator.math.numeric_integration import rk4
 
 
