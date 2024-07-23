@@ -7,9 +7,13 @@
 
 import numpy as np
 
+from simulator.math.rotation import rot_matrix_zyx
+
 
 class AircraftState:
-    def __init__(self, state0: np.ndarray = np.zeros(12)) -> None:
+    def __init__(
+        self, state0: np.ndarray = np.zeros(12), wind: np.ndarray = np.zeros(3)
+    ) -> None:
         """Initialize the State class.
 
         Parameters
@@ -29,8 +33,11 @@ class AircraftState:
             - p: Roll rate (radians/s)
             - q: Pitch rate (radians/s)
             - r: Yaw rate (radians/s)
+        wind : np.ndarray, optional
+            Wind vector (3-size array: wx, wy, wz in m/s), by default np.zeros(3)
         """
         self.state = state0
+        self.wind = wind
 
     @property
     def ned_position(self) -> np.ndarray:
@@ -112,6 +119,33 @@ class AircraftState:
         """Yaw rate (radians/s)"""
         return self.state[11]
 
+    @property
+    def body_wind(self) -> np.ndarray:
+        """3-size array with body frame wind vector [wx, wy, wz] in m/s"""
+        R_vb = rot_matrix_zyx(self.attitude_angles)
+        return R_vb @ self.wind
+
+    @property
+    def body_airspeed(self) -> np.ndarray:
+        """3-size array with body frame airspeed vector [ur, vr, wr] in m/s"""
+        return self.body_velocity - self.body_wind
+
+    @property
+    def airspeed(self) -> float:
+        """Airspeed value (m/s)"""
+        return np.linalg.norm(self.body_airspeed)
+
+    @property
+    def alpha(self) -> float:
+        """Angle of attack (rad)"""
+
+        return np.arctan2(self.body_airspeed[2], self.body_airspeed[0])
+
+    @property
+    def beta(self) -> float:
+        """Side-slip angle (rad)"""
+        return np.arcsin(self.body_airspeed[1] / self.airspeed)
+
     def update(self, new_state: np.ndarray) -> None:
         """Update the state array.
 
@@ -134,10 +168,20 @@ class AircraftState:
         """
         self.state = new_state
 
+    def set_wind(self, wind: np.ndarray = np.zeros(3)) -> None:
+        """Set the wind vector value.
+
+        Parameters
+        ----------
+        wind : np.ndarray, optional
+            Wind vector in NED frame (3-size array: wn, we, wd in m/s), by default np.zeros(3)
+        """
+        self.wind = wind
+
     def __str__(self):
         """
         Return a string representation of the aircraft state.
-        
+
         Returns:
         -------
         str
@@ -155,8 +199,10 @@ class AircraftState:
             "psi (yaw angle)",
             "p (roll rate)",
             "q (pitch rate)",
-            "r (yaw rate)"
+            "r (yaw rate)",
         ]
-        
-        state_str = "\n".join(f"{name}: {value:.3f}" for name, value in zip(state_names, self.state))
+
+        state_str = "\n".join(
+            f"{name}: {value:.3f}" for name, value in zip(state_names, self.state)
+        )
         return f"Aircraft State:\n{state_str}"

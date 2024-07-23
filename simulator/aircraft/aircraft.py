@@ -25,10 +25,10 @@ class Aircraft:
             Initial state array (12 variables: pn, pe, pd, u, v, w, roll, pitch, yaw, p, q, r),
             by default np.zeros(12)
         wind : np.ndarray, optional
-            Wind vector (3-size array: wx, wy, wz in m/s), by default np.zeros(3)
+            Wind vector in NED frame (3-size array: wn, we, wd in m/s), by default np.zeros(3)
         """
         self.params = params
-        self.state = AircraftState(state0)
+        self.state = AircraftState(state0, wind)
         self.dynamics = Dynamics(dt, params, self.state, wind)
         self.t = 0.0
         self.dt = dt
