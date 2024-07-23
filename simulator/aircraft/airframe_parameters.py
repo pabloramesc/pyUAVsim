@@ -65,11 +65,11 @@ class AirframeParameters:
     CQ0 : float
         Constant term for motor torque (dimensionless).
     CT2 : float
-        Dimensionless coefficient.
+        Quadratic coefficient for motor thrust (dimensionless).
     CT1 : float
-        Dimensionless coefficient.
+        Linear coefficient for motor thrust (dimensionless).
     CT0 : float
-        Dimensionless coefficient.
+        Constant term for motor thrust (dimensionless).
 
     ### Aerodynamic coefficients
     CL0 : float
@@ -154,9 +154,9 @@ class AirframeParameters:
     CQ2: float  # quadratic coefficient for motor torque (dimensionless)
     CQ1: float  # linear coefficient for motor torque (dimensionless)
     CQ0: float  # constant term for motor torque (dimensionless)
-    CT2: float  # dimensionless coefficient
-    CT1: float  # dimensionless coefficient
-    CT0: float  # dimensionless coefficient
+    CT2: float  # quadratic coefficient for motor thrust (dimensionless)
+    CT1: float  # linear coefficient for motor thrust (dimensionless)
+    CT0: float  # constant term for motor thrust (dimensionless)
 
     # Aerodynamic coefficients
     CL0: float  # coefficient of lift at zero angle of attack
@@ -189,11 +189,11 @@ class AirframeParameters:
     Cl_delta_r: float  # rolling moment coefficient due to rudder deflection
     Cn_delta_r: float  # yawing moment coefficient due to rudder deflection
 
-    def __post_init__(self):
-        self._calculate_gamma()
-        self._calculate_inertia_matrix()
+    def __post_init__(self) -> None:
+        # Calculate wing aspect ratio
+        self.AR = self.b**2 / self.S  
 
-    def _calculate_inertia_matrix(self):
+        #Calculate inertia matrix
         self.J = np.array(
             [
                 [self.Jx, 0.0, -self.Jxz],
@@ -203,7 +203,7 @@ class AirframeParameters:
         )
         self.Jinv = np.linalg.inv(self.J) # inverse inertia matrix
 
-    def _calculate_gamma(self):
+        # Calculate Gammas
         self.Gamma = self.Jx * self.Jz - self.Jxz**2
         self.Gamma1 = (self.Jxz * (self.Jx - self.Jy + self.Jz)) / self.Gamma
         self.Gamma2 = (self.Jz * (self.Jz - self.Jy) + self.Jxz**2) / self.Gamma

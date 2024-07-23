@@ -7,7 +7,7 @@
 
 import numpy as np
 
-from simulator.math.rotation import rot_matrix_zyx
+from simulator.math.rotation import rot_matrix_zyx, rot_matrix_wind
 
 
 class AircraftState:
@@ -38,6 +38,8 @@ class AircraftState:
         """
         self.state = state0
         self.wind = wind
+        self.R_vb = rot_matrix_zyx(self.attitude_angles)
+        self.R_wb = rot_matrix_wind(self.alpha, self.beta)
 
     @property
     def ned_position(self) -> np.ndarray:
@@ -121,13 +123,12 @@ class AircraftState:
 
     @property
     def body_wind(self) -> np.ndarray:
-        """3-size array with body frame wind vector [wx, wy, wz] in m/s"""
-        R_vb = rot_matrix_zyx(self.attitude_angles)
-        return R_vb @ self.wind
+        """3-size array with wind vector in body frame [wx, wy, wz] in m/s"""
+        return self.R_vb @ self.wind
 
     @property
     def body_airspeed(self) -> np.ndarray:
-        """3-size array with body frame airspeed vector [ur, vr, wr] in m/s"""
+        """3-size array with airspeed vector in body frame [ur, vr, wr] in m/s"""
         return self.body_velocity - self.body_wind
 
     @property
@@ -167,6 +168,8 @@ class AircraftState:
             - r: Yaw rate (radians/s)
         """
         self.state = new_state
+        self.R_vb = rot_matrix_zyx(self.attitude_angles)
+        self.R_wb = rot_matrix_wind(self.alpha, self.beta)
 
     def set_wind(self, wind: np.ndarray = np.zeros(3)) -> None:
         """Set the wind vector value.

@@ -8,6 +8,7 @@
 import numpy as np
 from numpy import sin, cos
 
+
 def rot_matrix_axis(axis: np.ndarray = np.zeros(3), t: float = 0.0) -> np.ndarray:
     """
     Compute transformation matrix from vehicle frame to body frame (R^b_v)
@@ -53,7 +54,7 @@ def rot_matrix_axis(axis: np.ndarray = np.zeros(3), t: float = 0.0) -> np.ndarra
 def rot_matrix_zyx(euler: np.ndarray = np.zeros(3)) -> np.ndarray:
     """
     Compute transformation matrix from vehicle frame to body frame (R^b_v)
-    with the aircraft attitude expressed as euler angles in ZYX sequence.
+    with the aircraft attitude expressed as euler angles using the Z-Y-X rotation sequence.
 
     Parameters
     ----------
@@ -74,17 +75,49 @@ def rot_matrix_zyx(euler: np.ndarray = np.zeros(3)) -> np.ndarray:
     cp = cos(p)
     sy = sin(y)
     cy = cos(y)
-    R = np.zeros((3, 3))
-    R[0, 0] = cp * cy
-    R[0, 1] = cp * sy
-    R[0, 2] = -sp
-    R[1, 0] = sr * sp * cy - cr * sy
-    R[1, 1] = sr * sp * sy + cr * cy
-    R[1, 2] = sr * cp
-    R[2, 0] = cr * sp * cy + sr * sy
-    R[2, 1] = cr * sp * sy - sr * cy
-    R[2, 2] = cr * cp
-    return R
+    R_vb = np.zeros((3, 3))
+    R_vb[0, 0] = cp * cy
+    R_vb[0, 1] = cp * sy
+    R_vb[0, 2] = -sp
+    R_vb[1, 0] = sr * sp * cy - cr * sy
+    R_vb[1, 1] = sr * sp * sy + cr * cy
+    R_vb[1, 2] = sr * cp
+    R_vb[2, 0] = cr * sp * cy + sr * sy
+    R_vb[2, 1] = cr * sp * sy - sr * cy
+    R_vb[2, 2] = cr * cp
+    return R_vb
+
+
+def rot_matrix_wind(alpha: float, beta: float) -> np.ndarray:
+    """Compute transformation matrix from wind frame to body frame (R^b_w).
+
+    Parameters
+    ----------
+    alpha : float
+        angle of attack in rads
+    beta : float
+        side-slip angle in rads
+
+    Returns
+    -------
+    np.ndarray
+        3x3 transformation matrix
+    """
+    sa = np.sin(alpha)
+    ca = np.cos(alpha)
+    sb = np.sin(beta)
+    cb = np.sin(beta)
+    R_wb = np.zeros((3, 3))
+    R_wb[0, 0] = cb * ca
+    R_wb[0, 1] = -sb * ca
+    R_wb[0, 2] = -sa
+    R_wb[1, 0] = sb
+    R_wb[1, 1] = cb
+    R_wb[1, 2] = 0.0
+    R_wb[2, 0] = cb * sa
+    R_wb[2, 1] = -sb * sa
+    R_wb[2, 2] = ca
+    return R_wb
 
 
 def rotate(
@@ -173,7 +206,7 @@ def multi_rotation(
 
 def ned2xyz(ned_coords: np.ndarray = np.zeros(3)) -> np.ndarray:
     """Change coordinates from the NED (North-East-Down) frame to XYZ frame.
-    
+
     In the XYZ frame:
     - X corresponds to East.
     - Y corresponds to North.

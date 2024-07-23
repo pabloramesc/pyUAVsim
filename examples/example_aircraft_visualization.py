@@ -1,8 +1,10 @@
 import time
+
 import numpy as np
 from matplotlib import pyplot as plt
 
-from simulator.visualization.aircraft_visualization import AircraftVisualization
+from simulator.visualization.aircraft_visualization import \
+    AircraftVisualization
 
 # Example usage:
 visualization = AircraftVisualization()

@@ -6,25 +6,31 @@
 """
 import numpy as np
 
-class ControlSurfaces:
+class ControlDeltas:
 
-    def __init__(self, deltas0: np.ndarray = np.zeros(3)) -> None:
-        """Initialize de ControlSurface class.
+    def __init__(self, deltas0: np.ndarray = np.zeros(4)) -> None:
+        """Initialize de ControlDeltas class.
 
         Parameters
         ----------
         deltas0 : np.ndarray, optional
-            Control surfaces' deflection angles [da, de, dr] in rads, by default np.zeros(3)
+            4-size array with initial control deltas array [da, de, dr, dt], by default np.zeros(4)
+
+        ### Deltas array (4 variables)
+        - da: aileron deflection angle (rads)
+        - de: elevator deflection angle (rads)
+        - dr: rudder deflection angle (rads)
+        - dt: throttle setting between 0.0 and 1.0 (adimensional)
         """
         self.deltas = deltas0
 
     def update(self, deltas: np.ndarray) -> None:
-        """Update the control surfaces' deflection angles.
+        """Update the control deltas.
 
         Parameters
         ----------
         deltas : np.ndarray
-            Control surfaces' deflection angles [da, de, dr] in rads
+            4-size array with initial control deltas array [da, de, dr, dt]
         """
         self.deltas = deltas
 
@@ -42,3 +48,8 @@ class ControlSurfaces:
     def delta_r(self) -> float:
         """Rudder deflection angle in rads"""
         return self.deltas[2]
+    
+    @property
+    def delta_t(self) -> float:
+        """Throttle setting between 0.0 and 1.0"""
+        return self.deltas[3]
