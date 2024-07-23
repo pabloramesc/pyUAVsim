@@ -40,7 +40,7 @@ class Aerodynamics:
     def lift_coefficient_at_alpha(self, alpha: float, model: str = "accurate") -> float:
         CL_at_alpha = 0.0
         if model == "accurate":
-            pass
+            pass # TODO: add CL(alpha) accurate equation (with non-linear terms for stall)
         elif model == "linear":
             ar = self.params.b**2 / self.params.S # wing aspect ratio
             CL_alpha = (np.pi * ar) / (1.0 + np.sqrt(1.0 + (0.5 * ar)**2))
@@ -51,4 +51,5 @@ class Aerodynamics:
     
     def drag_coefficient_at_alpha(self, alpha: float) -> float:
         CD_at_alpha = 0.0
+        # TODO: add CD(alpha) equation
         return CD_at_alpha
