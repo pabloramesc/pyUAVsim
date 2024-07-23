@@ -201,7 +201,7 @@ class AirframeParameters:
                 [-self.Jxz, 0.0, self.Jz],
             ]
         )
-        self.Jinv = np.linalg.inv(self.J)
+        self.Jinv = np.linalg.inv(self.J) # inverse inertia matrix
 
     def _calculate_gamma(self):
         self.Gamma = self.Jx * self.Jz - self.Jxz**2

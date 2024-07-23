@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 import numpy as np
 
-from simulator.math.angles import rot_matrix_zyx, ned2xyz
+from simulator.math.rotation import rot_matrix_zyx, ned2xyz
 
 class AircraftVisualization:
     def __init__(self):
