@@ -19,9 +19,9 @@ KV: 0.0659      # motor velocity constant in V-s/rad
 KQ: 0.0659      # motor torque constant in N-m
 Rmotor: 0.042   # motor resistance in Ohms
 i0: 1.5         # no-load current in A
-CQ2: -0.1079    # quadratic coefficient for motor torque (dimensionless)
-CQ1: -0.06044   # linear coefficient for motor torque (dimensionless)
-CQ0: 0.09357    # constant term for motor torque (dimensionless)
+CQ2: -0.01664    # quadratic coefficient for motor torque (dimensionless)
+CQ1: 0.00497   # linear coefficient for motor torque (dimensionless)
+CQ0: 0.00523    # constant term for motor torque (dimensionless)
 CT2: -0.1079    # dimensionless coefficient
 CT1: -0.06044   # dimensionless coefficient
 CT0: 0.09357    # dimensionless coefficient

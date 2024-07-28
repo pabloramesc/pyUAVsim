@@ -7,7 +7,7 @@ from simulator.math.rotation import rot_matrix_zyx, attitude_dt
 from simulator.math.numeric_integration import rk4
 
 
-class Dynamics:
+class KinematicsDynamics:
     def __init__(
         self,
         dt: float,
@@ -34,7 +34,7 @@ class Dynamics:
         self.t = 0.0
         self.dt = dt
 
-    def dynamics(self, f: np.ndarray, m: np.ndarray) -> np.ndarray:
+    def update(self, f: np.ndarray, m: np.ndarray) -> np.ndarray:
         """Integrate the kinematics and dynamics equations to calculate the current state.
 
         Parameters
@@ -63,17 +63,17 @@ class Dynamics:
             - r: Yaw rate (radians/s)
         """
         u = np.append(f, m)
-        func = lambda t, y: self._func(y, u)
+        func = lambda t, y: self.x_dot(y, u)
         dy = rk4(func, self.t, self.state.state, self.dt)
         return self.state.state + dy
 
-    def _func(self, x: np.ndarray, u: np.ndarray) -> np.ndarray:
+    def x_dot(self, x : np.ndarray, u: np.ndarray) -> np.ndarray:
         """Dynamics function for numeric integration: dx/dt = f(x, u)
 
         Parameters
         ----------
         x : np.ndarray
-            12-size array with aircraft last state
+            12-size array with aircraft last state (NOT USED!)
             [pn, pe, pd, u, v, w, roll, pitch, yaw, p, q, r]
             - pn: Position North (meters)
             - pe: Position East (meters)
@@ -104,10 +104,10 @@ class Dynamics:
             [d(pn), d(pe), d(pd), d(u), d(v), d(w), d(roll), d(pitch), d(yaw), d(p), d(q), d(r)]
         """
         # Extract forces and moments
-        f = u[0:3]
-        m = u[3:6]
-        fx, fy, fz = f
-        ml, mm, mn = m
+        forces = u[0:3]
+        moments = u[3:6]
+        # fx, fy, fz = forces
+        # ml, mm, mn = moments
 
         # Calculate position kinematics:
         # d[pn pe pd]/dt = R_bv * [u v w]
@@ -118,10 +118,7 @@ class Dynamics:
 
         # Calculate position dynamics:
         # d[u v w]/dt = -[p q r] x [u v w] + 1/m * [fx fy fz]
-        duvw = (
-            -np.cross(self.state.angular_rates, self.state.body_velocity)
-            + f / self.params.m
-        )
+        duvw = -np.cross(self.state.angular_rates, self.state.body_velocity) + forces / self.params.m
         # du = (self.r * self.v - self.q * self.w) + fx / self.params.m
         # dv = (self.p * self.w - self.r * self.u) + fy / self.params.m
         # dw = (self.q * self.u - self.p * self.v) + fz / self.params.m
@@ -137,10 +134,7 @@ class Dynamics:
         # Calculate attitude dynamics:
         # d[p q r]/dt = J^-1 * (-[p q r] x (J * [p q r]) + [l m n])
         dpqr = self.params.Jinv @ (
-            -np.cross(
-                self.state.angular_rates, (self.params.J @ self.state.angular_rates)
-            )
-            + m
+            -np.cross(self.state.angular_rates, (self.params.J @ self.state.angular_rates)) + moments
         )
         # dp = (
         #     self.params.Gamma1 * self.p * self.q

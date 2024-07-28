@@ -1,13 +1,19 @@
 import numpy as np
 
-from simulator.aircraft import Aircraft, load_airframe_parameters_from_yaml
+from simulator.aircraft import (
+    Aircraft,
+    AircraftState,
+    load_airframe_parameters_from_yaml,
+)
 from simulator.visualization.aircraft_visualization import AircraftVisualization
 
 params_file = r"config/aerosonde_parameters.yaml"
 aerosonde_params = load_airframe_parameters_from_yaml(params_file)
 
 dt = 0.01
-aircraft = Aircraft(dt, aerosonde_params)
+state0 = np.array([0.0, 0.0, 0.0, 10.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
+deltas0 = np.array([0.0, 0.1, 0.0, 0.5])
+aircraft = Aircraft(dt, aerosonde_params, state0=state0, deltas0=deltas0)
 
 visualization = AircraftVisualization()
 
@@ -15,19 +21,7 @@ t = 0.0
 while True:
     t += dt
 
-    fx = 100.0
-    fy = 0.0
-    fz = 0.0
-
-    l = 0.0
-    m = 1.0
-    n = 0.0
-
-    forces = np.array([fx, fy, fz])
-    moments = np.array([l, m, n])
-
-    state = aircraft.kinematics_dynamics.update(forces, moments)
-    aircraft.state.update(state)
+    aircraft.update_state()
 
     print(f"Time: {t:.2f} s")
     print(

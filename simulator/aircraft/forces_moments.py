@@ -10,20 +10,21 @@ import numpy as np
 from simulator.aircraft.aircraft_state import AircraftState
 from simulator.aircraft.airframe_parameters import AirframeParameters
 from simulator.aircraft.control_deltas import ControlDeltas
+from simulator.common.constants import EARTH_GRAVITY_VECTOR
 
 
-class Aerodynamics:
+class ForcesMoments:
     """
-    Class to calculate aerodynamic forces and moments for an aircraft.
+    Class to calculate forces and moments for an aircraft.
 
     Attributes:
     ----------
     params : AirframeParameters
-        Instance of AirframeParameters containing the aircraft's physical and aerodynamic properties.
+        Instance of AirframeParameters containing the aircraft's properties.
     """
 
     def __init__(self, params: AirframeParameters) -> None:
-        """Initialize the Aerodynamics class.
+        """Initialize the ForcesMoments class.
 
         Parameters
         ----------
@@ -31,6 +32,49 @@ class Aerodynamics:
             Instance of AirframeParameters containing the aircraft's properties
         """
         self.params = params
+
+        self.f = np.zeros(3)  # aircraft's external forces (fx, fy, fz) in body frame
+        self.m = np.zeros(3)  # aircraft's external moments (l, m, n)
+
+    def update(self, state: AircraftState, deltas: ControlDeltas) -> np.ndarray:
+        # gravity force in body frame
+        fg = state.R_vb @ EARTH_GRAVITY_VECTOR
+
+        # aerodynamic forces (lift, drag and lateral force) in body frame
+        F_lift = self.lift_force(
+            state, deltas
+        )  # lift force is expressed in the stability frame
+        F_drag = self.drag_force(
+            state, deltas
+        )  # drag force is expressed in the stability frame
+        F_lat = self.lateral_force(
+            state, deltas
+        )  # lateral force is expressed in body frame
+        fa = state.R_sb @ np.array([-F_drag, 0.0, -F_lift]) + np.array(
+            [0.0, F_lat, 0.0]
+        )
+
+        # propulsion forces in body frame
+        T_prop = self.propulsion_force(state, deltas)
+        fp = np.array([T_prop, 0.0, 0.0])
+
+        # aerodynamic moments (pitch, roll and yaw moments)
+        M_pitch = self.pitch_moment(state, deltas)
+        M_roll = self.roll_moment(state, deltas)
+        M_yaw = self.yaw_moment(state, deltas)
+        ma = np.array([M_roll, M_pitch, M_pitch])
+
+        # propulsion moments
+        Q_prop = self.propulsion_moment(state, deltas)
+        mp = np.array([-Q_prop, 0.0, 0.0])
+
+        # total forces and moments
+        self.f = fg + fa + fp
+        self.m = ma + mp
+        u = np.zeros(6)
+        u[0:3] = self.f
+        u[3:6] = self.m
+        return u
 
     def lift_coefficient_vs_alpha(self, alpha: float, model: str = "accurate") -> float:
         """Calculate the lift coefficient as a function of angle of attack.
@@ -316,13 +360,13 @@ class Aerodynamics:
         )  # b = (rho D^4 / (2 pi)) CQ1 Va + (KQ KV / R)
         c = (
             self.params.rho * self.params.Dprop**3 * self.params.CQ2 * state.airspeed**2
-            - self.params.KQ / self.params.R * Vin
+            - self.params.KQ / self.params.Rmotor * Vin
             + self.params.KQ * self.params.i0
         )  # c = (rho D^3) Cq2 Va^2 - (KQ / R) Vin + KQ i0
         Wp = (-b + np.sqrt(b**2 - 4 * a * c)) / (2.0 * a)
         return Wp
 
-    def motor_force(self, state: AircraftState, deltas: ControlDeltas) -> float:
+    def propulsion_force(self, state: AircraftState, deltas: ControlDeltas) -> float:
         """Calculate the motor force acting on the aircraft.
 
         Parameters
@@ -340,11 +384,10 @@ class Aerodynamics:
         Wp = self.propeller_speed(state, deltas)
         Jprop = 2.0 * np.pi * state.airspeed / (Wp * self.params.Dprop)  # advance ratio
         CT_vs_J = self.params.CT0 + self.params.CT1 * Jprop + self.params.CT2 * Jprop**2
-        Tp = self.params.rho * self.params.Dprop**4 / (4.0 * np.pi**2) * CT_vs_J
-        fp = Tp  # motor thrust
-        return fp
+        Tp = self.params.rho * (0.5 * Wp / np.pi)**2 * self.params.Dprop**4 * CT_vs_J
+        return Tp  # motor thrust
 
-    def motor_moment(self, state: AircraftState, deltas: ControlDeltas) -> float:
+    def propulsion_moment(self, state: AircraftState, deltas: ControlDeltas) -> float:
         """Calculate the motor moment acting on the aircraft.
 
         Parameters
@@ -362,6 +405,5 @@ class Aerodynamics:
         Wp = self.propeller_speed(state, deltas)
         Jprop = 2.0 * np.pi * state.airspeed / (Wp * self.params.Dprop)  # advance ratio
         CQ_vs_J = self.params.CQ0 + self.params.CQ1 * Jprop + self.params.CQ2 * Jprop**2
-        Qp = self.params.rho * self.params.Dprop**5 / (4.0 * np.pi**2) * CQ_vs_J
-        mp = -Qp  # motor torque
-        return mp
+        Qp = self.params.rho * (0.5 * Wp / np.pi)**2 * self.params.Dprop**5 * CQ_vs_J
+        return Qp  # motor torque

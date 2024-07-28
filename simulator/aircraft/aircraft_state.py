@@ -38,8 +38,9 @@ class AircraftState:
         """
         self.state = state0
         self.wind = wind
-        self.R_vb = rot_matrix_zyx(self.attitude_angles)
-        self.R_wb = rot_matrix_wind(self.alpha, self.beta)
+        self.R_vb = rot_matrix_zyx(self.attitude_angles) # vehicle to body frame
+        self.R_wb = rot_matrix_wind(self.alpha, self.beta) # wind to body frame
+        self.R_sb = rot_matrix_wind(self.alpha, 0.0) # stability to body frame
 
     @property
     def ned_position(self) -> np.ndarray:
@@ -120,6 +121,11 @@ class AircraftState:
     def r(self) -> float:
         """Yaw rate (radians/s)"""
         return self.state[11]
+    
+    @property
+    def altitude(self) -> float:
+        """Vertical distance to inertial frame (NED) in meters"""
+        return -self.pd
 
     @property
     def body_wind(self) -> np.ndarray:
@@ -146,6 +152,41 @@ class AircraftState:
     def beta(self) -> float:
         """Side-slip angle (rad)"""
         return np.arcsin(self.body_airspeed[1] / self.airspeed)
+    
+    @property
+    def groundspeed(self) -> float:
+        """Groundspeed value in m/s"""
+        return np.linalg.norm(self.body_velocity)
+    
+    @property
+    def ned_velocity(self) -> float:
+        """3-size array with aircraft NED velocity relative to ground [vn, ve, vd] in m/s"""
+        return self.R_vb.T @ self.body_velocity
+    
+    @property
+    def vspeed(self) -> float:
+        """Vertical speed value in m/s"""
+        return -self.ned_velocity[2]
+    
+    @property
+    def course_angle(self) -> float:
+        """Course angle (horizontal groundspeed direction relative to North) value in rads"""
+        return np.arctan2(self.ned_velocity[1], self.ned_velocity[0])
+    
+    @property
+    def path_angle(self) -> float:
+        """Path angle (vertical groundspeed angle relative to horizontal plane) value in rads"""
+        return -np.arcsin(self.ned_velocity[2], self.groundspeed)
+    
+    @property
+    def crab_angle(self) -> float:
+        """Crab angle (difference between the course angle and the heading or yaw angle) value in rads"""
+        return self.course_angle - self.yaw
+    
+    @property
+    def air_path_angle(self) -> float:
+        """Air-mass-referenced flight path angle (difference between pitch angle and angle of attack) value in rads"""
+        return self.pitch - self.beta
 
     def update(self, new_state: np.ndarray) -> None:
         """Update the state array.
@@ -168,8 +209,9 @@ class AircraftState:
             - r: Yaw rate (radians/s)
         """
         self.state = new_state
-        self.R_vb = rot_matrix_zyx(self.attitude_angles)
-        self.R_wb = rot_matrix_wind(self.alpha, self.beta)
+        self.R_vb = rot_matrix_zyx(self.attitude_angles) # vehicle to body frame
+        self.R_wb = rot_matrix_wind(self.alpha, self.beta) # wind to body frame
+        self.R_sb = rot_matrix_wind(self.alpha, 0.0) # stability to body frame
 
     def set_wind(self, wind: np.ndarray = np.zeros(3)) -> None:
         """Set the wind vector value.

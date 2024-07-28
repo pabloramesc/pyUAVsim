@@ -8,12 +8,12 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-from simulator.aircraft import Aerodynamics, load_airframe_parameters_from_yaml
+from simulator.aircraft import ForcesMoments, load_airframe_parameters_from_yaml
 
 params_file = r"config/aerosonde_parameters.yaml"
 aerosonde_params = load_airframe_parameters_from_yaml(params_file)
 
-aero = Aerodynamics(aerosonde_params)
+aero = ForcesMoments(aerosonde_params)
 
 # Define alpha range from -90 to 90 degrees
 alpha_degrees = np.linspace(-90, 90, 360)
