@@ -34,7 +34,7 @@ Outputs the control deltas for the aircraft simulator, closing the loop in the s
 **Estimation Filters**:
 Applies filters (e.g., Low Pass Filter, Kalman Filter) to sensor readings to estimate the aircraft state.
 
-**Controllers**:
+**Controll and Navigation**:
 Uses the estimated state along with mission parameters or joystick/controller input to manage attitude control, path following (line or orbit), path managing, and path planning.
 
 ![](pics/diagram.png)
