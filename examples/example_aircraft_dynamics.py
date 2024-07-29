@@ -1,7 +1,7 @@
 import numpy as np
 
 from simulator.aircraft import Aircraft, load_airframe_parameters_from_yaml
-from simulator.visualization.aircraft_visualization import AircraftVisualization
+from simulator.visualization.attitude_position_view import AttitudePositionView
 
 params_file = r"config/aerosonde_parameters.yaml"
 aerosonde_params = load_airframe_parameters_from_yaml(params_file)
@@ -9,7 +9,7 @@ aerosonde_params = load_airframe_parameters_from_yaml(params_file)
 dt = 0.01
 aircraft = Aircraft(dt, aerosonde_params)
 
-visualization = AircraftVisualization()
+visualization = AttitudePositionView()
 
 t = 0.0
 while True:

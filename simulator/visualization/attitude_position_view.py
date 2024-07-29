@@ -4,8 +4,8 @@ import numpy as np
 
 from simulator.math.rotation import rot_matrix_zyx, ned2xyz
 
-class AircraftVisualization:
-    def __init__(self):
+class AttitudePositionView:
+    def __init__(self, figsize=(12, 6), hlim=200.0, vlim=50.0):
         # Constants defining the aircraft geometry
         self.SPAN = 14.0
         self.CHORD = 2.0
@@ -20,7 +20,7 @@ class AircraftVisualization:
         plt.ion()
 
         # Create a figure with a specific layout
-        self.fig = plt.figure(figsize=(12, 6))
+        self.fig = plt.figure(figsize=figsize)
 
         # Define subplot for attitude visualization
         self.ax_attitude = self.fig.add_subplot(121, projection="3d")
@@ -38,9 +38,9 @@ class AircraftVisualization:
         self.ax_position.set_xlabel("East (m)")
         self.ax_position.set_ylabel("North (m)")
         self.ax_position.set_zlabel("Height (m)")
-        self.ax_position.set_xlim(-50, 50)
-        self.ax_position.set_ylim(-50, 50)
-        self.ax_position.set_zlim(-50, 50)
+        self.ax_position.set_xlim(-hlim, hlim)
+        self.ax_position.set_ylim(-hlim, hlim)
+        self.ax_position.set_zlim(-vlim, vlim)
 
         # Define the vertices of the aircraft components
         self.wing = np.array(

@@ -36,7 +36,21 @@ class ForcesMoments:
         self.f = np.zeros(3)  # aircraft's external forces (fx, fy, fz) in body frame
         self.m = np.zeros(3)  # aircraft's external moments (l, m, n)
 
-    def update(self, state: AircraftState, deltas: ControlDeltas) -> np.ndarray:
+    def update(self, state: AircraftState, deltas: ControlDeltas) -> tuple[np.ndarray, np.ndarray]:
+        """_summary_
+
+        Parameters
+        ----------
+        state : AircraftState
+            _description_
+        deltas : ControlDeltas
+            _description_
+
+        Returns
+        -------
+        tuple[ndarray, ndarray]
+            Calculated external forces [fx, fy, fz] and moments [l, m, n]
+        """
         # gravity force in body frame
         fg = state.R_vb @ EARTH_GRAVITY_VECTOR
 
@@ -69,12 +83,9 @@ class ForcesMoments:
         mp = np.array([-Q_prop, 0.0, 0.0])
 
         # total forces and moments
-        self.f = fg + fa + fp
-        self.m = ma + mp
-        u = np.zeros(6)
-        u[0:3] = self.f
-        u[3:6] = self.m
-        return u
+        f = fg + fa + fp
+        m = ma + mp
+        return f, m
 
     def lift_coefficient_vs_alpha(self, alpha: float, model: str = "accurate") -> float:
         """Calculate the lift coefficient as a function of angle of attack.
@@ -363,8 +374,8 @@ class ForcesMoments:
             - self.params.KQ / self.params.Rmotor * Vin
             + self.params.KQ * self.params.i0
         )  # c = (rho D^3) Cq2 Va^2 - (KQ / R) Vin + KQ i0
-        Wp = (-b + np.sqrt(b**2 - 4 * a * c)) / (2.0 * a)
-        return Wp
+        Omega = (-b + np.sqrt(b**2 - 4 * a * c)) / (2.0 * a)
+        return Omega
 
     def propulsion_force(self, state: AircraftState, deltas: ControlDeltas) -> float:
         """Calculate the motor force acting on the aircraft.
@@ -381,10 +392,10 @@ class ForcesMoments:
         float
             The motor force acting on the aircraft in newtons (N)
         """
-        Wp = self.propeller_speed(state, deltas)
-        Jprop = 2.0 * np.pi * state.airspeed / (Wp * self.params.Dprop)  # advance ratio
+        Omega = self.propeller_speed(state, deltas)
+        Jprop = 2.0 * np.pi * state.airspeed / (Omega * self.params.Dprop)  # advance ratio
         CT_vs_J = self.params.CT0 + self.params.CT1 * Jprop + self.params.CT2 * Jprop**2
-        Tp = self.params.rho * (0.5 * Wp / np.pi)**2 * self.params.Dprop**4 * CT_vs_J
+        Tp = self.params.rho * (0.5 * Omega / np.pi)**2 * self.params.Dprop**4 * CT_vs_J
         return Tp  # motor thrust
 
     def propulsion_moment(self, state: AircraftState, deltas: ControlDeltas) -> float:
@@ -402,8 +413,8 @@ class ForcesMoments:
         float
             The motor moment acting on the aircraft in newton-meters (Nm)
         """
-        Wp = self.propeller_speed(state, deltas)
-        Jprop = 2.0 * np.pi * state.airspeed / (Wp * self.params.Dprop)  # advance ratio
+        Omega = self.propeller_speed(state, deltas)
+        Jprop = 2.0 * np.pi * state.airspeed / (Omega * self.params.Dprop)  # advance ratio
         CQ_vs_J = self.params.CQ0 + self.params.CQ1 * Jprop + self.params.CQ2 * Jprop**2
-        Qp = self.params.rho * (0.5 * Wp / np.pi)**2 * self.params.Dprop**5 * CQ_vs_J
+        Qp = self.params.rho * (0.5 * Omega / np.pi)**2 * self.params.Dprop**5 * CQ_vs_J
         return Qp  # motor torque
