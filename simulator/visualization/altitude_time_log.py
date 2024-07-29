@@ -13,14 +13,15 @@ from simulator.aircraft import AircraftState
 
 
 class AltitudeTimeLog(GeneralPlotter):
-    def __init__(self, ax: plt.Axes = None) -> None:
-        if ax is None:
-            fig = plt.figure()
-            ax = fig.add_subplot(111)
-        super().__init__(ax, is_3d=False)
+    def __init__(self, fig: plt.Figure, pos: int = 111) -> None:
+        ax = fig.add_subplot(pos)
+        super().__init__(fig, ax, pos, is_3d=False)
+
         self.ax.set_title("Altitude vs Time Logger")
         self.ax.set_xlabel("Time (s)")
         self.ax.set_ylabel("Altitude (m)")
+        self.ax.grid()
+
         self.line, = self.ax.plot([], [], color='b', linewidth=2.0)
         self.altitude_log= []
 

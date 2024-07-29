@@ -9,6 +9,8 @@ The Python UAV Simulator provides a comprehensive environment for simulating the
 
 ![](pics/screenshot_01.png)
 
+![](pics/screenshot_02.png)
+
 The simulator is composed of four main modules, each with distinct responsibilities and submodules. These modules are organized into three levels: Physical, Electrical, and Software.
 
 ### Physical Level (Aircraft)

@@ -6,13 +6,10 @@
 """
 
 import numpy as np
+from matplotlib import pyplot as plt
 
-from simulator.aircraft import (
-    Aircraft,
-    AircraftState,
-    load_airframe_parameters_from_yaml,
-)
-from simulator.visualization.attitude_position_view import AttitudePositionView
+from simulator.aircraft import Aircraft, load_airframe_parameters_from_yaml
+from simulator.visualization import MultiPlotter, AttitudeView, Position2DPlot, AltitudeTimeLog
 
 params_file = r"config/aerosonde_parameters.yaml"
 aerosonde_params = load_airframe_parameters_from_yaml(params_file)
@@ -22,7 +19,11 @@ state0 = np.array([0.0, 0.0, 0.0, 10.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
 deltas0 = np.array([0.0, 0.1, 0.1, 0.5])
 aircraft = Aircraft(dt, aerosonde_params, state0=state0, deltas0=deltas0)
 
-visualization = AttitudePositionView()
+plt.ion()
+fig = plt.figure(figsize=(12, 6))
+att_view = AttitudeView(fig, 121)
+pos_plot = Position2DPlot(fig, 222)
+alt_log = AltitudeTimeLog(fig, 224)
 
 t = 0.0
 while True:
@@ -45,4 +46,10 @@ while True:
     )
     print("-" * 50)
 
-    visualization.update(aircraft.state.state, pause=0.01)
+    att_view.update(aircraft.state)
+    pos_plot.update(aircraft.state)
+    alt_log.update(aircraft.state, time=t)
+
+    plt.draw()
+    plt.pause(0.01)
+

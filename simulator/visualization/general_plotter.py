@@ -13,8 +13,10 @@ from simulator.aircraft import AircraftState
 
 
 class GeneralPlotter(ABC):
-    def __init__(self, ax: plt.Axes, is_3d: bool = False):
+    def __init__(self, fig: plt.Figure, ax: plt.Axes, pos: int = 111, is_3d: bool = False):
+        self.fig = fig
         self.ax = ax
+        self.pos = pos
         self.is_3d = is_3d
 
     @abstractmethod

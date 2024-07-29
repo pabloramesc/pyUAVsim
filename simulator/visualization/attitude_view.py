@@ -14,15 +14,13 @@ from simulator.math.rotation import ned2xyz, rot_matrix_zyx
 from simulator.visualization import GeneralPlotter
 
 
-class AttitudeVisualization(GeneralPlotter):
-    def __init__(self, ax: plt.Axes = None):
-        if ax is None:
-            fig = plt.figure()
-            ax = fig.add_subplot(111)
-        super().__init__(ax, is_3d=True)
-        self.setup_aircraft_model()
+class AttitudeView(GeneralPlotter):
+    def __init__(self, fig: plt.Figure, pos: int = 111):
+        ax = fig.add_subplot(pos, projection="3d")
+        super().__init__(fig, ax, pos, is_3d=True)
+        self._setup_aircraft_model()
 
-    def setup_aircraft_model(self):
+    def _setup_aircraft_model(self):
         # Constants defining the aircraft geometry
         self.SPAN = 14.0
         self.CHORD = 2.0
@@ -34,7 +32,6 @@ class AttitudeVisualization(GeneralPlotter):
         self.TAIL_TIP = 1.0
 
         # Define subplot for attitude visualization
-        self.ax = self.fig.add_subplot(121, projection="3d")
         self.ax.set_title("Attitude Visualization")
         self.ax.set_xlabel("East (m)")
         self.ax.set_ylabel("North (m)")

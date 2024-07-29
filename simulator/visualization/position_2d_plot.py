@@ -13,18 +13,16 @@ from simulator.aircraft import AircraftState
 
 
 class Position2DPlot(GeneralPlotter):
-    def __init__(self, ax: plt.Axes = None, hlim: float = None) -> None:
-        if ax is None:
-            fig = plt.figure()
-            ax = fig.add_subplot(111)
-        super().__init__(ax, is_3d=False)
+    def __init__(self, fig: plt.Figure, pos: int = 111) -> None:
+        ax = fig.add_subplot(pos)
+        super().__init__(fig, ax, pos, is_3d=False)
+
         self.ax.set_title("Position in NED Frame")
         self.ax.set_xlabel("East (m)")
         self.ax.set_ylabel("North (m)")
-        if not hlim is None:
-            self.ax.set_xlim(-hlim, hlim)
-            self.ax.set_ylim(-hlim, hlim)
-        self.line, = self.ax.plot([], [], color='b', linewidth=2.0)
+        self.ax.grid()
+
+        (self.line,) = self.ax.plot([], [], color="b", linewidth=2.0)
         self.position_history = []
 
     def update(self, state: AircraftState, time: float = None) -> None:
@@ -32,5 +30,7 @@ class Position2DPlot(GeneralPlotter):
         if len(self.position_history) > 1:
             positions = np.array(self.position_history)
             self.line.set_data(positions[:, 1], positions[:, 0])
+        self.ax.relim()
+        self.ax.autoscale_view()
         self.ax.figure.canvas.draw()
         self.ax.figure.canvas.flush_events()

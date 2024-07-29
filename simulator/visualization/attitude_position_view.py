@@ -5,7 +5,7 @@ import numpy as np
 from simulator.math.rotation import rot_matrix_zyx, ned2xyz
 
 class AttitudePositionView:
-    def __init__(self, figsize=(12, 6), hlim=200.0, vlim=50.0):
+    def __init__(self, figsize=(12, 6), ):
         # Constants defining the aircraft geometry
         self.SPAN = 14.0
         self.CHORD = 2.0
@@ -38,9 +38,6 @@ class AttitudePositionView:
         self.ax_position.set_xlabel("East (m)")
         self.ax_position.set_ylabel("North (m)")
         self.ax_position.set_zlabel("Height (m)")
-        self.ax_position.set_xlim(-hlim, hlim)
-        self.ax_position.set_ylim(-hlim, hlim)
-        self.ax_position.set_zlim(-vlim, vlim)
 
         # Define the vertices of the aircraft components
         self.wing = np.array(
@@ -124,7 +121,11 @@ class AttitudePositionView:
             positions = np.array(self.position_history)
             self.line.set_data(positions[:, 0], positions[:, 1])
             self.line.set_3d_properties(positions[:, 2])
-
+            # Autoscale axis limits
+            self.ax_position.set_xlim(min(positions[:, 0]), max(positions[:, 0]))
+            self.ax_position.set_ylim(min(positions[:, 1]), max(positions[:, 1]))
+            self.ax_position.set_zlim(min(positions[:, 2]), max(positions[:, 2]))
+            
         # Update the plots
         self.fig.canvas.draw()
         self.fig.canvas.flush_events()
