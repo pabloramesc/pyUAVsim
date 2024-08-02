@@ -44,8 +44,8 @@ Uses the estimated state along with mission parameters or joystick/controller in
 - [x] Main aicraft data handlers: `AircraftParameters`, `AircrafState` ...
 - [x] Aircraft forces and moments (gravity, aerodynamic and propulsion) simulation
 - [x] Aircraft kinematics and dynamics integration to calculate new state
-- [ ] Multi functional visualization tool based on Matplotlib
-- [ ] Trim calculation
+- [x] Multi functional visualization tool based on Matplotlib
+- [x] Trim calculation
 - [ ] Wind and atmospheric model integration
 - [ ] Realistic sensor data simulation including IMU, GPS, and barometer.
 - [ ] Actuators simulation (servos and DC motor) with realistic transfer functions
