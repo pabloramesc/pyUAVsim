@@ -33,23 +33,21 @@ class ForcesMoments:
         """
         self.params = params
 
-        self.f = np.zeros(3)  # aircraft's external forces (fx, fy, fz) in body frame
-        self.m = np.zeros(3)  # aircraft's external moments (l, m, n)
-
     def update(self, state: AircraftState, deltas: ControlDeltas) -> tuple[np.ndarray, np.ndarray]:
-        """_summary_
+        """Calcuate external forces and moments acting on the aircraft
+        due to gravity, aerodynamics and propulsion.
 
         Parameters
         ----------
         state : AircraftState
-            _description_
+            Current aircraft's state
         deltas : ControlDeltas
-            _description_
+            Current cotrol deltas
 
         Returns
         -------
         tuple[ndarray, ndarray]
-            Calculated external forces [fx, fy, fz] and moments [l, m, n]
+            Calculated external forces [fx, fy, fz] and moments [l, m, n] in body frame
         """
         # gravity force in body frame
         fg = state.R_vb @ EARTH_GRAVITY_VECTOR
@@ -76,7 +74,7 @@ class ForcesMoments:
         M_pitch = self.pitch_moment(state, deltas)
         M_roll = self.roll_moment(state, deltas)
         M_yaw = self.yaw_moment(state, deltas)
-        ma = np.array([M_roll, M_pitch, M_pitch])
+        ma = np.array([M_roll, M_pitch, M_yaw])
 
         # propulsion moments
         Q_prop = self.propulsion_moment(state, deltas)

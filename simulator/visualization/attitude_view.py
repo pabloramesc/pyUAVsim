@@ -99,5 +99,4 @@ class AttitudeView(GeneralPlotter):
                 ned2xyz(rotated_vtail),
             ]
         )
-        self.ax.figure.canvas.draw()
-        self.ax.figure.canvas.flush_events()
+    

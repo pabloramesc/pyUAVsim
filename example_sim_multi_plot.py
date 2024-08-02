@@ -8,15 +8,16 @@
 import numpy as np
 from matplotlib import pyplot as plt
 
-from simulator.aircraft import Aircraft, load_airframe_parameters_from_yaml
-from simulator.visualization import MultiPlotter, AttitudeView, Position2DPlot, AltitudeTimeLog
+from simulator.aircraft import Aircraft, load_airframe_parameters_from_yaml, Trim
+from simulator.visualization import AttitudeView, Position2DPlot, AltitudeTimeLog
 
 params_file = r"config/aerosonde_parameters.yaml"
 aerosonde_params = load_airframe_parameters_from_yaml(params_file)
 
-dt = 0.1
-state0 = np.array([0.0, 0.0, 0.0, 10.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
-deltas0 = np.array([0.0, 0.1, 0.1, 0.5])
+trim = Trim(aerosonde_params)
+state0, deltas0 = trim.calculate_trim(10.0, np.deg2rad(10.0), 1e12)
+
+dt = 0.01
 aircraft = Aircraft(dt, aerosonde_params, state0=state0, deltas0=deltas0)
 
 plt.ion()
@@ -45,6 +46,7 @@ while True:
         f"Angular Rates:       p: {aircraft.state.p:.2f}, q: {aircraft.state.q:.2f}, r: {aircraft.state.r:.2f}"
     )
     print("-" * 50)
+
 
     att_view.update(aircraft.state)
     pos_plot.update(aircraft.state)

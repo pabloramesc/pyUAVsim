@@ -32,5 +32,3 @@ class Position2DPlot(GeneralPlotter):
             self.line.set_data(positions[:, 1], positions[:, 0])
         self.ax.relim()
         self.ax.autoscale_view()
-        self.ax.figure.canvas.draw()
-        self.ax.figure.canvas.flush_events()

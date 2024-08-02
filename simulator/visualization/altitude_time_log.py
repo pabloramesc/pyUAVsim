@@ -31,5 +31,3 @@ class AltitudeTimeLog(GeneralPlotter):
         self.line.set_data(log[:, 0], log[:, 1])
         self.ax.relim()
         self.ax.autoscale_view()
-        self.ax.figure.canvas.draw()
-        self.ax.figure.canvas.flush_events()

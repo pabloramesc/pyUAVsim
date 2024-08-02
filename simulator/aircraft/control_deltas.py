@@ -6,6 +6,8 @@
 """
 import numpy as np
 
+from simulator.math.angles import clip_angle_pi
+
 class ControlDeltas:
 
     def __init__(self, deltas0: np.ndarray = np.zeros(4)) -> None:
@@ -37,19 +39,19 @@ class ControlDeltas:
     @property
     def delta_a(self) -> float:
         """Aileron deflection angle in rads"""
-        return self.deltas[0]
+        return clip_angle_pi(self.deltas[0])
     
     @property
     def delta_e(self) -> float:
         """Elevator deflection angle in rads"""
-        return self.deltas[1]
+        return clip_angle_pi(self.deltas[1])
     
     @property
     def delta_r(self) -> float:
         """Rudder deflection angle in rads"""
-        return self.deltas[2]
+        return clip_angle_pi(self.deltas[2])
     
     @property
     def delta_t(self) -> float:
         """Throttle setting between 0.0 and 1.0"""
-        return self.deltas[3]
+        return np.clip(self.deltas[3], 0.0, 1.0)

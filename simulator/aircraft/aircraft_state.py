@@ -176,7 +176,7 @@ class AircraftState:
     @property
     def path_angle(self) -> float:
         """Path angle (vertical groundspeed angle relative to horizontal plane) value in rads"""
-        return -np.arcsin(self.ned_velocity[2], self.groundspeed)
+        return -np.arcsin(self.ned_velocity[2] / self.groundspeed)
     
     @property
     def crab_angle(self) -> float:

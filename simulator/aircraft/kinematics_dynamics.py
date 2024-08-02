@@ -73,7 +73,7 @@ class KinematicsDynamics:
         Parameters
         ----------
         x : np.ndarray
-            12-size array with aircraft last state (NOT USED!)
+            12-size array with aircraft last state (NOT USED! Internal AircraftState object used instead)
             [pn, pe, pd, u, v, w, roll, pitch, yaw, p, q, r]
             - pn: Position North (meters)
             - pe: Position East (meters)

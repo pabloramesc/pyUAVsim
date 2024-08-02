@@ -7,19 +7,17 @@
 
 import numpy as np
 
-from simulator.aircraft import (
-    Aircraft,
-    AircraftState,
-    load_airframe_parameters_from_yaml,
-)
+from simulator.aircraft import Aircraft, Trim, load_airframe_parameters_from_yaml
+
 from simulator.visualization.attitude_position_view import AttitudePositionView
 
 params_file = r"config/aerosonde_parameters.yaml"
 aerosonde_params = load_airframe_parameters_from_yaml(params_file)
 
+trim = Trim(aerosonde_params)
+state0, deltas0 = trim.calculate_trim(10.0, 0.0, 100.0)
+
 dt = 0.1
-state0 = np.array([0.0, 0.0, 0.0, 10.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
-deltas0 = np.array([0.0, 0.1, 0.1, 0.5])
 aircraft = Aircraft(dt, aerosonde_params, state0=state0, deltas0=deltas0)
 
 visualization = AttitudePositionView()
