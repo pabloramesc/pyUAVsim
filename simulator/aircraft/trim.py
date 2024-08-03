@@ -6,7 +6,9 @@
 """
 
 import numpy as np
-from scipy.optimize import minimize
+from scipy.optimize import minimize, fsolve
+
+from simulator.math.numeric_differentiation import jacobian
 
 from simulator.aircraft import (
     AirframeParameters,
@@ -43,11 +45,11 @@ class Trim:
         """
 
         x_dot_trim = np.zeros(12)
-        x_dot_trim[0] = Va * np.cos(gamma)  # horizontal speed (d(pn)/dt)
-        x_dot_trim[2] = -Va * np.sin(gamma)  # climb rate (d(pd)/dt)
-        x_dot_trim[8] = Va / R_orb * np.cos(gamma)  # turn rate (d(yaw)/dt)
+        x_dot_trim[0] = +Va * np.cos(gamma)  # horizontal speed
+        x_dot_trim[2] = -Va * np.sin(gamma)  # climb rate
+        x_dot_trim[8] = Va / R_orb * np.cos(gamma)  # turn rate
 
-        def fun(x: np.ndarray) -> float:
+        def objective(x: np.ndarray) -> float:
             x_trim = x[0:12]
             u_trim = x[12:16]
             err = np.linalg.norm(x_dot_trim - self.x_dot(x_trim, u_trim))
@@ -56,22 +58,14 @@ class Trim:
         x0_trim = np.zeros(12)
         x0_trim[3] = x_dot_trim[0]  # u = d(pn)/dt
         x0_trim[5] = x_dot_trim[2]  # w = d(pd)/dt
-        x0_trim[11] = x_dot_trim[8]  # r = d(yaw)/dt
         u0_trim = np.zeros(4)
+        u0_trim[3] = 0.5
 
         def cons_eq_x(x: np.ndarray) -> np.ndarray:
             return np.array(
                 [
-                    x[0] - 0.0, # pn = 0.0
-                    x[1] - 0.0, # pe = 0.0
-                    x[2] - 0.0, # pd = 0.0
-                    x[3] - x0_trim[3],  # u = Va * cos(gamma)
-                    x[4] - 0.0,  # v = 0.0
-                    x[5] - x0_trim[5],  # w = -Va * sin(gamma)
-                    x[8] - 0.0, # yaw = 0.0
-                    x[9] - 0.0, # p = 0.0
-                    x[10] - 0.0, # q = 0.0
-                    x[11] - x0_trim[11], # r = Va / Rorb * cos(gamma)
+                    np.linalg.norm(x[3:6]) - Va, # velocity magnitude equals to airspeed
+                    x[4] - 0.0,  # zero side velocity
                 ]
             )
 
@@ -86,7 +80,7 @@ class Trim:
         cons = [{"type": "eq", "fun": cons_eq_x}, {"type": "ineq", "fun": cons_ineq_u}]
 
         result = minimize(
-            fun,
+            objective,
             x0=np.append(x0_trim, u0_trim),
             method="SLSQP",
             tol=1e-9,
@@ -99,6 +93,24 @@ class Trim:
 
         state_trim = AircraftState(x_trim)
         dela_trim = ControlDeltas(u_trim)
+
+        alpha = state_trim.alpha
+        beta = state_trim.beta
+        roll = state_trim.roll
+        pitch = alpha + gamma
+
+        x_trim[0] = 0.0  # pn
+        x_trim[1] = 0.0  # pe
+        x_trim[2] = 0.0  # pd
+        x_trim[3] = Va * np.cos(alpha) * np.cos(beta)  # u
+        x_trim[4] = Va * np.sin(beta)  # v
+        x_trim[5] = Va * np.sin(alpha) * np.cos(beta)  # w
+        x_trim[6] = roll  # roll
+        x_trim[7] = pitch  # pitch
+        x_trim[8] = 0.0  # yaw
+        x_trim[9] = -Va / R_orb * np.sin(pitch)  # p
+        x_trim[10] = Va / R_orb * np.sin(roll) * np.cos(pitch)  # q
+        x_trim[11] = Va / R_orb * np.cos(roll) * np.cos(pitch)  # r
 
         return x_trim, u_trim
 

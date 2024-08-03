@@ -15,7 +15,7 @@ params_file = r"config/aerosonde_parameters.yaml"
 aerosonde_params = load_airframe_parameters_from_yaml(params_file)
 
 trim = Trim(aerosonde_params)
-state0, deltas0 = trim.calculate_trim(10.0, np.deg2rad(10.0), 1e12)
+state0, deltas0 = trim.calculate_trim(10.0, np.deg2rad(45.0), 1e12)
 
 dt = 0.01
 aircraft = Aircraft(dt, aerosonde_params, state0=state0, deltas0=deltas0)
@@ -40,7 +40,9 @@ while True:
         f"Velocity (Body):     u: {aircraft.state.u:.2f}, v: {aircraft.state.v:.2f}, w: {aircraft.state.w:.2f}"
     )
     print(
-        f"Attitude (Radians):  roll: {aircraft.state.roll:.2f}, pitch: {aircraft.state.pitch:.2f}, yaw: {aircraft.state.yaw:.2f}"
+        f"Attitude (Degrees): roll: {np.rad2deg(aircraft.state.roll):.2f}, "
+        f"pitch: {np.rad2deg(aircraft.state.pitch):.2f}, "
+        f"yaw: {np.rad2deg(aircraft.state.yaw):.2f}"
     )
     print(
         f"Angular Rates:       p: {aircraft.state.p:.2f}, q: {aircraft.state.q:.2f}, r: {aircraft.state.r:.2f}"
