@@ -11,24 +11,21 @@ from numpy import sin, cos
 
 def rot_matrix_axis(axis: np.ndarray = np.zeros(3), t: float = 0.0) -> np.ndarray:
     """
-    Compute transformation matrix from vehicle frame to body frame (R^b_v)
-    with the aircraft attitude expressed as an axis and a rotation for that axis.
+    Compute transformation matrix for rotation around an axis.
 
     Parameters
     ----------
     axis : np.ndarray, optional
         3-size array with rotation axis components (ux, uy, uz), by default np.zeros(3)
     t : float, optional
-        rotation in rad, by default 0.0
+        rotation angle in rad, by default 0.0
 
     Returns
     -------
     np.ndarray
         3x3 transformation matrix
     """
-    ux = axis[0]
-    uy = axis[1]
-    uz = axis[2]
+    ux, uy, uz = axis / np.linalg.norm(axis)
     R = np.array(
         [
             [
@@ -316,7 +313,7 @@ def quat2euler(q):
         )
         att[1] = np.arcsin(2.0 * (q0 * q2 - q1 * q3))
         att[2] = np.arctan2(
-            2.0 * (q0 * q1 + q2 * q3), (q0 * q0 + q1 * q1 - q2 * q2 - q3 * q3)
+            2.0 * (q0 * q3 + q1 * q2), (q0 * q0 + q1 * q1 - q2 * q2 - q3 * q3)
         )
         return att
     else:
@@ -331,7 +328,7 @@ def quat2euler(q):
         )
         att[:, 1] = np.arcsin(2.0 * (q0 * q2 - q1 * q3))
         att[:, 2] = np.arctan2(
-            2.0 * (q0 * q1 + q2 * q3), (q0 * q0 + q1 * q1 - q2 * q2 - q3 * q3)
+            2.0 * (q0 * q3 + q1 * q2), (q0 * q0 + q1 * q1 - q2 * q2 - q3 * q3)
         )
         return att
 
@@ -344,7 +341,7 @@ def attitude_dt(omega: np.ndarray, roll: float, pitch: float) -> np.ndarray:
     Parameters
     ----------
     omega : np.ndarray
-        3-size array with angular rates in rad/s.
+        3-size array with angular rates [p, q, r] in rad/s.
     roll : float
         Roll angle in radians.
     pitch : float
