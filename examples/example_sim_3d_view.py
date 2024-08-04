@@ -15,10 +15,10 @@ params_file = r"config/aerosonde_parameters.yaml"
 aerosonde_params = load_airframe_parameters_from_yaml(params_file)
 
 trim = Trim(aerosonde_params)
-state0, deltas0 = trim.calculate_trim(15.0, np.deg2rad(0.0), 500)
+state0, delta0 = trim.calculate_trim(15.0, np.deg2rad(0.0), 500)
 
 dt = 0.01
-aircraft = Aircraft(dt, aerosonde_params, state0=state0, deltas0=deltas0)
+aircraft = Aircraft(dt, aerosonde_params, state0=state0, delta0=delta0)
 
 visualization = AttitudePositionView()
 
@@ -43,4 +43,4 @@ while True:
     )
     print("-" * 50)
 
-    visualization.update(aircraft.state.state, pause=0.01)
+    visualization.update(aircraft.state.x, pause=0.01)

@@ -23,6 +23,8 @@ class Trim:
 
     def __init__(self, params: AirframeParameters) -> None:
         self.params = params
+        self.forces_moments = ForcesMoments(self.params)
+        self.kinematics_dynamics = KinematicsDynamics(0.0, self.params)
 
     def calculate_trim(
         self, Va: float, gamma: float, R_orb: float
@@ -52,7 +54,7 @@ class Trim:
         def objective(x: np.ndarray) -> float:
             x_trim = x[0:12]
             u_trim = x[12:16]
-            err = np.linalg.norm(x_dot_trim - self.x_dot(x_trim, u_trim))
+            err = np.linalg.norm(x_dot_trim - self.derivatives(x_trim, u_trim))
             return err**2
 
         x0_trim = np.zeros(12)
@@ -114,14 +116,14 @@ class Trim:
 
         return x_trim, u_trim
 
-    def x_dot(self, x: np.ndarray, u: np.ndarray) -> np.ndarray:
-        """_summary_
+    def derivatives(self, x: np.ndarray, delta: np.ndarray) -> np.ndarray:
+        """Dynamycs function as dx/dt = f(x, delta), where x is the current state and delta the control array.
 
         Parameters
         ----------
         x : np.ndarray
             12-size array with the aircrfat's state: [pn, pe, pd, u, v, w, roll, pitch, yaw, p, q, r]
-        u : np.ndarray
+        delta : np.ndarray
             4-size array with the control deltas: [delta_a, delta_e, delta_r, delta_t]
 
         Returns
@@ -129,13 +131,8 @@ class Trim:
         np.ndarray
             12-size array with time derivative of the aircraft state: dx/dt
         """
-        state = AircraftState(state0=x)
-        deltas = ControlDeltas(deltas0=u)
-
-        forces_moments = ForcesMoments(self.params)
-        f, m = forces_moments.update(state, deltas)
-
-        kinematics_dynamics = KinematicsDynamics(0.0, self.params, state)
-        dxdt = kinematics_dynamics.x_dot(x, u=np.append(f, m))
-
-        return dxdt
+        state = AircraftState(x)
+        deltas = ControlDeltas(delta)
+        u = self.forces_moments.update(state, deltas)
+        x_dot = self.kinematics_dynamics.derivatives(x, u)
+        return x_dot

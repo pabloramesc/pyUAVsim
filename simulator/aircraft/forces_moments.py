@@ -33,7 +33,7 @@ class ForcesMoments:
         """
         self.params = params
 
-    def update(self, state: AircraftState, deltas: ControlDeltas) -> tuple[np.ndarray, np.ndarray]:
+    def update(self, state: AircraftState, deltas: ControlDeltas) -> np.ndarray:
         """Calcuate external forces and moments acting on the aircraft
         due to gravity, aerodynamics and propulsion.
 
@@ -46,8 +46,8 @@ class ForcesMoments:
 
         Returns
         -------
-        tuple[ndarray, ndarray]
-            Calculated external forces [fx, fy, fz] and moments [l, m, n] in body frame
+        ndarray
+            Calculated external forces and moments array in body frame: [fx, fy, fx, l, m, n]
         """
         # gravity force in body frame
         fg = state.R_vb @ EARTH_GRAVITY_VECTOR
@@ -81,9 +81,10 @@ class ForcesMoments:
         mp = np.array([-Q_prop, 0.0, 0.0])
 
         # total forces and moments
-        f = fg + fa + fp
-        m = ma + mp
-        return f, m
+        u = np.zeros(6)
+        u[0:3] = fg + fa + fp
+        u[3:6] = ma + mp
+        return u
 
     def lift_coefficient_vs_alpha(self, alpha: float, model: str = "accurate") -> float:
         """Calculate the lift coefficient as a function of angle of attack.

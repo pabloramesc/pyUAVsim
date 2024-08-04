@@ -19,9 +19,9 @@ class Aircraft:
         self,
         dt: float,
         params: AirframeParameters,
-        wind: np.ndarray = np.zeros(3),
+        wind0: np.ndarray = np.zeros(3),
         state0: np.ndarray = np.zeros(12),
-        deltas0: np.ndarray = np.zeros(4),
+        delta0: np.ndarray = np.zeros(4),
     ) -> None:
         """Initialize the Aircraft class.
 
@@ -31,27 +31,25 @@ class Aircraft:
             Time step for integration (seconds)
         params : AirframeParameters
             Parameters of the airframe
-        wind : np.ndarray, optional
-            Wind vector in NED frame (3-size array: wn, we, wd in m/s), by default np.zeros(3)
+        wind0 : np.ndarray, optional
+            Initial wind vector in NED frame (3-size array: wn, we, wd in m/s), by default np.zeros(3)
         state0 : np.ndarray, optional
-            Initial state array (12 variables: pn, pe, pd, u, v, w, roll, pitch, yaw, p, q, r),
-            by default np.zeros(12)
-        deltas0 : np.ndarray, optional
-            Initial deltas array (4 variables: da, de, dr, dt),
-            by default np.zeros(12)
+            Initial state array (12 variables: pn, pe, pd, u, v, w, roll, pitch, yaw, p, q, r), by default np.zeros(12)
+        delta0 : np.ndarray, optional
+            Initial delta array (4 variables: delta_a, delta_e, delta_r, delta_t), by default np.zeros(12)
         """
         self.t = 0.0
         self.dt = dt
-
-        self.wind = wind
+        
+        self.u = np.zeros(6)
 
         self.params = params
-        self.state = AircraftState(state0, wind)
-        self.deltas = ControlDeltas(deltas0)
-        self.kinematics_dynamics = KinematicsDynamics(dt, params, self.state, wind)
+        self.state = AircraftState(state0, wind0)
+        self.deltas = ControlDeltas(delta0)
+        self.kinematics_dynamics = KinematicsDynamics(dt, params)
         self.forces_moments = ForcesMoments(params)
 
-    def update_deltas(self, deltas: np.ndarray = np.zeros(4)) -> None:
+    def set_deltas(self, deltas: np.ndarray = np.zeros(4)) -> None:
         self.deltas.update(deltas)
 
     def update_state(self) -> None:
@@ -73,7 +71,8 @@ class Aircraft:
         - r: Yaw rate (radians/s)
         """
         u = self.forces_moments.update(self.state, self.deltas)
-        f = u[0:3]
-        m = u[3:6]
-        new_state = self.kinematics_dynamics.update(f, m)
-        self.state.update(new_state)
+        x = self.kinematics_dynamics.update(self.state.x, u)
+        x_dot = self.kinematics_dynamics.derivatives(x, u)
+        self.u = u
+        self.state.update(x, x_dot)
+        

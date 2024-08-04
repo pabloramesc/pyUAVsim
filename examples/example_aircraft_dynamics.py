@@ -44,4 +44,4 @@ while True:
     )
     print("-" * 50)
 
-    visualization.update(aircraft.state.state, pause=0.01)
+    visualization.update(aircraft.state.x, pause=0.01)

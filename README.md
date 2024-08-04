@@ -46,6 +46,7 @@ Uses the estimated state along with mission parameters or joystick/controller in
 - [x] Aircraft kinematics and dynamics integration to calculate new state
 - [x] Multi functional visualization tool based on Matplotlib
 - [x] Trim calculation
+- [ ] Quaternions support
 - [ ] Wind and atmospheric model integration
 - [ ] Realistic sensor data simulation including IMU, GPS, and barometer.
 - [ ] Actuators simulation (servos and DC motor) with realistic transfer functions

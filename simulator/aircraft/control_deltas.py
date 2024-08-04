@@ -10,12 +10,12 @@ from simulator.math.angles import clip_angle_pi
 
 class ControlDeltas:
 
-    def __init__(self, deltas0: np.ndarray = np.zeros(4)) -> None:
+    def __init__(self, delta0: np.ndarray = np.zeros(4)) -> None:
         """Initialize de ControlDeltas class.
 
         Parameters
         ----------
-        deltas0 : np.ndarray, optional
+        delta0 : np.ndarray, optional
             4-size array with initial control deltas array [da, de, dr, dt], by default np.zeros(4)
 
         ### Deltas array (4 variables)
@@ -24,34 +24,34 @@ class ControlDeltas:
         - dr: rudder deflection angle (rads)
         - dt: throttle setting between 0.0 and 1.0 (adimensional)
         """
-        self.deltas = deltas0
+        self.delta = delta0
 
-    def update(self, deltas: np.ndarray) -> None:
+    def update(self, d: np.ndarray) -> None:
         """Update the control deltas.
 
         Parameters
         ----------
-        deltas : np.ndarray
+        d : np.ndarray
             4-size array with initial control deltas array [da, de, dr, dt]
         """
-        self.deltas = deltas
+        self.delta = d
 
     @property
     def delta_a(self) -> float:
         """Aileron deflection angle in rads"""
-        return clip_angle_pi(self.deltas[0])
+        return clip_angle_pi(self.delta[0])
     
     @property
     def delta_e(self) -> float:
         """Elevator deflection angle in rads"""
-        return clip_angle_pi(self.deltas[1])
+        return clip_angle_pi(self.delta[1])
     
     @property
     def delta_r(self) -> float:
         """Rudder deflection angle in rads"""
-        return clip_angle_pi(self.deltas[2])
+        return clip_angle_pi(self.delta[2])
     
     @property
     def delta_t(self) -> float:
         """Throttle setting between 0.0 and 1.0"""
-        return np.clip(self.deltas[3], 0.0, 1.0)
+        return np.clip(self.delta[3], 0.0, 1.0)
