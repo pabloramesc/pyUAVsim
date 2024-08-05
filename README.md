@@ -10,7 +10,7 @@ To get started with the Python UAV Simulator, follow these steps:
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/yourusername/pyUAVsim.git
+   git clone https://github.com/pabloramesc98/pyUAVsim.git
    ```
 
 2. Navigate to the project folder:
