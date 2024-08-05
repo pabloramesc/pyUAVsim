@@ -10,18 +10,9 @@ import numpy as np
 from simulator.aircraft.aircraft_state import AircraftState
 from simulator.aircraft.airframe_parameters import AirframeParameters
 from simulator.aircraft.control_deltas import ControlDeltas
-from simulator.common.constants import EARTH_GRAVITY_VECTOR
 
 
-class ForcesMoments:
-    """
-    Class to calculate forces and moments for an aircraft.
-
-    Attributes:
-    ----------
-    params : AirframeParameters
-        Instance of AirframeParameters containing the aircraft's properties.
-    """
+class AerodynamicModel:
 
     def __init__(self, params: AirframeParameters) -> None:
         """Initialize the ForcesMoments class.
@@ -33,9 +24,10 @@ class ForcesMoments:
         """
         self.params = params
 
-    def update(self, state: AircraftState, deltas: ControlDeltas) -> np.ndarray:
-        """Calcuate external forces and moments acting on the aircraft
-        due to gravity, aerodynamics and propulsion.
+    def calculate_forces_moments(
+        self, state: AircraftState, deltas: ControlDeltas
+    ) -> np.ndarray:
+        """Calcuate aerodynamic forces and moments acting on the aircraft.
 
         Parameters
         ----------
@@ -47,10 +39,8 @@ class ForcesMoments:
         Returns
         -------
         ndarray
-            Calculated external forces and moments array in body frame: [fx, fy, fx, l, m, n]
+            External forces and moments array in body frame: [fx, fy, fx, l, m, n]
         """
-        # gravity force in body frame
-        fg = state.R_vb @ EARTH_GRAVITY_VECTOR
 
         # aerodynamic forces (lift, drag and lateral force) in body frame
         F_lift = self.lift_force(
@@ -62,28 +52,18 @@ class ForcesMoments:
         F_lat = self.lateral_force(
             state, deltas
         )  # lateral force is expressed in body frame
-        fa = state.R_sb @ np.array([-F_drag, 0.0, -F_lift]) + np.array(
-            [0.0, F_lat, 0.0]
-        )
-
-        # propulsion forces in body frame
-        T_prop = self.propulsion_force(state, deltas)
-        fp = np.array([T_prop, 0.0, 0.0])
 
         # aerodynamic moments (pitch, roll and yaw moments)
         M_pitch = self.pitch_moment(state, deltas)
         M_roll = self.roll_moment(state, deltas)
         M_yaw = self.yaw_moment(state, deltas)
-        ma = np.array([M_roll, M_pitch, M_yaw])
 
-        # propulsion moments
-        Q_prop = self.propulsion_moment(state, deltas)
-        mp = np.array([-Q_prop, 0.0, 0.0])
-
-        # total forces and moments
+        # total forces and moments in body frame
         u = np.zeros(6)
-        u[0:3] = fg + fa + fp
-        u[3:6] = ma + mp
+        u[0:3] = state.R_sb @ np.array([-F_drag, 0.0, -F_lift]) + np.array(
+            [0.0, F_lat, 0.0]
+        )
+        u[3:6] = np.array([M_roll, M_pitch, M_yaw])
         return u
 
     def lift_coefficient_vs_alpha(self, alpha: float, model: str = "accurate") -> float:
@@ -337,83 +317,3 @@ class ForcesMoments:
             * (Cn_vs_beta + Cn_vs_p + Cn_vs_r + Cn_vs_delta_a + Cn_vs_delta_r)
         )  # fy = 1/2 rho Va**2 S b Cn(beta, p, r, delta_a, delta_r)
         return fy
-
-    def propeller_speed(self, state: AircraftState, deltas: ControlDeltas) -> float:
-        """Calculate the propeller speed using the DC motor model.
-
-        Parameters
-        ----------
-        state : AircraftState
-             The current state of the aircraft
-        deltas : ControlSurfaces
-            The current deflections of the aircraft's control surfaces
-
-        Returns
-        -------
-        float
-            The propeller speed in radians per second (rad/s)
-        """
-        Vin = self.params.Vmax * deltas.delta_t  # DC motor input voltage
-        a = (
-            self.params.rho
-            * self.params.Dprop**5
-            / (2.0 * np.pi) ** 2
-            * self.params.CQ0
-        )  # a = (rho D^5 / (2 pi)^2) CQ0
-        b = (
-            self.params.rho
-            * self.params.Dprop**4
-            / (2.0 * np.pi)
-            * self.params.CQ1
-            * state.airspeed
-            + self.params.KQ * self.params.KV / self.params.Rmotor
-        )  # b = (rho D^4 / (2 pi)) CQ1 Va + (KQ KV / R)
-        c = (
-            self.params.rho * self.params.Dprop**3 * self.params.CQ2 * state.airspeed**2
-            - self.params.KQ / self.params.Rmotor * Vin
-            + self.params.KQ * self.params.i0
-        )  # c = (rho D^3) Cq2 Va^2 - (KQ / R) Vin + KQ i0
-        Omega = (-b + np.sqrt(b**2 - 4 * a * c)) / (2.0 * a)
-        return Omega
-
-    def propulsion_force(self, state: AircraftState, deltas: ControlDeltas) -> float:
-        """Calculate the motor force acting on the aircraft.
-
-        Parameters
-        ----------
-        state : AircraftState
-             The current state of the aircraft
-        deltas : ControlSurfaces
-            The current deflections of the aircraft's control surfaces
-
-        Returns
-        -------
-        float
-            The motor force acting on the aircraft in newtons (N)
-        """
-        Omega = self.propeller_speed(state, deltas)
-        Jprop = 2.0 * np.pi * state.airspeed / (Omega * self.params.Dprop)  # advance ratio
-        CT_vs_J = self.params.CT0 + self.params.CT1 * Jprop + self.params.CT2 * Jprop**2
-        Tp = self.params.rho * (0.5 * Omega / np.pi)**2 * self.params.Dprop**4 * CT_vs_J
-        return Tp  # motor thrust
-
-    def propulsion_moment(self, state: AircraftState, deltas: ControlDeltas) -> float:
-        """Calculate the motor moment acting on the aircraft.
-
-        Parameters
-        ----------
-        state : AircraftState
-             The current state of the aircraft
-        deltas : ControlSurfaces
-            The current deflections of the aircraft's control surfaces
-
-        Returns
-        -------
-        float
-            The motor moment acting on the aircraft in newton-meters (Nm)
-        """
-        Omega = self.propeller_speed(state, deltas)
-        Jprop = 2.0 * np.pi * state.airspeed / (Omega * self.params.Dprop)  # advance ratio
-        CQ_vs_J = self.params.CQ0 + self.params.CQ1 * Jprop + self.params.CQ2 * Jprop**2
-        Qp = self.params.rho * (0.5 * Omega / np.pi)**2 * self.params.Dprop**5 * CQ_vs_J
-        return Qp  # motor torque

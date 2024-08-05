@@ -8,7 +8,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-from simulator.aircraft import ForcesMoments, load_airframe_parameters_from_yaml, AircraftState, ControlDeltas
+from simulator.aircraft import load_airframe_parameters_from_yaml, PropulsionModel, AircraftState, ControlDeltas
 
 # Load parameters from yaml file
 params_file = r"config/aerosonde_parameters.yaml"
@@ -16,7 +16,7 @@ aerosonde_params = load_airframe_parameters_from_yaml(params_file)
 Vmax = aerosonde_params.Vmax
 
 # Initialize the ForcesMoments model
-model = ForcesMoments(aerosonde_params)
+model = PropulsionModel(aerosonde_params)
 
 # Define airspeed range and throttle settings
 airspeed = np.linspace(0.0, 30.0, 1000)
@@ -40,24 +40,28 @@ for dt in delta_throttle:
     thrust_results.append(thrust)
     torque_results.append(torque)
 
+
+plt.figure(figsize=(10, 5))
+
 # Plotting thrust versus airspeed
-plt.figure()
+plt.subplot(1, 2, 1)
 for i, dt in enumerate(delta_throttle):
     plt.plot(airspeed, thrust_results[i], label=f'{dt*Vmax:.1f} V')
 plt.xlabel('airspeed (m/s)')
 plt.ylabel('thrust (N)')
 plt.legend(title='Voltage')
-plt.title('Propeller thrust versus airspeed for various motor voltage settings')
+plt.title('Propeller thrust vs airspeed')
 plt.grid(True)
 
 # Plotting torque versus airspeed
-plt.figure()
+plt.subplot(1, 2, 2)
 for i, dt in enumerate(delta_throttle):
     plt.plot(airspeed, torque_results[i], label=f'{dt*Vmax:.1f} V')
 plt.xlabel('airspeed (m/s)')
 plt.ylabel('torque (Nm)')
 plt.legend(title='Voltage')
-plt.title('Motor torque versus airspeed for various motor voltage settings')
+plt.title('Motor torque vs airspeed')
 plt.grid(True)
 
+plt.tight_layout()
 plt.show()

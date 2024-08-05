@@ -8,7 +8,7 @@
 import matplotlib.pyplot as plt
 
 from simulator.aircraft import AircraftState
-from simulator.visualization import GeneralPlotter
+from simulator.gui.general_plotter import GeneralPlotter
 
 
 class MultiPlotter:

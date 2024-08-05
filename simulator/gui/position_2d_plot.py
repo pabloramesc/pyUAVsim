@@ -8,8 +8,8 @@
 import numpy as np
 from matplotlib import pyplot as plt
 
-from simulator.visualization import GeneralPlotter
-from simulator.aircraft import AircraftState
+from simulator.gui.general_plotter import GeneralPlotter
+from simulator.aircraft.aircraft_state import AircraftState
 
 
 class Position2DPlot(GeneralPlotter):

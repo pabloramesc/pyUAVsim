@@ -26,15 +26,15 @@ class ControlDeltas:
         """
         self.delta = delta0
 
-    def update(self, d: np.ndarray) -> None:
+    def update(self, delta: np.ndarray) -> None:
         """Update the control deltas.
 
         Parameters
         ----------
-        d : np.ndarray
+        delta : np.ndarray
             4-size array with initial control deltas array [da, de, dr, dt]
         """
-        self.delta = d
+        self.delta = delta
 
     @property
     def delta_a(self) -> float:
@@ -55,3 +55,19 @@ class ControlDeltas:
     def delta_t(self) -> float:
         """Throttle setting between 0.0 and 1.0"""
         return np.clip(self.delta[3], 0.0, 1.0)
+    
+    def __str__(self) -> str:
+        """Return a string representation of the control deltas.
+
+        Returns
+        -------
+        str
+            A string representation of the control deltas
+        """
+        return (
+            f"Control Deltas:\n"
+            f"  Aileron (da)    : {self.delta_a:.2f} rad\n"
+            f"  Elevator (de)   : {self.delta_e:.2f} rad\n"
+            f"  Rudder (dr)     : {self.delta_r:.2f} rad\n"
+            f"  Throttle (dt)   : {self.delta_t:.2f} (0.0 to 1.0)"
+        )

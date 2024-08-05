@@ -11,7 +11,7 @@ from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 
 from simulator.aircraft import AircraftState
 from simulator.math.rotation import ned2xyz, rot_matrix_zyx
-from simulator.visualization import GeneralPlotter
+from simulator.gui.general_plotter import GeneralPlotter
 
 
 class AttitudeView(GeneralPlotter):

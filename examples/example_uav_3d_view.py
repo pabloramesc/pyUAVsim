@@ -5,7 +5,7 @@
  https://opensource.org/licenses/MIT
 """
 
-import numpy as np
+import time
 
 from simulator.aircraft import AircraftDynamics, load_airframe_parameters_from_yaml
 from simulator.cli import SimConsole
@@ -16,25 +16,17 @@ aerosonde_params = load_airframe_parameters_from_yaml(params_file)
 
 dt = 0.01
 uav = AircraftDynamics(dt, aerosonde_params)
-
-gui = AttitudePosition3DView()
+uav.trim(25.0, 0.0, 1e12, update=True)
+time.sleep(10.0)
 
 cli = SimConsole()
+gui = AttitudePosition3DView()
 
 t = 0.0
 while True:
     t += dt
-    fx = 100.0
-    fy = 0.0
-    fz = 0.0
-    l = 0.0
-    m = 1.0
-    n = 0.0
 
-    u = np.array([fx, fy, fz, l, m, n])
-    state = uav.kinematics_dynamics(uav.state.x, u)
-    uav.state.update(state)
+    uav.update()
 
     cli.print_state(t, uav.state, style="table")
-
     gui.update(uav.state.x, pause=0.01)

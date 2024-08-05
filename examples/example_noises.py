@@ -25,10 +25,11 @@ wn1 = np.zeros(N)
 for k in range(N):
     wn1[k] = get_white_noise(Nd, dt, nlen=1)
 wn2 = get_white_noise(Nd, dt, nlen=N)
+plt.figure(1)
+plt.title("White Noises")
 plt.plot(t, wn1, label="wn1")
 plt.plot(t, wn2, label="wn2")
 plt.legend()
-plt.show()
 
 # pink noise test
 pn1 = np.zeros(N)
@@ -37,10 +38,11 @@ for k in range(N):
     pn1[k] = get_pink_noise(Bi, Tc, dt, pn_prev, nlen=1)
     pn_prev = pn1[k]
 pn2 = get_pink_noise(Bi, Tc, dt, 0.0, nlen=N)
+plt.figure(2)
+plt.title("Pink Noises")
 plt.plot(t, pn1, label="pn1")
 plt.plot(t, pn2, label="pn2")
 plt.legend()
-plt.show()
 
 # brown noise test
 bn1 = np.zeros(N)
@@ -49,7 +51,10 @@ for k in range(N):
     bn1[k] = get_brown_noise(Rw, dt, bn_prev, nlen=1)
     bn_prev = bn1[k]
 bn2 = get_brown_noise(Rw, dt, 0.0, nlen=N)
+plt.figure(3)
+plt.title("Brown Noises")
 plt.plot(t, bn1, label="bn1")
 plt.plot(t, bn2, label="bn2")
 plt.legend()
+
 plt.show()

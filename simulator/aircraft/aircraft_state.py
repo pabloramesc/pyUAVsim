@@ -36,14 +36,42 @@ class AircraftState:
         wind0 : np.ndarray, optional
             Initial wind vector (3-size array: wx, wy, wz in m/s), by default np.zeros(3)
         """
-        self.x = x0
-        self.x_dot = np.zeros(12)
+        self._x = x0
+        self._x_dot = np.zeros(12)
+        self._wind = wind0
+        self._R_vb = rot_matrix_zyx(self.attitude_angles)  # vehicle to body frame
+        self._R_wb = rot_matrix_wind(self.alpha, self.beta)  # wind to body frame
+        self._R_sb = rot_matrix_wind(self.alpha, 0.0)  # stability to body frame
 
-        self.wind = wind0
+    @property
+    def x(self) -> np.ndarray:
+        """12-size array with the aircrfat's current state: [pn, pe, pd, u, v, w, roll, pitch, yaw, p, q, r]"""
+        return self._x
 
-        self.R_vb = rot_matrix_zyx(self.attitude_angles)  # vehicle to body frame
-        self.R_wb = rot_matrix_wind(self.alpha, self.beta)  # wind to body frame
-        self.R_sb = rot_matrix_wind(self.alpha, 0.0)  # stability to body frame
+    @property
+    def x_dot(self) -> np.ndarray:
+        """12-size array with time derivative of the aircraft state: dx/dt"""
+        return self._x_dot
+
+    @property
+    def wind(self) -> np.ndarray:
+        """3-size array with NED frame wind velocity [wn, we, wd] in m/s"""
+        return self._wind
+
+    @property
+    def R_vb(self) -> np.ndarray:
+        """Transformation matrix from vehicle frame to body frame (R^b_v)"""
+        return self._R_vb
+
+    @property
+    def R_wb(self) -> np.ndarray:
+        """Transformation matrix from wind frame to body frame (R^b_w)"""
+        return self._R_wb
+
+    @property
+    def R_sb(self) -> np.ndarray:
+        """Transformation matrix from stability frame to body frame (R^b_s)"""
+        return self._R_sb
 
     @property
     def ned_position(self) -> np.ndarray:
@@ -189,7 +217,7 @@ class AircraftState:
     def air_path_angle(self) -> float:
         """Air-mass-referenced flight path angle (difference between pitch angle and angle of attack) value in rads"""
         return self.pitch - self.beta
-    
+
     @property
     def body_acceleration(self) -> np.ndarray:
         """3-size array with body frame accelerations [ax, ay, az] in m/s^2"""
@@ -229,15 +257,14 @@ class AircraftState:
         - q: Pitch rate (radians/s)
         - r: Yaw rate (radians/s)
         """
-        self.x = x
+        self._x = x
         if not x_dot is None:
-            self.x_dot = x_dot
+            self._x_dot = x_dot
         if not wind is None:
-            self.wind = wind
-
-        self.R_vb = rot_matrix_zyx(self.attitude_angles)  # vehicle to body frame
-        self.R_wb = rot_matrix_wind(self.alpha, self.beta)  # wind to body frame
-        self.R_sb = rot_matrix_wind(self.alpha, 0.0)  # stability to body frame
+            self._wind = wind
+        self._R_vb = rot_matrix_zyx(self.attitude_angles)  # vehicle to body frame
+        self._R_wb = rot_matrix_wind(self.alpha, self.beta)  # wind to body frame
+        self._R_sb = rot_matrix_wind(self.alpha, 0.0)  # stability to body frame
 
     def __str__(self):
         """
@@ -246,7 +273,7 @@ class AircraftState:
         Returns:
         -------
         str
-            A string representation of the aircraft state.
+            A string representation of the aircraft state
         """
         state_names = [
             "pn (North position)",
@@ -262,7 +289,6 @@ class AircraftState:
             "q (pitch rate)",
             "r (yaw rate)",
         ]
-
         state_str = "\n".join(
             f"{name}: {value:.3f}" for name, value in zip(state_names, self.x)
         )

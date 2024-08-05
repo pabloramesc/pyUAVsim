@@ -4,7 +4,7 @@ import numpy as np
 
 from simulator.math.rotation import rot_matrix_zyx, ned2xyz
 
-class AttitudePositionView:
+class AttitudePosition3DView:
     def __init__(self, figsize=(12, 6), ):
         # Constants defining the aircraft geometry
         self.SPAN = 14.0
