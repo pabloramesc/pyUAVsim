@@ -1,15 +1,34 @@
 # Python UAV Simulator
 A Python unmanned aircraft simulator based on the book *Small Unmanned Aircraft: Theory and Practice* by Randy Beard and Tim McLain.
 
-
 For more information visit https://github.com/randybeard/mavsim_public
 
+## Getting Started
+
+To get started with the Python UAV Simulator, follow these steps:
+
+1. Clone the repository:
+
+   ```bash
+   git clone https://github.com/yourusername/pyUAVsim.git
+   ```
+
+2. Navigate to the project folder:
+
+   ```bash
+   cd pyUAVsim
+   ```
+
+3. Run the example:
+
+   ```bash
+   python example.py
+   ```
+   
 ## Overview
 The Python UAV Simulator provides a comprehensive environment for simulating the behavior of unmanned aerial vehicles (UAVs). It allows users to explore aircraft dynamics, sensor readings, autopilot behavior, and actuator responses in a controlled simulation framework.
 
 ![](pics/screenshot_01.png)
-
-![](pics/screenshot_02.png)
 
 The simulator is composed of four main modules, each with distinct responsibilities and submodules. These modules are organized into three levels: Physical, Electrical, and Software.
 

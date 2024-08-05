@@ -47,23 +47,23 @@ class SimConsole:
 
     def _print_state_table(self, t: float, state: AircraftState) -> None:
         # Create a table
-        table = Table(title="Aircraft State")
+        table = Table()
 
         # Define columns
-        table.add_column("Variable", justify="left", style="cyan", no_wrap=True)
+        table.add_column("Aircraft State", justify="left", style="cyan", no_wrap=True)
         table.add_column("X Value", style="magenta")
         table.add_column("Y Value", style="green")
         table.add_column("Z Value", style="blue")
 
         # Add rows to the table
         table.add_row(
-            "Position (m)",
+            "NED Position (m)",
             f"pn: {state.pn:.2f}",
             f"pe: {state.pe:.2f}",
             f"pd: {state.pd:.2f}",
         )
         table.add_row(
-            "Velocity (m/s)",
+            "Body Velocity (m/s)",
             f"u: {state.u:.2f}",
             f"v: {state.v:.2f}",
             f"w: {state.w:.2f}",
@@ -82,4 +82,5 @@ class SimConsole:
         )
 
         # Print the table
+        self.console.print(f"Time: {t:.2f} s")
         self.console.print(table)

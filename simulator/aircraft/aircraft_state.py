@@ -290,6 +290,6 @@ class AircraftState:
             "r (yaw rate)",
         ]
         state_str = "\n".join(
-            f"{name}: {value:.3f}" for name, value in zip(state_names, self.x)
+            f"  {name}: {value:.3f}" for name, value in zip(state_names, self.x)
         )
         return f"Aircraft State:\n{state_str}"

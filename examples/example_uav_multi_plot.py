@@ -19,7 +19,7 @@ aerosonde_params = load_airframe_parameters_from_yaml(params_file)
 
 dt = 0.01
 uav = AircraftDynamics(dt, aerosonde_params)
-uav.trim(25.0, 0.0, np.inf, update=True)
+uav.trim(10.0, np.deg2rad(10.0), np.inf, update=True)
 time.sleep(10.0)
 
 cli = SimConsole()
@@ -36,7 +36,7 @@ while True:
 
     uav.update()
 
-    cli.print_state(t, uav.state)
+    cli.print_state(t, uav.state, style="table")
 
     att_view.update(uav.state)
     pos_plot.update(uav.state)
