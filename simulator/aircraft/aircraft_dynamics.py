@@ -20,6 +20,8 @@ from simulator.math.rotation import (
     rot_matrix_zyx,
     quaternion_kinematics,
     rot_matrix_quat,
+    quat2euler,
+    euler2quat,
 )
 
 
@@ -30,8 +32,8 @@ class AircraftDynamics:
         params: AirframeParameters,
         use_quat: bool = False,
         wind0: np.ndarray = np.zeros(3),
-        x0: np.ndarray = np.zeros(12),
-        delta0: np.ndarray = np.zeros(4),
+        x0: np.ndarray = None,
+        delta0: np.ndarray = None,
     ) -> None:
         """Initialize the AircraftDynamics class.
 
@@ -54,7 +56,7 @@ class AircraftDynamics:
             If quaternions are used, the array contains 13 elements: [pn, pe, pd, u, v, w, q0, q1, q2, q3, p, q, r]
             By default None
         delta0 : np.ndarray, optional
-            Initial delta array (4 variables: delta_a, delta_e, delta_r, delta_t), by default np.zeros(12)
+            Initial delta array (4 variables: delta_a, delta_e, delta_r, delta_t), by default None
         """
         self.t = 0.0
         self.dt = dt
@@ -64,16 +66,16 @@ class AircraftDynamics:
         self.u = np.zeros(6)
 
         self.params = params
-        self.state = AircraftState(x0, wind0)
-        self.deltas = ControlDeltas(delta0)
+        self.state = AircraftState(x0, wind0, use_quat=use_quat)
+        self.control_deltas = ControlDeltas(delta0)
         self.aerodynamics = AerodynamicModel(params)
         self.propulsion = PropulsionModel(params)
 
-    def set_state(self, x: np.ndarray = np.zeros(12)) -> None:
+    def set_state(self, x: np.ndarray) -> None:
         self.state.update(x)
 
-    def set_deltas(self, delta: np.ndarray = np.zeros(4)) -> None:
-        self.deltas.update(delta)
+    def set_control_deltas(self, delta: np.ndarray) -> None:
+        self.control_deltas.update(delta)
 
     def update(self, deltas: ControlDeltas = None) -> AircraftState:
         """Update aircraft's state simulating the flight dynamics.
@@ -94,8 +96,8 @@ class AircraftDynamics:
             New updated aricraft's state
         """
         if not deltas is None:
-            self.deltas = deltas
-        u = self.forces_moments(self.state, self.deltas)
+            self.control_deltas = deltas
+        u = self.forces_moments(self.state, self.control_deltas)
         x = self.kinematics_dynamics(self.state.x, u)
         x_dot = self.state_derivatives(x, u)
         self.t += self.dt
@@ -177,10 +179,10 @@ class AircraftDynamics:
         func = lambda t, y: self.state_derivatives(y, u)
         dx = rk4(func, self.t, x, self.dt)
         x2 = x + dx
-        if self.use_quat:
-            x2[6:10] = x2[6:10] / np.linalg.norm(
-                x[6:10]
-            )  # normalize quaternion after integration step
+        if self.use_quat:  # normalize quaternion after integration step
+            quat_norm = np.linalg.norm(x2[6:10])
+            if quat_norm > 0.0:
+                x2[6:10] = x2[6:10] / quat_norm
         return x2
 
     def state_derivatives(self, x: np.ndarray, u: np.ndarray) -> np.ndarray:
@@ -200,7 +202,7 @@ class AircraftDynamics:
         Returns
         -------
         np.ndarray
-            12-size array with time derivative of the aircraft state: dx/dt
+            12-size array with time derivative of the aircraft's state: dx/dt
 
         Notes
         -----
@@ -227,71 +229,102 @@ class AircraftDynamics:
         - m: External moment around body y-axis (Nm)
         - n: External moment around body z-axis (Nm)
         """
-        x_dot = None
-
         if self.use_quat:
-            x_dot = np.zeros(13)
-
-            # Calculate position kinematics:
-            # d[pn pe pd]/dt = R_bv * [u v w]
-            R_bv = rot_matrix_quat(
-                x[6:10]
-            ).T  # transformation matrix from body frame to vehicle frame
-            x_dot[0:3] = R_bv @ x[3:6]
-
-            # Calculate position dynamics:
-            # d[u v w]/dt = -[p q r] x [u v w] + 1/m * [fx fy fz]
-            # u_dot = (r * v - q * w) + fx / m
-            # v_dot = (p * w - r * u) + fy / m
-            # w_dot = (q * u - p * v) + fz / m
-            x_dot[3:6] = -np.cross(x[10:13], x[3:6]) + u[0:3] / self.params.m
-
-            # Calculate attitude kinematics:
-            # q_dot = 1/2 * Omega([p q r]) * q
-            x_dot[6:10] = quaternion_kinematics(
-                x[10:13], x[6:10]
-            )  # derivative of the orientation quaternion
-
-            # Calculate attitude dynamics:
-            # d[p q r]/dt = J^-1 * (-[p q r] x (J * [p q r]) + [l m n])
-            # p_dot = (Gamma1 * p * q - Gamma2 * q * r + Gamma3 * l + Gamma4 * n)
-            # q_dot = (Gamma5 * p * r - Gamma6 * (p**2 - r**2) + m / Jy)
-            # r_dot = (Gamma7 * p * q - Gamma1 * q * r + Gamma4 * l+ Gamma8 * n)
-            x_dot[10:13] = self.params.Jinv @ (
-                -np.cross(x[10:13], (self.params.J @ x[10:13])) + u[3:6]
-            )
-
+            return self._state_derivatives_quat(x, u)
         else:
-            x_dot = np.zeros(12)
+            return self._state_derivatives_euler(x, u)
 
-            # Calculate position kinematics:
-            # d[pn pe pd]/dt = R_bv * [u v w]
-            R_bv = rot_matrix_zyx(
-                x[6:9]
-            ).T  # transformation matrix from body frame to vehicle frame
-            x_dot[0:3] = R_bv @ x[3:6]
+    def _state_derivatives_quat(self, x: np.ndarray, u: np.ndarray) -> np.ndarray:
+        """State transition function for quaternion representation of attitude.
 
-            # Calculate position dynamics:
-            # d[u v w]/dt = -[p q r] x [u v w] + 1/m * [fx fy fz]
-            # u_dot = (r * v - q * w) + fx / m
-            # v_dot = (p * w - r * u) + fy / m
-            # w_dot = (q * u - p * v) + fz / m
-            x_dot[3:6] = -np.cross(x[9:12], x[3:6]) + u[0:3] / self.params.m
+        Parameters
+        ----------
+        x : np.ndarray
+            13-size array with aircraft's state vector: [pn, pe, pd, u, v, w, q0, q1, q2, q3, p, q, r]
+        u : np.ndarray
+            6-size array with external forces and moments: [fx, fy, fz, l, m, n]
 
-            # Calculate attitude kinematics:
-            # d[roll yaw pitch]/dt = [roll 0 0] + R(roll, 0, 0) * [0 pitch 0] + R(roll, pitch, 0) * [0 0 yaw]
-            x_dot[6:9] = euler_kinematics(
-                x[9:12], x[6], x[7]
-            )  # derivative of the attitude in euler angles
+        Returns
+        -------
+        np.ndarray
+            13-size array with time derivative of the aircraft's state: dx/dt
+        """
+        x_dot = np.zeros(13)
 
-            # Calculate attitude dynamics:
-            # d[p q r]/dt = J^-1 * (-[p q r] x (J * [p q r]) + [l m n])
-            # p_dot = (Gamma1 * p * q - Gamma2 * q * r + Gamma3 * l + Gamma4 * n)
-            # q_dot = (Gamma5 * p * r - Gamma6 * (p**2 - r**2) + m / Jy)
-            # r_dot = (Gamma7 * p * q - Gamma1 * q * r + Gamma4 * l+ Gamma8 * n)
-            x_dot[9:12] = self.params.Jinv @ (
-                -np.cross(x[9:12], (self.params.J @ x[9:12])) + u[3:6]
-            )
+        # Calculate position kinematics:
+        # d[pn pe pd]/dt = R_bv * [u v w]
+        R_bv = rot_matrix_quat(
+            x[6:10]
+        ).T  # transformation matrix from body frame to vehicle frame
+        x_dot[0:3] = R_bv @ x[3:6]
+
+        # Calculate position dynamics:
+        # d[u v w]/dt = -[p q r] x [u v w] + 1/m * [fx fy fz]
+        # u_dot = (r * v - q * w) + fx / m
+        # v_dot = (p * w - r * u) + fy / m
+        # w_dot = (q * u - p * v) + fz / m
+        x_dot[3:6] = -np.cross(x[10:13], x[3:6]) + u[0:3] / self.params.m
+
+        # Calculate attitude kinematics:
+        # q_dot = 1/2 * Omega([p q r]) * q
+        Omega = quaternion_kinematics(x[10:13])
+        x_dot[6:10] = 0.5 * Omega @ x[6:10]
+
+        # Calculate attitude dynamics:
+        # d[p q r]/dt = J^-1 * (-[p q r] x (J * [p q r]) + [l m n])
+        # p_dot = (Gamma1 * p * q - Gamma2 * q * r + Gamma3 * l + Gamma4 * n)
+        # q_dot = (Gamma5 * p * r - Gamma6 * (p**2 - r**2) + m / Jy)
+        # r_dot = (Gamma7 * p * q - Gamma1 * q * r + Gamma4 * l+ Gamma8 * n)
+        x_dot[10:13] = self.params.Jinv @ (
+            -np.cross(x[10:13], (self.params.J @ x[10:13])) + u[3:6]
+        )
+
+        return x_dot
+
+    def _state_derivatives_euler(self, x: np.ndarray, u: np.ndarray) -> np.ndarray:
+        """State transition function for euler angles representation of attitude.
+
+        Parameters
+        ----------
+        x : np.ndarray
+            12-size array with aircraft's state vector: [pn, pe, pd, u, v, w, roll, yaw, pitch, p, q, r]
+        u : np.ndarray
+            6-size array with external forces and moments: [fx, fy, fz, l, m, n]
+
+        Returns
+        -------
+        np.ndarray
+            12-size array with time derivative of the aircraft's state: dx/dt
+        """
+        x_dot = np.zeros(12)
+
+        # Calculate position kinematics:
+        # d[pn pe pd]/dt = R_bv * [u v w]
+        R_bv = rot_matrix_zyx(
+            x[6:9]
+        ).T  # transformation matrix from body frame to vehicle frame
+        x_dot[0:3] = R_bv @ x[3:6]
+
+        # Calculate position dynamics:
+        # d[u v w]/dt = -[p q r] x [u v w] + 1/m * [fx fy fz]
+        # u_dot = (r * v - q * w) + fx / m
+        # v_dot = (p * w - r * u) + fy / m
+        # w_dot = (q * u - p * v) + fz / m
+        x_dot[3:6] = -np.cross(x[9:12], x[3:6]) + u[0:3] / self.params.m
+
+        # Calculate attitude kinematics:
+        # d[roll yaw pitch]/dt = R_euler * [p q r]
+        R_euler = euler_kinematics(x[6:9])
+        x_dot[6:9] = R_euler @ x[9:12]
+
+        # Calculate attitude dynamics:
+        # d[p q r]/dt = J^-1 * (-[p q r] x (J * [p q r]) + [l m n])
+        # p_dot = (Gamma1 * p * q - Gamma2 * q * r + Gamma3 * l + Gamma4 * n)
+        # q_dot = (Gamma5 * p * r - Gamma6 * (p**2 - r**2) + m / Jy)
+        # r_dot = (Gamma7 * p * q - Gamma1 * q * r + Gamma4 * l+ Gamma8 * n)
+        x_dot[9:12] = self.params.Jinv @ (
+            -np.cross(x[9:12], (self.params.J @ x[9:12])) + u[3:6]
+        )
 
         return x_dot
 
@@ -328,34 +361,27 @@ class AircraftDynamics:
         if verbose:
             print("Calculating trim states and deltas...")
 
+        # force euler angles before trim calculation
+        _use_quat = self.use_quat  # store previous value to restore it later
+        self.use_quat = False
+
         # desired derivative state for the trim conditions
-        if self.use_quat:
-            x_dot_trim = np.zeros(13)
-            # TODO: turn rate constrain for quaternions
-        else:
-            x_dot_trim = np.zeros(12)
-            x_dot_trim[8] = Va / R_orb * np.cos(gamma)  # turn rate
+        x_dot_trim = np.zeros(12)
         x_dot_trim[0] = +Va * np.cos(gamma)  # horizontal speed
         x_dot_trim[2] = -Va * np.sin(gamma)  # climb rate
+        x_dot_trim[8] = Va / R_orb * np.cos(gamma)  # turn rate
 
         # cuadratic error between desired x_dot_trim and dynamics function
         def objective(v: np.ndarray) -> float:
-            if self.use_quat:
-                state = AircraftState(v[0:13], use_quat=True)
-                deltas = ControlDeltas(v[13:17])
-            else:
-                state = AircraftState(v[0:12], use_quat=False)
-                deltas = ControlDeltas(v[12:16])
+            state = AircraftState(v[0:12], use_quat=False)
+            deltas = ControlDeltas(v[12:16])
             u = self.forces_moments(state, deltas)
             x_dot = self.state_derivatives(state.x, u)
             err = np.linalg.norm(x_dot_trim - x_dot)
             return err**2
 
         # initial guesses for x_trim and delta_trim
-        if self.use_quat:
-            x0_trim = np.zeros(13)
-        else:
-            x0_trim = np.zeros(12)
+        x0_trim = np.zeros(12)
         x0_trim[3] = x_dot_trim[0]  # u = d(pn)/dt
         x0_trim[5] = x_dot_trim[2]  # w = d(pd)/dt
         delta0_trim = np.zeros(4)
@@ -373,20 +399,12 @@ class AircraftDynamics:
 
         # inequality constrains
         def cons_ineq_u(v: np.ndarray) -> np.ndarray:
-            if self.use_quat:
-                return np.array(
-                    [
-                        v[16] - 0.1,  # delta_t > 0.1
-                        1.0 - v[16],  # delta_t < 1.0
-                    ]
-                )
-            else:
-                return np.array(
-                    [
-                        v[15] - 0.1,  # delta_t > 0.1
-                        1.0 - v[15],  # delta_t < 1.0
-                    ]
-                )
+            return np.array(
+                [
+                    v[15] - 0.0,  # delta_t > 0.0
+                    1.0 - v[15],  # delta_t < 1.0
+                ]
+            )
 
         # minimize calculate trim variables
         result = minimize(
@@ -400,14 +418,8 @@ class AircraftDynamics:
             ],
             options={"maxiter": 1000, "disp": True},
         )
-        if self.use_quat:
-            x_trim = result.x[0:13]
-            delta_trim = result.x[13:17]
-        else:
-            x_trim = result.x[0:12]
-            delta_trim = result.x[12:16]
-        state_trim = AircraftState(x_trim, use_quat=self.use_quat)
-        deltas_trim = ControlDeltas(delta_trim)
+        state_trim = AircraftState(result.x[0:12], use_quat=False)
+        deltas_trim = ControlDeltas(result.x[12:16])
 
         if verbose:
             if result.success:
@@ -417,26 +429,32 @@ class AircraftDynamics:
             else:
                 print("Trim calculation failed!")
 
+        # restore previous use_quat value
+        self.use_quat = _use_quat
+
         # compute trimmed states
         alpha = state_trim.alpha
         beta = state_trim.beta
         roll = state_trim.roll
         pitch = alpha + gamma
         if self.use_quat:
+            quat = euler2quat(np.array([roll, pitch, 0.0]))
+            x_trim = np.zeros(13)
             x_trim[0] = 0.0  # pn
             x_trim[1] = 0.0  # pe
             x_trim[2] = 0.0  # pd
             x_trim[3] = Va * np.cos(alpha) * np.cos(beta)  # u
             x_trim[4] = Va * np.sin(beta)  # v
             x_trim[5] = Va * np.sin(alpha) * np.cos(beta)  # w
-            x_trim[6] = 0.0  # q0
-            x_trim[7] = 0.0  # q1
-            x_trim[8] = 0.0  # q2
-            x_trim[9] = 0.0  # q3
+            x_trim[6] = quat[0]  # q0
+            x_trim[7] = quat[1]  # q1
+            x_trim[8] = quat[2]  # q2
+            x_trim[9] = quat[3]  # q3
             x_trim[10] = -Va / R_orb * np.sin(pitch)  # p
             x_trim[11] = Va / R_orb * np.sin(roll) * np.cos(pitch)  # q
             x_trim[12] = Va / R_orb * np.cos(roll) * np.cos(pitch)  # r
         else:
+            x_trim = np.zeros(12)
             x_trim[0] = 0.0  # pn
             x_trim[1] = 0.0  # pe
             x_trim[2] = 0.0  # pd
@@ -453,8 +471,8 @@ class AircraftDynamics:
         # update internal atributes if needed
         if update:
             self.set_state(x_trim)
-            self.set_deltas(delta_trim)
+            self.set_control_deltas(deltas_trim.delta)
             if verbose:
                 print("Internal states and deltas updated with calculated trim.")
 
-        return x_trim, delta_trim
+        return x_trim, deltas_trim.delta

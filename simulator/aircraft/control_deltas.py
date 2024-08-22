@@ -10,13 +10,13 @@ from simulator.math.angles import clip_angle_pi
 
 class ControlDeltas:
 
-    def __init__(self, delta0: np.ndarray = np.zeros(4)) -> None:
+    def __init__(self, delta0: np.ndarray = None) -> None:
         """Initialize de ControlDeltas class.
 
         Parameters
         ----------
         delta0 : np.ndarray, optional
-            4-size array with initial control deltas array [da, de, dr, dt], by default np.zeros(4)
+            4-size array with initial control deltas array [da, de, dr, dt], by default None
 
         ### Deltas array (4 variables)
         - da: aileron deflection angle (rads)
@@ -24,7 +24,10 @@ class ControlDeltas:
         - dr: rudder deflection angle (rads)
         - dt: throttle setting between 0.0 and 1.0 (adimensional)
         """
-        self.delta = delta0
+        if delta0 is None:
+            self.delta = np.zeros(4)
+        else:
+            self.delta = delta0
 
     def update(self, delta: np.ndarray) -> None:
         """Update the control deltas.

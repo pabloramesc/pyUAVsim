@@ -1,0 +1,7 @@
+matplotlib==3.8.4
+numpy==2.1.0
+pytest==8.2.2
+PyYAML==6.0.2
+rich==13.7.1
+scipy==1.14.1
+toml==0.10.2

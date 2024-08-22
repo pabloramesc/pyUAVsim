@@ -3,9 +3,12 @@ from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 import numpy as np
 
 from simulator.math.rotation import rot_matrix_zyx, ned2xyz
+from simulator.aircraft import AircraftState
 
 class AttitudePosition3DView:
-    def __init__(self, figsize=(12, 6), ):
+    def __init__(self, figsize=(12, 6), use_blit: bool = False):
+        self.use_blit = use_blit
+
         # Constants defining the aircraft geometry
         self.SPAN = 14.0
         self.CHORD = 2.0
@@ -90,20 +93,20 @@ class AttitudePosition3DView:
         # Initialize the aircraft's starting position
         self.position_history = []
 
+        # Create a blit background for the attitude and position plots
+        if self.use_blit:
+            self.attitude_background = self.fig.canvas.copy_from_bbox(self.ax_attitude.bbox)
+            self.position_background = self.fig.canvas.copy_from_bbox(self.ax_position.bbox)
+
         # Show the plots
         plt.show()
 
-    def update(self, state: np.ndarray, pause: float = 0.0):
-        # Update the angles and position from the state array
-        roll, pitch, yaw = state[6:9]
-        north, east, down = state[0:3]
-
+    def update(self, state: AircraftState, pause: float = 0.0):
         # Rotate the components for attitude visualization
-        R_vb = rot_matrix_zyx(np.array([roll, pitch, yaw]))
-        rotated_body = self.body.dot(R_vb)
-        rotated_wing = self.wing.dot(R_vb)
-        rotated_htail = self.htail.dot(R_vb)
-        rotated_vtail = self.vtail.dot(R_vb)
+        rotated_body = self.body.dot(state.R_vb)
+        rotated_wing = self.wing.dot(state.R_vb)
+        rotated_htail = self.htail.dot(state.R_vb)
+        rotated_vtail = self.vtail.dot(state.R_vb)
 
         # Update the vertices for attitude visualization
         self.poly.set_verts([
@@ -114,7 +117,7 @@ class AttitudePosition3DView:
         ])
 
         # Update the position history
-        self.position_history.append(ned2xyz(np.array([north, east, down])))
+        self.position_history.append(ned2xyz(state.ned_position))
 
         # Update the position visualization
         if len(self.position_history) > 1:
@@ -127,7 +130,16 @@ class AttitudePosition3DView:
             self.ax_position.set_zlim(min(positions[:, 2]), max(positions[:, 2]))
             
         # Update the plots
-        self.fig.canvas.draw()
-        self.fig.canvas.flush_events()
+        if self.use_blit:
+            # Use blit to update only the changed parts of the canvas
+            self.fig.canvas.restore_region(self.attitude_background)
+            self.ax_attitude.draw_artist(self.poly)
+            self.fig.canvas.restore_region(self.position_background)
+            self.ax_position.draw_artist(self.line)
+            self.fig.canvas.blit(self.ax_attitude.bbox)
+            self.fig.canvas.blit(self.ax_position.bbox)
+        else:
+            self.fig.canvas.draw()
+            self.fig.canvas.flush_events()
 
         plt.pause(pause)

@@ -62,6 +62,7 @@ class AircraftState:
 
         if self.use_quat:
             self._x = np.zeros(13)
+            self._x[6] = 1.0 # neutral quaternion is [1, 0, 0, 0]
             self._x_dot = np.zeros(13)
         else:
             self._x = np.zeros(12)
