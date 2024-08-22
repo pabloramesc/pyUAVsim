@@ -20,7 +20,7 @@ aerosonde_params = load_airframe_parameters_from_yaml(params_file)
 dt = 0.01
 uav = AircraftDynamics(dt, aerosonde_params, use_quat=True)
 uav.trim(25.0, np.deg2rad(10.0), 500, update=True)
-# wait_animation(10.0)  # wait 10 seconds to visualize trim vars
+wait_animation(10.0)  # wait 10 seconds to visualize trim vars
 
 cli = SimConsole()
 gui = AttitudePosition3DView(use_blit=True)
