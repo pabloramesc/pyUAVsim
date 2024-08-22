@@ -56,7 +56,7 @@ def rot_matrix_zyx(euler: np.ndarray = np.zeros(3)) -> np.ndarray:
     Parameters
     ----------
     euler : np.ndarray, optional
-        3-size array with euler angles (roll, pitch, yaw) in rad, by default np.zeros(3)
+        3-size array with euler angles [roll, pitch, yaw] in rad, by default np.zeros(3)
 
     Returns
     -------
@@ -82,6 +82,38 @@ def rot_matrix_zyx(euler: np.ndarray = np.zeros(3)) -> np.ndarray:
     R_vb[2, 0] = cr * sp * cy + sr * sy
     R_vb[2, 1] = cr * sp * sy - sr * cy
     R_vb[2, 2] = cr * cp
+    return R_vb
+
+
+def rot_matrix_quat(quat: np.ndarray = np.zeros(4)) -> np.ndarray:
+    """
+    Compute transformation matrix from vehicle frame to body frame (R^b_v)
+    with the aircraft attitude expressed as quaternions.
+
+    Parameters
+    ----------
+    quat : np.ndarray, optional
+        4-size array with aircraft's orientation quaternions [q0, q1, q2, q3], by default np.zeros(4)
+
+    Returns
+    -------
+    np.ndarray
+        3x3 transformation matrix
+    """
+    q0 = quat[0]
+    q1 = quat[1]
+    q2 = quat[2]
+    q3 = quat[3]
+    R_vb = np.zeros((3, 3))
+    R_vb[0, 0] = 1.0 - 2.0 * (q2 * q2 + q3 * q3)
+    R_vb[0, 1] = 2.0 * (q1 * q2 + q0 * q3)
+    R_vb[0, 2] = 2.0 * (q1 * q3 - q0 * q2)
+    R_vb[1, 0] = 2.0 * (q1 * q2 - q0 * q3)
+    R_vb[1, 1] = 1.0 - 2.0 * (q1 * q1 + q3 * q3)
+    R_vb[1, 2] = 2.0 * (q0 * q1 + q2 * q3)
+    R_vb[2, 0] = 2.0 * (q1 * q3 + q0 * q2)
+    R_vb[2, 1] = 2.0 * (q2 * q3 - q0 * q1)
+    R_vb[2, 2] = 1.0 - 2.0 * (q1 * q1 + q2 * q2)
     return R_vb
 
 
@@ -201,142 +233,110 @@ def multi_rotation(
     return rot_points
 
 
-def ned2xyz(ned_coords: np.ndarray = np.zeros(3)) -> np.ndarray:
-    """Change coordinates from the NED (North-East-Down) frame to XYZ frame.
-
-    In the XYZ frame:
-    - X corresponds to East.
-    - Y corresponds to North.
-    - Z corresponds to the negative of Down.
+def ned2xyz(ned: np.ndarray = np.zeros(3)) -> np.ndarray:
+    """
+    Convert coordinates from the NED (North-East-Down) frame to the XYZ frame.
 
     Parameters
     ----------
     ned_coords : np.ndarray, optional
-        Coordinates in the NED frame, by default np.zeros(3).
-        This can be a 1D array of length 3 or a 2D array of shape (N, 3).
+        Coordinates in the NED frame. This can be a 1D array of shape (3,) or a 2D array of shape (N, 3).
+        Default is np.zeros(3).
 
     Returns
     -------
     np.ndarray
-        Coordinates in the XYZ frame.
-        This will have the same shape as the input.
+        Coordinates in the XYZ frame, with the same shape as the input.
     """
-    if ned_coords.ndim > 1:
-        N = ned_coords.shape[0]
-        xyz_coords = np.zeros((N, 3))
-        xyz_coords[:, 0] = ned_coords[:, 1]
-        xyz_coords[:, 1] = ned_coords[:, 0]
-        xyz_coords[:, 2] = -ned_coords[:, 2]
-    else:
-        xyz_coords = np.zeros(3)
-        xyz_coords[0] = ned_coords[1]
-        xyz_coords[1] = ned_coords[0]
-        xyz_coords[2] = -ned_coords[2]
-    return xyz_coords
+    ned = np.atleast_2d(ned)  # Ensure 2D for uniform handling
+
+    xyz = np.zeros((ned.shape[0], 3))
+    xyz[:, 0] = ned[:, 1]
+    xyz[:, 1] = ned[:, 0]
+    xyz[:, 2] = -ned[:, 2]
+
+    return np.squeeze(xyz)  # Maintain shape consistency with input
 
 
-def euler2quat(att):
-    """Convert Euler angles to quaternion.
+def euler2quat(att: np.ndarray) -> np.ndarray:
+    """
+    Convert Euler angles (roll, pitch, yaw) to quaternion representation.
 
     Parameters
     ----------
     att : np.ndarray
-        Array of Euler angles (roll, pitch, yaw) in radians.
-        This can be a 1D array of length 3 or a 2D array of shape (N, 3).
+        Array of Euler angles (roll, pitch, yaw) in radians. Input can be a 1D array of shape (3,)
+        or a 2D array of shape (N, 3).
 
     Returns
     -------
     np.ndarray
-        Quaternion (q0, q1, q2, q3]).
-        This can be a 1D array of length 4 or a 2D array of shape (N, 4),
-        depending on the input shape.
+        Quaternion(s) as a 1D array of shape (4,) for a single set of Euler angles, or a 2D array
+        of shape (N, 4) for multiple sets.
     """
-    if att.ndim == 1:
-        r = att[0]
-        sr = sin(0.5 * r)
-        cr = cos(0.5 * r)
-        p = att[1]
-        sp = sin(0.5 * p)
-        cp = cos(0.5 * p)
-        y = att[2]
-        sy = sin(0.5 * y)
-        cy = cos(0.5 * y)
-        q = np.zeros(4)
-        q[0] = cr * cp * cy + sr * sp * sy
-        q[1] = sr * cp * cy - cr * sp * sy
-        q[2] = cr * sp * cy + sr * cp * sy
-        q[3] = cr * cp * sy - sr * sp * cy
-        return q
-    else:
-        r = att[:, 0]
-        sr = sin(0.5 * r)
-        cr = cos(0.5 * r)
-        p = att[:, 1]
-        sp = sin(0.5 * p)
-        cp = cos(0.5 * p)
-        y = att[:, 2]
-        sy = sin(0.5 * y)
-        cy = cos(0.5 * y)
-        N = att.shape[0]
-        q = np.zeros((N, 4))
-        q[:, 0] = cr * cp * cy + sr * sp * sy
-        q[:, 1] = sr * cp * cy - cr * sp * sy
-        q[:, 2] = cr * sp * cy + sr * cp * sy
-        q[:, 3] = cr * cp * sy - sr * sp * cy
-        return q
+    att = np.atleast_2d(att)  # Ensure 2D for consistent processing
+
+    r = att[:, 0]
+    sr = sin(0.5 * r)
+    cr = cos(0.5 * r)
+    p = att[:, 1]
+    sp = sin(0.5 * p)
+    cp = cos(0.5 * p)
+    y = att[:, 2]
+    sy = sin(0.5 * y)
+    cy = cos(0.5 * y)
+
+    q = np.zeros((att.shape[0], 4))
+    q[:, 0] = cr * cp * cy + sr * sp * sy
+    q[:, 1] = sr * cp * cy - cr * sp * sy
+    q[:, 2] = cr * sp * cy + sr * cp * sy
+    q[:, 3] = cr * cp * sy - sr * sp * cy
+
+    return np.squeeze(q)  # Adjust shape based on input
 
 
-def quat2euler(q):
-    """Convert quaternion to Euler angles.
-
+def quat2euler(q: np.ndarray) -> np.ndarray:
+    """
+    Convert quaternion(s) to Euler angles.
 
     Parameters
     ----------
     q : np.ndarray
-        Quaternion [q0, q1, q2, q3].
-        This can be a 1D array of length 4 or a 2D array of shape (N, 4).
+        Input quaternion(s) as a 1D array of shape (4,) or a 2D array of shape (N, 4).
+
     Returns
     -------
     np.ndarray
-        Array of Euler angles (roll, pitch, yaw) in radians.
-        This can be a 1D array of length 3 or a 2D array of shape (N, 3),
-        depending on the input shape.
+        Euler angles (roll, pitch, yaw) in radians. Output shape is (3,) for a single
+        quaternion or (N, 3) for multiple.
+
+    Notes
+    -----
+    - Angles are computed using the ZYX sequence: yaw (z-axis), pitch (y-axis), roll (x-axis).
     """
-    if q.ndim == 1:
-        q0 = q[0]
-        q1 = q[1]
-        q2 = q[2]
-        q3 = q[3]
-        att = np.zeros(3)
-        att[0] = np.arctan2(
-            2.0 * (q0 * q1 + q2 * q3), (q0 * q0 - q1 * q1 - q2 * q2 + q3 * q3)
-        )
-        att[1] = np.arcsin(2.0 * (q0 * q2 - q1 * q3))
-        att[2] = np.arctan2(
-            2.0 * (q0 * q3 + q1 * q2), (q0 * q0 + q1 * q1 - q2 * q2 - q3 * q3)
-        )
-        return att
-    else:
-        q0 = q[:, 0]
-        q1 = q[:, 1]
-        q2 = q[:, 2]
-        q3 = q[:, 3]
-        N = q.shape[0]
-        att = np.zeros((N, 3))
-        att[:, 0] = np.arctan2(
-            2.0 * (q0 * q1 + q2 * q3), (q0 * q0 - q1 * q1 - q2 * q2 + q3 * q3)
-        )
-        att[:, 1] = np.arcsin(2.0 * (q0 * q2 - q1 * q3))
-        att[:, 2] = np.arctan2(
-            2.0 * (q0 * q3 + q1 * q2), (q0 * q0 + q1 * q1 - q2 * q2 - q3 * q3)
-        )
-        return att
+    q = np.atleast_2d(q)  # Ensure q is at least 2D (N, 4)
+
+    q0 = q[:, 0]
+    q1 = q[:, 1]
+    q2 = q[:, 2]
+    q3 = q[:, 3]
+
+    att = np.zeros((q.shape[0], 3))
+    att[:, 0] = np.arctan2(
+        2.0 * (q0 * q1 + q2 * q3), (q0 * q0 - q1 * q1 - q2 * q2 + q3 * q3)
+    )
+    att[:, 1] = np.arcsin(2.0 * (q0 * q2 - q1 * q3))
+    att[:, 2] = np.arctan2(
+        2.0 * (q0 * q3 + q1 * q2), (q0 * q0 + q1 * q1 - q2 * q2 - q3 * q3)
+    )
+
+    return np.squeeze(att)  # Remove axes of length 1 (for single quaternion input)
 
 
-def attitude_dt(omega: np.ndarray, roll: float, pitch: float) -> np.ndarray:
+def euler_kinematics(omega: np.ndarray, roll: float, pitch: float) -> np.ndarray:
     """
-    Calculate the derivative of the attitude (roll, pitch, yaw) using angular rates in body frame
-    and previously estimated roll and pitch angles.
+    Calculate the derivative of the attitude expressed in euler angles [roll, pitch, yaw]
+    using angular rates and previous roll and pitch angles.
 
     Parameters
     ----------
@@ -356,11 +356,41 @@ def attitude_dt(omega: np.ndarray, roll: float, pitch: float) -> np.ndarray:
     cr = np.cos(roll)
     xp = 1.0 / np.cos(pitch)  # secant
     tp = np.tan(pitch)
-    mat = np.array(
+    R_dt = np.array(
         [
             [1.0, sr * tp, cr * tp],
             [0.0, cr, -sr],
             [0.0, sr * xp, cr * xp],
         ]
     )
-    return mat.dot(omega)
+    return R_dt.dot(omega)
+
+
+def quaternion_kinematics(omega: np.ndarray, quat: np.ndarray) -> np.ndarray:
+    """Calculate the derivative of the attitude expressed in quaternions [q0, q1, q2, q3]
+    using angular rates and previous quaternions.
+
+    Parameters
+    ----------
+    omega : np.ndarray
+        3-size array with angular rates [p, q, r] in rad/s.
+    quat : np.ndarray
+        4-size array with orientation quaternions [q0, q1, q2, q3]
+
+    Returns
+    -------
+    np.ndarray
+        Time derivative of the orientation quaternions d(q0, q1, q2, q3)/dt
+    """
+    wx = omega[0]
+    wy = omega[1]
+    wz = omega[2]
+    Omega = np.array(
+        [
+            [0.0, -wx, -wy, -wz],
+            [+wx, 0.0, +wz, -wy],
+            [+wy, -wz, 0.0, +wx],
+            [+wz, +wy, -wx, 0.0],
+        ]
+    )
+    return 0.5 * Omega.dot(quat)

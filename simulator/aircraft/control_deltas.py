@@ -66,8 +66,8 @@ class ControlDeltas:
         """
         return (
             f"Control Deltas:\n"
-            f"  Aileron (da)    : {self.delta_a:.2f} rad\n"
-            f"  Elevator (de)   : {self.delta_e:.2f} rad\n"
-            f"  Rudder (dr)     : {self.delta_r:.2f} rad\n"
-            f"  Throttle (dt)   : {self.delta_t:.2f} (0.0 to 1.0)"
+            f"- Aileron (delta_a)    : {self.delta_a:.2f} rad\n"
+            f"- Elevator (delta_e)   : {self.delta_e:.2f} rad\n"
+            f"- Rudder (delta_r)     : {self.delta_r:.2f} rad\n"
+            f"- Throttle (delta_t)   : {self.delta_t:.2f} (0.0 to 1.0)"
         )

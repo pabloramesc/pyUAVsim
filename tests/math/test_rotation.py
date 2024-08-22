@@ -18,7 +18,7 @@ from simulator.math.rotation import (
     ned2xyz,
     euler2quat,
     quat2euler,
-    attitude_dt,
+    euler_kinematics,
 )
 
 
@@ -106,7 +106,7 @@ def test_attitude_dt():
     omega = np.array([0.1, 0.2, 0.3])
     roll = 0.0
     pitch = 0.0
-    actual = attitude_dt(omega, roll, pitch)
+    actual = euler_kinematics(omega, roll, pitch)
     expected = np.array([0.1, 0.2, 0.3])
     np.testing.assert_array_almost_equal(actual, expected)
 

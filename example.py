@@ -7,26 +7,32 @@
 
 import time
 
+import numpy as np
+
 from simulator.aircraft import AircraftDynamics, load_airframe_parameters_from_yaml
 from simulator.cli import SimConsole
 from simulator.gui import AttitudePosition3DView
+from simulator.utils import wait_animation
 
 params_file = r"config/aerosonde_parameters.yaml"
 aerosonde_params = load_airframe_parameters_from_yaml(params_file)
 
 dt = 0.01
 uav = AircraftDynamics(dt, aerosonde_params)
-uav.trim(25.0, 0.0, 100.0, update=True)
-time.sleep(10.0)
+uav.trim(25.0, np.deg2rad(10.0), 500.0, update=True)
+wait_animation(10.0) # wait 10 seconds to visualize trim vars
 
 cli = SimConsole()
 gui = AttitudePosition3DView()
 
-t = 0.0
+t = 0.0 # simulation time
+k = 0 # simulation steps
 while True:
     t += dt
+    k += 1
 
-    uav.update()
+    uav.update() # update simulation states
 
-    cli.print_state(t, uav.state)
-    gui.update(uav.state.x, pause=0.01)
+    if k % 10 == 0: # update interface each 10 steps
+        cli.print_state(t, uav.state)
+        gui.update(uav.state.x, pause=0.01)
