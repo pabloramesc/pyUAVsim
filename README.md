@@ -8,20 +8,21 @@ For more information visit https://github.com/randybeard/mavsim_public
 To get started with the Python UAV Simulator, follow these steps:
 
 1. Clone the repository:
-
    ```bash
    git clone https://github.com/pabloramesc/pyUAVsim.git
+   ```
+
+2. Open the project folder:
+   ```bash
    cd pyUAVsim
    ```
 
-2. Install the required packages:
-
+3. Install the required packages:
    ```bash
    pip install -r requirements.txt
    ```
 
-3. Run the example:
-
+4. Run the example:
    ```bash
    python example.py
    ```
