@@ -41,11 +41,13 @@ class PropulsionModel:
         ndarray
             Calculated external forces and moments array in body frame: [fx, fy, fx, l, m, n]
         """
+        Vin = self.params.Vmax * deltas.delta_t
+        
         # propulsion forces in body frame
-        T_prop = self.propulsion_force(state, deltas)
+        T_prop = self.propulsion_force(Vin, state.airspeed)
 
         # propulsion moments
-        Q_prop = self.propulsion_moment(state, deltas)
+        Q_prop = self.propulsion_moment(Vin, state.airspeed)
 
         # total forces and moments
         u = np.zeros(6)
@@ -53,22 +55,21 @@ class PropulsionModel:
         u[3:6] = np.array([-Q_prop, 0.0, 0.0])
         return u
 
-    def propeller_speed(self, state: AircraftState, deltas: ControlDeltas) -> float:
+    def propeller_speed(self, Vin: float, Va: float) -> float:
         """Calculate the propeller speed using the DC motor model.
 
         Parameters
         ----------
-        state : AircraftState
-             The current state of the aircraft
-        deltas : ControlSurfaces
-            The current deflections of the aircraft's control surfaces
+        Vin : float
+            Motor voltage in V
+        Va : float
+            Aicraft's current airspeed in m/s
 
         Returns
         -------
         float
             The propeller speed in radians per second (rad/s)
         """
-        Vin = self.params.Vmax * deltas.delta_t  # DC motor input voltage
         a = (
             self.params.rho
             * self.params.Dprop**5
@@ -80,35 +81,35 @@ class PropulsionModel:
             * self.params.Dprop**4
             / (2.0 * np.pi)
             * self.params.CQ1
-            * state.airspeed
+            * Va
             + self.params.KQ * self.params.KV / self.params.Rmotor
         )  # b = (rho D^4 / (2 pi)) CQ1 Va + (KQ KV / R)
         c = (
-            self.params.rho * self.params.Dprop**3 * self.params.CQ2 * state.airspeed**2
+            self.params.rho * self.params.Dprop**3 * self.params.CQ2 * Va**2
             - self.params.KQ / self.params.Rmotor * Vin
             + self.params.KQ * self.params.i0
         )  # c = (rho D^3) Cq2 Va^2 - (KQ / R) Vin + KQ i0
         Omega = (-b + np.sqrt(b**2 - 4 * a * c)) / (2.0 * a)
         return Omega
 
-    def propulsion_force(self, state: AircraftState, deltas: ControlDeltas) -> float:
+    def propulsion_force(self, Vin: float, Va: float) -> float:
         """Calculate the motor force acting on the aircraft.
 
         Parameters
         ----------
-        state : AircraftState
-             The current state of the aircraft
-        deltas : ControlSurfaces
-            The current deflections of the aircraft's control surfaces
-
+        Vin : float
+            Motor voltage in V
+        Va : float
+            Aicraft's current airspeed in m/s
+            
         Returns
         -------
         float
             The motor force acting on the aircraft in newtons (N)
         """
-        Omega = self.propeller_speed(state, deltas)
+        Omega = self.propeller_speed(Vin, Va)
         Jprop = (
-            2.0 * np.pi * state.airspeed / (Omega * self.params.Dprop)
+            2.0 * np.pi * Va / (Omega * self.params.Dprop)
         )  # advance ratio
         CT_vs_J = self.params.CT0 + self.params.CT1 * Jprop + self.params.CT2 * Jprop**2
         Tp = (
@@ -119,24 +120,24 @@ class PropulsionModel:
         )
         return Tp  # motor thrust
 
-    def propulsion_moment(self, state: AircraftState, deltas: ControlDeltas) -> float:
+    def propulsion_moment(self, Vin: float, Va: float) -> float:
         """Calculate the motor moment acting on the aircraft.
 
         Parameters
         ----------
-        state : AircraftState
-             The current state of the aircraft
-        deltas : ControlSurfaces
-            The current deflections of the aircraft's control surfaces
+        Vin : float
+            Motor voltage in V
+        Va : float
+            Aicraft's current airspeed in m/s
 
         Returns
         -------
         float
             The motor moment acting on the aircraft in newton-meters (Nm)
         """
-        Omega = self.propeller_speed(state, deltas)
+        Omega = self.propeller_speed(Vin, Va)
         Jprop = (
-            2.0 * np.pi * state.airspeed / (Omega * self.params.Dprop)
+            2.0 * np.pi * Va / (Omega * self.params.Dprop)
         )  # advance ratio
         CQ_vs_J = self.params.CQ0 + self.params.CQ1 * Jprop + self.params.CQ2 * Jprop**2
         Qp = (

@@ -12,35 +12,30 @@ from matplotlib import pyplot as plt
 
 from simulator.aircraft import AircraftDynamics, load_airframe_parameters_from_yaml
 from simulator.cli import SimConsole
-from simulator.gui import AltitudeTimeLog, AttitudeView, Position2DPlot
+from simulator.gui import MainStatusPanel
 
 params_file = r"config/aerosonde_parameters.yaml"
 aerosonde_params = load_airframe_parameters_from_yaml(params_file)
 
 dt = 0.01
 uav = AircraftDynamics(dt, aerosonde_params)
-uav.trim(10.0, np.deg2rad(10.0), np.inf, update=True)
-time.sleep(10.0)
+uav.trim(25.0, np.deg2rad(10.0), 500.0, update=True)
 
 cli = SimConsole()
+gui = MainStatusPanel(use_blit=True)
 
-plt.ion()
-fig = plt.figure(figsize=(12, 6))
-att_view = AttitudeView(fig, 121)
-pos_plot = Position2DPlot(fig, 222)
-alt_log = AltitudeTimeLog(fig, 224)
-
-t = 0.0
+sim_step = 0
+t_sim = 0.0
+t0 = time.time()
 while True:
-    t += dt
-
+    sim_step += 1
+    t_sim += dt
+    
     uav.update()
 
-    cli.print_state(t, uav.state, style="table")
+    gui.add_data(uav.state, t_sim)
 
-    att_view.update(uav.state)
-    pos_plot.update(uav.state)
-    alt_log.update(uav.state, time=t)
-
-    plt.draw()
-    plt.pause(0.01)
+    if sim_step % 100 == 0:
+        t_real = time.time() - t0
+        cli.print_state(t_sim, t_real, uav.state)
+        gui.update(uav.state, pause=0.01)

@@ -14,6 +14,7 @@ from simulator.math.rotation import (
     euler2quat,
     quat2euler,
 )
+from simulator.aircraft.control_deltas import ControlDeltas
 
 
 class AircraftState:
@@ -22,6 +23,7 @@ class AircraftState:
         x0: np.ndarray = None,
         wind0: np.ndarray = np.zeros(3),
         use_quat: bool = False,
+        control_deltas: ControlDeltas = None,
     ) -> None:
         """Initialize the AircraftState class.
 
@@ -80,6 +82,8 @@ class AircraftState:
 
         self._R_wb = rot_matrix_wind(self.alpha, self.beta)  # wind to body frame
         self._R_sb = rot_matrix_wind(self.alpha, 0.0)  # stability to body frame
+
+        self.control_deltas = control_deltas
 
     @property
     def x(self) -> np.ndarray:
@@ -231,7 +235,7 @@ class AircraftState:
     @property
     def airspeed(self) -> float:
         """Airspeed value (m/s)"""
-        return np.linalg.norm(self.body_airspeed)
+        return np.linalg.norm(self.body_airspeed) + 1e-12
 
     @property
     def alpha(self) -> float:

@@ -9,15 +9,13 @@ import numpy as np
 from matplotlib import pyplot as plt
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 
-from simulator.aircraft import AircraftState
 from simulator.math.rotation import ned2xyz, rot_matrix_zyx
-from simulator.gui.general_plotter import GeneralPlotter
+from simulator.gui.panel_components import View
 
 
-class AttitudeView(GeneralPlotter):
+class AttitudeView(View):
     def __init__(self, fig: plt.Figure, pos: int = 111):
-        ax = fig.add_subplot(pos, projection="3d")
-        super().__init__(fig, ax, pos, is_3d=True)
+        super().__init__(fig, pos, is_3d=True)          
         self._setup_aircraft_model()
 
     def _setup_aircraft_model(self):
@@ -84,9 +82,18 @@ class AttitudeView(GeneralPlotter):
         self.poly.set_edgecolor("k")
         self.poly.set_alpha(0.8)
         self.ax.add_collection(self.poly)
+        
+        self.setup_blit([self.poly])
 
-    def update(self, state: AircraftState, time: float = None):
-        R_vb = state.R_vb
+    def update(self, euler: np.ndarray) -> None:
+        """_summary_
+
+        Parameters
+        ----------
+        euler : np.ndarray
+            3-size array with Euler angles [roll, pitch, yaw] in radians
+        """
+        R_vb = rot_matrix_zyx(euler)
         rotated_body = self.body.dot(R_vb)
         rotated_wing = self.wing.dot(R_vb)
         rotated_htail = self.htail.dot(R_vb)
@@ -100,3 +107,4 @@ class AttitudeView(GeneralPlotter):
             ]
         )
     
+        self.render()

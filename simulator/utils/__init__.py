@@ -1,1 +1,1 @@
-from .wait import wait_animation
+from .readable import wait_animation

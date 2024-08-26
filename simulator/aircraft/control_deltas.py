@@ -4,19 +4,23 @@
  This software is released under the MIT License.
  https://opensource.org/licenses/MIT
 """
+
 import numpy as np
 
 from simulator.math.angles import clip_angle_pi
 
+
 class ControlDeltas:
 
-    def __init__(self, delta0: np.ndarray = None) -> None:
+    def __init__(self, delta0: np.ndarray = None, max_angle: float = np.pi / 2) -> None:
         """Initialize de ControlDeltas class.
 
         Parameters
         ----------
         delta0 : np.ndarray, optional
             4-size array with initial control deltas array [da, de, dr, dt], by default None
+        max_angle : float, optional
+            Maximum deflection angle (absolute value) for control surfaces, by default np.pi/2
 
         ### Deltas array (4 variables)
         - da: aileron deflection angle (rads)
@@ -28,6 +32,7 @@ class ControlDeltas:
             self.delta = np.zeros(4)
         else:
             self.delta = delta0
+        self.max_angle = max_angle
 
     def update(self, delta: np.ndarray) -> None:
         """Update the control deltas.
@@ -42,23 +47,23 @@ class ControlDeltas:
     @property
     def delta_a(self) -> float:
         """Aileron deflection angle in rads"""
-        return clip_angle_pi(self.delta[0])
-    
+        return np.clip(self.delta[0], -self.max_angle, +self.max_angle)
+
     @property
     def delta_e(self) -> float:
         """Elevator deflection angle in rads"""
-        return clip_angle_pi(self.delta[1])
-    
+        return np.clip(self.delta[1], -self.max_angle, +self.max_angle)
+
     @property
     def delta_r(self) -> float:
         """Rudder deflection angle in rads"""
-        return clip_angle_pi(self.delta[2])
-    
+        return np.clip(self.delta[2], -self.max_angle, +self.max_angle)
+
     @property
     def delta_t(self) -> float:
         """Throttle setting between 0.0 and 1.0"""
         return np.clip(self.delta[3], 0.0, 1.0)
-    
+
     def __str__(self) -> str:
         """Return a string representation of the control deltas.
 

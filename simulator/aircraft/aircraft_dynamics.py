@@ -66,8 +66,8 @@ class AircraftDynamics:
         self.u = np.zeros(6)
 
         self.params = params
-        self.state = AircraftState(x0, wind0, use_quat=use_quat)
         self.control_deltas = ControlDeltas(delta0)
+        self.state = AircraftState(x0, wind0, use_quat, self.control_deltas)
         self.aerodynamics = AerodynamicModel(params)
         self.propulsion = PropulsionModel(params)
 

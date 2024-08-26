@@ -10,28 +10,31 @@ from rich.console import Console
 from rich.table import Table
 
 from simulator.aircraft.aircraft_state import AircraftState
+from simulator.utils.readable import seconds_to_hhmmss, seconds_to_dhms
 
 
 class SimConsole:
     def __init__(self) -> None:
         self.console = Console()
 
-    def print_state(self, t: float, state: AircraftState, style="simple") -> None:
+    def print_state(self, t_sim: float, t_real: float, state: AircraftState, style="simple") -> None:
         # Clear the screen
         self.console.clear()
 
         if style == "simple":
-            self._print_state_simple(t, state)
+            self._print_state_simple(t_sim, t_real, state)
         elif style == "table":
-            self._print_state_table(t, state)
+            self._print_state_table(t_sim, t_real, state)
         else:
             raise ValueError(
                 "Not valid style parameter! Valid oprtions are 'simple' or 'table'."
             )
 
-    def _print_state_simple(self, t: float, state: AircraftState) -> None:
+    def _print_state_simple(self, t_sim: float, t_real: float, state: AircraftState) -> None:
+        t_sim_str = seconds_to_dhms(t_sim)
+        t_real_str = seconds_to_dhms(t_real)
         # Print updated content
-        self.console.print(f"Time: {t:.2f} s")
+        self.console.print(f"Sim Time: {t_sim_str}, Real Time: {t_real_str}")
         self.console.print(
             f"NED position (m): pn: {state.pn:.2f}, pe: {state.pe:.2f}, pd: {state.pd:.2f}"
         )
@@ -45,7 +48,7 @@ class SimConsole:
             f"Angular Rates (rads/s): p: {state.p:.2f}, q: {state.q:.2f}, r: {state.r:.2f}"
         )
 
-    def _print_state_table(self, t: float, state: AircraftState) -> None:
+    def _print_state_table(self, t_sim: float, t_real: float, state: AircraftState) -> None:
         # Create a table
         table = Table()
 
@@ -82,5 +85,5 @@ class SimConsole:
         )
 
         # Print the table
-        self.console.print(f"Time: {t:.2f} s")
+        self.console.print(f"Sim Time: {t_sim:.2f} s, Real Time: {t_real:.2f} s")
         self.console.print(table)

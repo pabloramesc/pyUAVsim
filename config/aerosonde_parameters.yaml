@@ -19,8 +19,8 @@ KV: 0.0659      # motor velocity constant in V-s/rad
 KQ: 0.0659      # motor torque constant in N-m
 Rmotor: 0.042   # motor resistance in Ohms
 i0: 1.5         # no-load current in A
-CQ2: -0.01664    # quadratic coefficient for motor torque (dimensionless)
-CQ1: 0.00497   # linear coefficient for motor torque (dimensionless)
+CQ2: -0.01664   # quadratic coefficient for motor torque (dimensionless)
+CQ1: 0.00497    # linear coefficient for motor torque (dimensionless)
 CQ0: 0.00523    # constant term for motor torque (dimensionless)
 CT2: -0.1079    # dimensionless coefficient
 CT1: -0.06044   # dimensionless coefficient
@@ -39,7 +39,7 @@ Cm_q: -38.21    # slope of Cm vs pitch rate curve
 CL_delta_e: 0.13    # slope of CL vs elevator deflection curve
 CD_delta_e: 0.0135  # slope of CD vs elevator deflection curve
 Cm_delta_e: -0.99   # slope of Cm vs elevator deflection curve
-M: 50.0         # Mach number
+M: 50.0         # lift sigmoid function transition rate
 alpha0: 0.47    # zero-lift angle of attack
 CD_p: 0.043     # parasitic drag coefficient due to roll rate
 CY_beta: -0.83  # side force coefficient due to sideslip angle
