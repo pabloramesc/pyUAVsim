@@ -3,6 +3,11 @@ A Python unmanned aircraft simulator based on the book *Small Unmanned Aircraft:
 
 For more information visit https://github.com/randybeard/mavsim_public
 
+## Overview
+The Python UAV Simulator provides a comprehensive environment for simulating the behavior of unmanned aerial vehicles (UAVs). It allows users to explore aircraft dynamics, sensor readings, autopilot behavior, and actuator responses in a controlled simulation framework.
+
+![](pics/screenshot_01.png)
+
 ## Getting Started
 
 To get started with the Python UAV Simulator, follow these steps:
@@ -27,12 +32,10 @@ To get started with the Python UAV Simulator, follow these steps:
    python example.py
    ```
    
-## Overview
-The Python UAV Simulator provides a comprehensive environment for simulating the behavior of unmanned aerial vehicles (UAVs). It allows users to explore aircraft dynamics, sensor readings, autopilot behavior, and actuator responses in a controlled simulation framework.
-
-![](pics/screenshot_01.png)
-
+## Description
 The simulator is composed of four main modules, each with distinct responsibilities and submodules. These modules are organized into three levels: Physical, Electrical, and Software.
+
+![](pics/diagram.png)
 
 ### Physical Level (Aircraft)
 **Forces and Moments**:
@@ -57,8 +60,6 @@ Applies filters (e.g., Low Pass Filter, Kalman Filter) to sensor readings to est
 
 **Controll and Navigation**:
 Uses the estimated state along with mission parameters or joystick/controller input to manage attitude control, path following (line or orbit), path managing, and path planning.
-
-![](pics/diagram.png)
 
 ## Development
 
