@@ -79,7 +79,11 @@ Uses the estimated state along with mission parameters or joystick/controller in
 - [ ] Real-time external joystick/controller support
 - [ ] Unity 3D visualiztion framework 
 
-
+## Tests
+To run all the tests and generate a coverage report in HTML:
+```bash
+python -m pytest --cov=simulator --cov-report html
+```
 
 ## License
 

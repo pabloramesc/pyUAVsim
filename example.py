@@ -36,7 +36,7 @@ while True:
     
     gui.add_data(uav.state, sim_time)
 
-    if sim_iter % 100 == 0:  # update interface each 10 steps
+    if sim_iter % 10 == 0:  # update interface each 10 steps
         real_time = time.time() - real_t0
         cli.print_state(sim_time, real_time, uav.state)
         gui.update(uav.state, pause=0.01)

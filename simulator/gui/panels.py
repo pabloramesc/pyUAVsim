@@ -64,7 +64,7 @@ class AttitudePositionPanel(Panel):
 
 
 class MainStatusPanel(Panel):
-    def __init__(self, figsize=(10, 10), use_blit: bool = False) -> None:
+    def __init__(self, figsize=(10, 6), use_blit: bool = False) -> None:
         super().__init__(figsize, use_blit)
         self.attitude_view = AttitudeView(self.fig, pos=221)
         self.position_plot = PositionPlot(self.fig, pos=222, is_3d=False)

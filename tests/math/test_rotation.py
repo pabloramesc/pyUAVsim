@@ -25,13 +25,12 @@ from simulator.math.rotation import (
 
 
 def test_rot_matrix_axis():
-    """Rotate x axis around z axis by 90 degrees
-    """
-    axis = np.array([0, 0, 1]) # z axis
-    angle = np.pi / 2 # 90 degress
+    """Rotate x axis around z axis by 90 degrees"""
+    axis = np.array([0, 0, 1])  # z axis
+    angle = np.pi / 2  # 90 degress
     Rot = rot_matrix_axis(axis, angle)
-    actual = Rot @ np.array([1, 0, 0]) # rotate x axis
-    expected = np.array([0, 1, 0]) # result is y axis
+    actual = Rot @ np.array([1, 0, 0])  # rotate x axis
+    expected = np.array([0, 1, 0])  # result is y axis
     np.testing.assert_array_almost_equal(actual, expected)
 
 
@@ -42,13 +41,15 @@ def test_rot_matrix_zyx():
     expected = np.array([0, 1, 0])
     np.testing.assert_array_almost_equal(actual, expected)
 
+
 def test_rot_matrix_quat():
-    quat = np.array([1.0, 1.0, 0.0, 0.0]) # roll = 90 deg
+    quat = np.array([1.0, 1.0, 0.0, 0.0])  # roll = 90 deg
     quat = quat / np.linalg.norm(quat)
     Rot = rot_matrix_quat(quat)
     actual = Rot @ np.array([0, 0, 1])
     expected = np.array([0, 1, 0])
     np.testing.assert_array_almost_equal(actual, expected)
+
 
 def test_rot_matrix_wind():
     alpha = np.pi / 4
@@ -98,16 +99,16 @@ def test_ned2xyz():
 
 
 def test_euler2quat():
-    euler = np.array([np.pi/2, 0, 0])
+    euler = np.array([np.pi / 2, 0, 0])
     actual = euler2quat(euler)
-    expected = np.array([np.sqrt(2)/2, np.sqrt(2)/2, 0, 0])
+    expected = np.array([np.sqrt(2) / 2, np.sqrt(2) / 2, 0, 0])
     np.testing.assert_array_almost_equal(actual, expected)
 
 
 def test_quat2euler():
-    quat = np.array([np.sqrt(2)/2, np.sqrt(2)/2, 0, 0])
+    quat = np.array([np.sqrt(2) / 2, np.sqrt(2) / 2, 0, 0])
     actual = quat2euler(quat)
-    expected = np.array([np.pi/2, 0, 0])
+    expected = np.array([np.pi / 2, 0, 0])
     np.testing.assert_array_almost_equal(actual, expected)
 
 
@@ -119,6 +120,7 @@ def test_euler_kinematics():
     expected = np.array([0.1, 0.2, 0.3])
     np.testing.assert_array_almost_equal(actual, expected)
 
+
 def test_quaternion_kinematics():
     omega = np.array([0.1, 0.2, 0.3])
     quat = np.array([1.0, 0.0, 0.0, 0.0])
@@ -126,6 +128,7 @@ def test_quaternion_kinematics():
     actual = 0.5 * Omega @ quat
     expected = 0.5 * np.array([0.0, 0.1, 0.2, 0.3])
     np.testing.assert_array_almost_equal(actual, expected)
+
 
 if __name__ == "__main__":
     pytest.main()

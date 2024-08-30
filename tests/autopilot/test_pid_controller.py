@@ -50,6 +50,7 @@ def test_derivative():
     )  # kd * (alpha * diff_prev - 2 / (2 * tau + dt) * (error - error_prev))
     np.testing.assert_almost_equal(actual, expected)
 
+
 def test_saturation():
     pid = PIDController(kp=2.0, max_output=5.0, min_output=-3.0)
     actual = pid.update(x_ref=10.0, x=5.0, dt=1.0)
@@ -59,22 +60,26 @@ def test_saturation():
     expected = -3.0
     np.testing.assert_almost_equal(actual, expected)
 
+
 def test_reset_functionality():
-    pid = PIDController(kp=1.0, ki=1.0)
-    pid.update(x_ref=10, x=5, dt=1.0)
+    pid = PIDController(kp=1.0, ki=1.0, kd=1.0)
+    for k in range(10):
+        pid.update(x_ref=10, x=5, dt=1.0)
     pid.reset()
     np.testing.assert_almost_equal(pid.prev_error, 0.0)
     np.testing.assert_almost_equal(pid.prev_intg, 0.0)
     np.testing.assert_almost_equal(pid.prev_diff, 0.0)
 
+
 def test_integrator_anti_windup():
     pid = PIDController(kp=1.0, ki=1.0, max_output=5.0)
     # Test integrator anti-windup; expected output should not wind up beyond saturation limits
     output = pid.update(x_ref=10, x=5, dt=1.0)
-    np.testing.assert_almost_equal(output, 5.0) # Saturation applies
+    np.testing.assert_almost_equal(output, 5.0)  # Saturation applies
     # If saturation and anti-windup are correct, next output should not drastically change
     output = pid.update(x_ref=10, x=5, dt=1.0)
     np.testing.assert_almost_equal(output, 5.0)  # Consistent with anti-windup
+
 
 def test_null_update():
     pid = PIDController(kp=2.0, ki=0.1, kd=0.2)
@@ -83,3 +88,7 @@ def test_null_update():
         out = pid.update(x_ref=10.0, x=10.0, dt=1.0)
         outputs.append(out)
     np.testing.assert_array_almost_equal(np.array(outputs), np.zeros(10))
+
+
+if __name__ == "__main__":
+    pytest.main()

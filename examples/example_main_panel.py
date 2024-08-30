@@ -35,7 +35,7 @@ while True:
 
     gui.add_data(uav.state, t_sim)
 
-    if sim_step % 100 == 0:
+    if sim_step % 10 == 0:
         t_real = time.time() - t0
         cli.print_state(t_sim, t_real, uav.state)
         gui.update(uav.state, pause=0.01)
