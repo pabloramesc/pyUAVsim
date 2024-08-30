@@ -7,7 +7,7 @@
 
 import numpy as np
 
-def jacobian(func: callable, x0: np.ndarray, eps: float = 1e-6):
+def jacobian(func: callable, x0: np.ndarray, eps: float = 1e-6) -> np.ndarray:
     """Calculate the Jacobian matrix of the function `func` at the point `x0`.
 
     Parameters
@@ -34,4 +34,3 @@ def jacobian(func: callable, x0: np.ndarray, eps: float = 1e-6):
         f_eps = func(x_eps)
         Jac[:, i] = (f_eps - f0) / eps
     return Jac
-

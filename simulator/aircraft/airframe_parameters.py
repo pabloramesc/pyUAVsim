@@ -97,7 +97,7 @@ class AirframeParameters:
     Cm_delta_e : float
         Slope of pitching moment coefficient vs. elevator deflection curve (dimensionless).
     M : float
-        Mach number (dimensionless).
+        Lift sigmoid function transition rate (dimensionless).
     alpha0 : float
         Zero-lift angle of attack in radians (rad).
     CD_p : float
@@ -160,33 +160,37 @@ class AirframeParameters:
 
     # Aerodynamic coefficients
     CL0: float  # coefficient of lift at zero angle of attack
-    CD0: float  # coefficient of drag at zero lift
-    Cm0: float  # pitching moment coefficient at zero angle of attack
     CL_alpha: float  # slope of CL vs alpha curve
-    CD_alpha: float  # slope of CD vs alpha curve
-    Cm_alpha: float  # slope of Cm vs alpha curve
     CL_q: float  # slope of CL vs pitch rate curve
-    CD_q: float  # slope of CD vs pitch rate curve
-    Cm_q: float  # slope of Cm vs pitch rate curve
     CL_delta_e: float  # slope of CL vs elevator deflection curve
-    CD_delta_e: float  # slope of CD vs elevator deflection curve
-    Cm_delta_e: float  # slope of Cm vs elevator deflection curve
-    M: float  # Mach number
-    alpha0: float  # zero-lift angle of attack
+    CD0: float  # coefficient of drag at zero lift
+    CD_alpha: float  # slope of CD vs alpha curve
     CD_p: float  # parasitic drag coefficient due to roll rate
+    CD_q: float  # slope of CD vs pitch rate curve
+    CD_delta_e: float  # slope of CD vs elevator deflection curve
+    Cm0: float  # pitching moment coefficient at zero angle of attack
+    Cm_alpha: float  # slope of Cm vs alpha curve
+    Cm_q: float  # slope of Cm vs pitch rate curve
+    Cm_delta_e: float  # slope of Cm vs elevator deflection curve
+    M: float  # lift sigmoid function transition rate
+    alpha0: float  # zero-lift angle of attack
+    CY_0: float = 0.0
     CY_beta: float  # side force coefficient due to sideslip angle
-    Cl_beta: float  # rolling moment coefficient due to sideslip angle
-    Cn_beta: float  # yawing moment coefficient due to sideslip angle
     CY_p: float  # side force coefficient due to roll rate
-    Cl_p: float  # rolling moment coefficient due to roll rate
-    Cn_p: float  # yawing moment coefficient due to roll rate
     CY_r: float  # side force coefficient due to yaw rate
-    Cl_r: float  # rolling moment coefficient due to yaw rate
-    Cn_r: float  # yawing moment coefficient due to yaw rate
     CY_delta_a: float  # side force coefficient due to aileron deflection
+    CY_delta_r: float = 0.0
+    Cl_0: float = 0.0
+    Cl_beta: float  # rolling moment coefficient due to sideslip angle
+    Cl_p: float  # rolling moment coefficient due to roll rate
+    Cl_r: float  # rolling moment coefficient due to yaw rate
     Cl_delta_a: float  # rolling moment coefficient due to aileron deflection
-    Cn_delta_a: float  # yawing moment coefficient due to aileron deflection
     Cl_delta_r: float  # rolling moment coefficient due to rudder deflection
+    Cn_0: float = 0.0
+    Cn_beta: float  # yawing moment coefficient due to sideslip angle
+    Cn_p: float  # yawing moment coefficient due to roll rate
+    Cn_r: float  # yawing moment coefficient due to yaw rate
+    Cn_delta_a: float  # yawing moment coefficient due to aileron deflection
     Cn_delta_r: float  # yawing moment coefficient due to rudder deflection
 
     def __post_init__(self) -> None:

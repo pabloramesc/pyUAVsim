@@ -12,7 +12,7 @@ import numpy as np
 PI = np.pi
 RAD2DEG = 180.0 / PI
 DEG2RAD = PI / 180.0
-EPS = 1e-9  # a constant that is almost zero
+EPS = 1e-12  # a constant that is almost zero
 
 
 ### ESPHERICAL GEOGRAPHIC COORDINATES

@@ -350,7 +350,7 @@ def euler_kinematics(euler: np.ndarray) -> np.ndarray:
 
     Notes
     -----
-    Formula: `euler_dot = R_euler * omega` where
+    Formula: `euler_dot = R_euler @ omega` where
     - `euler_dot` is the time derivative of Euler angles [roll, pitch, yaw].
     - `R_euler` is the transformation matrix that maps angular rates [p, q, r] to
       the derivatives of Euler angles.
@@ -398,7 +398,7 @@ def quaternion_kinematics(omega: np.ndarray) -> np.ndarray:
 
     Notes
     -----
-    Formula: `q_dot = 1/2 * Omega * q` where
+    Formula: `q_dot = 1/2 * Omega @ q` where
     - `q_dot` is the time derivative of the quaternion [q0, q1, q2, q3].
     - `Omega` is a 4x4 skew-symmetric matrix constructed from the angular rates [p, q, r].
     - `q` is the current quaternion [q0, q1, q2, q3].
