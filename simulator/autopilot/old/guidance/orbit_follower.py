@@ -46,7 +46,7 @@ class OrbitFollower:
         cn, ce, _ = self.orbit_center
         dist_error = np.sqrt((pn - cn) ** 2 + (pe - ce) ** 2)
         ang_position = np.arctan2(pe - ce, pn - cn)
-        ang_position = self.wrap_course(ang_position, aircraft_course)
+        ang_position = FlightControl.wrap_course(ang_position, aircraft_course)
         course_cmd = ang_position + self.orbit_direction * (
             0.5 * PI + np.arctan(self.k_orbit * (dist_error - self.orbit_radius) / self.orbit_radius)
         )

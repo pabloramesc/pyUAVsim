@@ -172,14 +172,13 @@ class AutopilotConfig:
             The trimmed state of the aircraft used to compute the control gains.
         """
         Va_trim = state_trim.airspeed
+        
         a_phi_adim = 0.5 * params.rho * Va_trim**2 * params.S * params.c
         a_phi1 = -a_phi_adim * params.Cp_p * 0.5 * params.c / Va_trim
-        a_phi2 = a_phi_adim * params.Cp_delta_a
+        a_phi2 = +a_phi_adim * params.Cp_delta_a
 
-        wn_roll = self.wn_roll
-        zeta_roll = self.zeta_roll
-        self.kp_roll_aileron = wn_roll**2 / a_phi2
-        self.kd_roll_aileron = (2.0 * zeta_roll * wn_roll - a_phi1) / a_phi2
+        self.kp_roll_aileron = self.wn_roll**2 / a_phi2
+        self.kd_roll_aileron = (2.0 * self.zeta_roll * self.wn_roll - a_phi1) / a_phi2
 
     def _calculate_course_gains(self, state_trim: AircraftState) -> None:
         """
@@ -191,13 +190,10 @@ class AutopilotConfig:
             The trimmed state of the aircraft used to compute the control gains.
         """
         Vg_trim = state_trim.groundspeed
-        wn_roll = self.wn_roll
-        BW_course = self.BW_course
-        wn_course = wn_roll / BW_course
-        zeta_course = self.zeta_course
-
-        self.kp_course_roll = 2.0 * zeta_course * wn_course * Vg_trim / g
-        self.ki_course_roll = wn_course**2 * Vg_trim / g
+        
+        self.wn_course = self.wn_roll / self.BW_course
+        self.kp_course_roll = 2.0 * self.zeta_course * self.wn_course * Vg_trim / g
+        self.ki_course_roll = self.wn_course**2 * Vg_trim / g
 
     def _calculate_sideslip_gains(self, params: AirframeParameters, state_trim: AircraftState) -> None:
         """
@@ -211,14 +207,13 @@ class AutopilotConfig:
             The trimmed state of the aircraft used to compute the control gains.
         """
         Va_trim = state_trim.airspeed
+
         a_beta_adim = 0.5 * params.rho * Va_trim * params.S / params.m
         a_beta1 = -a_beta_adim * params.CY_beta
-        a_beta2 = a_beta_adim * params.CY_delta_r
+        a_beta2 = +a_beta_adim * params.CY_delta_r
 
-        wn_sideslip = self.wn_sideslip
-        zeta_sideslip = self.zeta_sideslip
-        self.kp_sideslip_rudder = (2.0 * zeta_sideslip * wn_sideslip - a_beta1) / a_beta2
-        self.ki_sideslip_rudder = wn_sideslip**2 / a_beta2
+        self.kp_sideslip_rudder = (2.0 * self.zeta_sideslip * self.wn_sideslip - a_beta1) / a_beta2
+        self.ki_sideslip_rudder = self.wn_sideslip**2 / a_beta2
 
     def _calculate_pitch_gains(self, params: AirframeParameters, state_trim: AircraftState) -> None:
         """
@@ -232,15 +227,14 @@ class AutopilotConfig:
             The trimmed state of the aircraft used to compute the control gains.
         """
         Va_trim = state_trim.airspeed
+
         a_theta_adim = 0.5 * params.rho * Va_trim**2 * params.c * params.S / params.Jy
         a_theta1 = -a_theta_adim * params.Cm_q * 0.5 * params.c / Va_trim
         a_theta2 = -a_theta_adim * params.Cm_alpha
-        a_theta3 = a_theta_adim * params.Cm_delta_e
+        a_theta3 = +a_theta_adim * params.Cm_delta_e
 
-        wn_pitch = self.wn_pitch
-        zeta_pitch = self.zeta_pitch
-        self.kp_pitch_elevator = (wn_pitch**2 - a_theta2) / a_theta3
-        self.kd_pitch_elevator = (2.0 * zeta_pitch * wn_pitch - a_theta1) / a_theta3
+        self.kp_pitch_elevator = (self.wn_pitch**2 - a_theta2) / a_theta3
+        self.kd_pitch_elevator = (2.0 * self.zeta_pitch * self.wn_pitch - a_theta1) / a_theta3
 
     def _calculate_altitude_gains(self, state_trim: AircraftState) -> None:
         """
@@ -251,15 +245,12 @@ class AutopilotConfig:
         state_trim : AircraftState
             The trimmed state of the aircraft used to compute the control gains.
         """
-        wn_pitch = self.wn_pitch
         Va_trim = state_trim.airspeed
-        BW_altitude = self.BW_altitude
-        wn_altitude = wn_pitch / BW_altitude
-        zeta_altitude = self.zeta_altitude
 
-        K_pitch_DC = self.kp_pitch_elevator * state_trim.control_deltas.delta_e / wn_pitch**2
-        self.kp_altitude_pitch = 2.0 * zeta_altitude * wn_altitude / (K_pitch_DC * Va_trim)
-        self.ki_altitude_pitch = wn_altitude**2 / (K_pitch_DC * Va_trim)
+        self.wn_altitude = self.wn_pitch / self.BW_altitude
+        K_pitch_DC = self.kp_pitch_elevator * state_trim.control_deltas.delta_e / self.wn_pitch**2
+        self.kp_altitude_pitch = 2.0 * self.zeta_altitude * self.wn_altitude / (K_pitch_DC * Va_trim)
+        self.ki_altitude_pitch = self.wn_altitude**2 / (K_pitch_DC * Va_trim)
 
     def _calculate_airspeed_gains(self, params: AirframeParameters, state_trim: AircraftState) -> None:
         """
@@ -276,8 +267,8 @@ class AutopilotConfig:
 
         # Propulsion Model
         prop_model = PropulsionModel(params)
-        prop_func = lambda delta_t, Va: prop_model.propulsion_force(params.Vmax * delta_t, Va)
-        dTp_Va, dTp_delta_t = jacobian(func=prop_func, x0=np.array([state_trim.control_deltas.delta_t_trim, Va_trim]))
+        prop_func = lambda x: prop_model.propulsion_force(params.Vmax * x[0], x[1])
+        dTp_Va, dTp_delta_t = jacobian(func=prop_func, x0=np.array([state_trim.control_deltas.delta_t, Va_trim]))[0]
 
         a_V1 = (
             params.rho
@@ -295,16 +286,11 @@ class AutopilotConfig:
         a_V3 = g * np.cos(state_trim.pitch - state_trim.alpha)
 
         # Airspeed control with throttle
-        wn_airspeed = self.wn_airspeed
-        zeta_airspeed = self.zeta_airspeed
-        self.kp_airspeed_throttle = (2.0 * zeta_airspeed * wn_airspeed - a_V1) / a_V2
-        self.ki_airspeed_throttle = wn_airspeed**2 / a_V2
+        self.kp_airspeed_throttle = (2.0 * self.zeta_airspeed * self.wn_airspeed - a_V1) / a_V2
+        self.ki_airspeed_throttle = self.wn_airspeed**2 / a_V2
 
         # Airspeed control with pitch
-        wn_pitch = self.wn_pitch
-        BW_airspeed2 = self.BW_airspeed2
-        wn_airspeed2 = wn_pitch / BW_airspeed2
-        zeta_airspeed2 = self.zeta_airspeed2
-        K_pitch_DC = self.kp_pitch_elevator * state_trim.control_deltas.delta_e / wn_pitch**2
-        self.kp_airspeed_pitch = (a_V1 - 2.0 * zeta_airspeed2 * wn_airspeed2) / (K_pitch_DC * g)
-        self.ki_airspeed_pitch = -(wn_airspeed2**2) / (K_pitch_DC * g)
+        self.wn_airspeed2 = self.wn_pitch / self.BW_airspeed2
+        K_pitch_DC = self.kp_pitch_elevator * state_trim.control_deltas.delta_e / self.wn_pitch**2
+        self.kp_airspeed_pitch = (a_V1 - 2.0 * self.zeta_airspeed2 * self.wn_airspeed2) / (K_pitch_DC * g)
+        self.ki_airspeed_pitch = -(self.wn_airspeed2**2) / (K_pitch_DC * g)

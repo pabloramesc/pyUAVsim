@@ -63,7 +63,7 @@ Uses the estimated state along with mission parameters or joystick/controller in
 
 ## Development
 
-- [x] Main aicraft data handlers: `AircraftParameters`, `AircrafState` ...
+- [x] Main aircraft data handlers: `AircraftParameters`, `AircrafState` ...
 - [x] Aircraft forces and moments (gravity, aerodynamic and propulsion) simulation
 - [x] Aircraft kinematics and dynamics integration to calculate new state
 - [x] Multi functional visualization tool based on Matplotlib
@@ -73,8 +73,9 @@ Uses the estimated state along with mission parameters or joystick/controller in
 - [ ] Realistic sensor data simulation including IMU, GPS, and barometer.
 - [ ] Actuators simulation (servos and DC motor) with realistic transfer functions
 - [ ] Estimation filters for airtcraft's state estimation
-- [ ] Implement autopilot control layers: attitude control, path following ...
-- [ ] Mission parametes support (waypoints)
+- [ ] Implement all autopilot layers: flight control, path following, path manager...
+- [ ] Mission parametes (waypoints) and autopilot modes (manual, FBW, auto...) support
+- [ ] Add TECS and LQR control
 - [ ] Real-time external joystick/controller support
 - [ ] Unity 3D visualiztion framework 
 

@@ -1,58 +1,62 @@
 # Aerosonde airframe parameters (YAML)
 
 # Physical parameters
-m: 11.0         # mass in kg
-Jx: 0.824       # moment of inertia about x-axis in kg-m^2
-Jy: 1.135       # moment of inertia about y-axis in kg-m^2
-Jz: 1.759       # moment of inertia about z-axis in kg-m^2
-Jxz: 0.120      # product of inertia in kg-m^2
-S: 0.55         # wing area in m^2
-b: 2.9          # wingspan in m
-c: 0.19         # mean aerodynamic chord in m
-rho: 1.268      # air density in kg/m^3
-e: 0.9          # Oswald efficiency factor (dimensionless)
+m: 11.0 # mass in kg
+Jx: 0.824 # moment of inertia about x-axis in kg-m^2
+Jy: 1.135 # moment of inertia about y-axis in kg-m^2
+Jz: 1.759 # moment of inertia about z-axis in kg-m^2
+Jxz: 0.120 # product of inertia in kg-m^2
+S: 0.55 # wing area in m^2
+b: 2.9 # wingspan in m
+c: 0.19 # mean aerodynamic chord in m
+rho: 1.268 # air density in kg/m^3
+e: 0.9 # Oswald efficiency factor (dimensionless)
 
 # Motor parameters
-Vmax: 44.4      # maximum voltage in V
-Dprop: 0.508    # propeller diameter in m
-KV: 0.0659      # motor velocity constant in V-s/rad
-KQ: 0.0659      # motor torque constant in N-m
-Rmotor: 0.042   # motor resistance in Ohms
-i0: 1.5         # no-load current in A
-CQ2: -0.01664   # quadratic coefficient for motor torque (dimensionless)
-CQ1: 0.00497    # linear coefficient for motor torque (dimensionless)
-CQ0: 0.00523    # constant term for motor torque (dimensionless)
-CT2: -0.1079    # dimensionless coefficient
-CT1: -0.06044   # dimensionless coefficient
-CT0: 0.09357    # dimensionless coefficient
+Vmax: 44.4 # maximum voltage in V
+Dprop: 0.508 # propeller diameter in m
+KV: 0.0659 # motor velocity constant in V-s/rad
+KQ: 0.0659 # motor torque constant in N-m
+Rmotor: 0.042 # motor resistance in Ohms
+i0: 1.5 # no-load current in A
+CQ2: -0.01664 # quadratic coefficient for motor torque (dimensionless)
+CQ1: 0.00497 # linear coefficient for motor torque (dimensionless)
+CQ0: 0.00523 # constant term for motor torque (dimensionless)
+CT2: -0.1079 # dimensionless coefficient
+CT1: -0.06044 # dimensionless coefficient
+CT0: 0.09357 # dimensionless coefficient
 
 # Aerodynamic coefficients
-CL0: 0.23       # coefficient of lift at zero angle of attack
-CD0: 0.043      # coefficient of drag at zero lift
-Cm0: 0.0135     # pitching moment coefficient at zero angle of attack
-CL_alpha: 5.61  # slope of CL vs alpha curve
+CL_0: 0.23 # coefficient of lift at zero angle of attack
+CD_0: 0.043 # coefficient of drag at zero lift
+Cm_0: 0.0135 # pitching moment coefficient at zero angle of attack
+CL_alpha: 5.61 # slope of CL vs alpha curve
 CD_alpha: 0.030 # slope of CD vs alpha curve
 Cm_alpha: -2.74 # slope of Cm vs alpha curve
-CL_q: 7.95      # slope of CL vs pitch rate curve
-CD_q: 0.0       # slope of CD vs pitch rate curve
-Cm_q: -38.21    # slope of Cm vs pitch rate curve
-CL_delta_e: 0.13    # slope of CL vs elevator deflection curve
-CD_delta_e: 0.0135  # slope of CD vs elevator deflection curve
-Cm_delta_e: -0.99   # slope of Cm vs elevator deflection curve
-M: 50.0         # lift sigmoid function transition rate
-alpha0: 0.47    # zero-lift angle of attack
-CD_p: 0.043     # parasitic drag coefficient due to roll rate
-CY_beta: -0.83  # side force coefficient due to sideslip angle
-Cl_beta: 0.0    # rolling moment coefficient due to sideslip angle
-Cn_beta: 0.073  # yawing moment coefficient due to sideslip angle
-CY_p: 0.0       # side force coefficient due to roll rate
-Cl_p: -0.51     # rolling moment coefficient due to roll rate
-Cn_p: -0.069    # yawing moment coefficient due to roll rate
-CY_r: 0.0       # side force coefficient due to yaw rate
-Cl_r: 0.25      # rolling moment coefficient due to yaw rate
-Cn_r: -0.095    # yawing moment coefficient due to yaw rate
-CY_delta_a: 0.075   # side force coefficient due to aileron deflection
-Cl_delta_a: 0.17    # rolling moment coefficient due to aileron deflection
-Cn_delta_a: -0.011  # yawing moment coefficient due to aileron deflection
-Cl_delta_r: 0.0024  # rolling moment coefficient due to rudder deflection
-Cn_delta_r: -0.069  # yawing moment coefficient due to rudder deflection
+CL_q: 7.95 # slope of CL vs pitch rate curve
+CD_q: 0.0 # slope of CD vs pitch rate curve
+Cm_q: -38.21 # slope of Cm vs pitch rate curve
+CL_delta_e: 0.13 # slope of CL vs elevator deflection curve
+CD_delta_e: 0.0135 # slope of CD vs elevator deflection curve
+Cm_delta_e: -0.99 # slope of Cm vs elevator deflection curve
+M: 50.0 # lift sigmoid function transition rate
+alpha0: 0.47 # zero-lift angle of attack
+CD_p: 0.043 # parasitic drag coefficient due to roll rate
+CY_0: 0.0 # lateral force coefficient when all states are zero
+Cl_0: 0.0 # rolling moment coefficient when all states are zero
+Cn_0: 0.0 # yawing moment coefficient when all states are zero
+CY_beta: -0.83 # lateral force coefficient due to sideslip angle
+Cl_beta: -0.13 # rolling moment coefficient due to sideslip angle
+Cn_beta: 0.073 # yawing moment coefficient due to sideslip angle
+CY_p: 0.0 # lateral force coefficient due to roll rate
+Cl_p: -0.51 # rolling moment coefficient due to roll rate
+Cn_p: -0.069 # yawing moment coefficient due to roll rate
+CY_r: 0.0 # lateral force coefficient due to yaw rate
+Cl_r: 0.25 # rolling moment coefficient due to yaw rate
+Cn_r: -0.095 # yawing moment coefficient due to yaw rate
+CY_delta_a: 0.075 # lateral force coefficient due to aileron deflection
+Cl_delta_a: 0.17 # rolling moment coefficient due to aileron deflection
+Cn_delta_a: -0.011 # yawing moment coefficient due to aileron deflection
+CY_delta_r: 0.19 # lateral force coefficient due to rudder deflection
+Cl_delta_r: 0.0024 # rolling moment coefficient due to rudder deflection
+Cn_delta_r: -0.069 # yawing moment coefficient due to rudder deflection

@@ -100,9 +100,9 @@ def diff_angle_pi(angle1: float, angle2: float) -> float:
         Difference between the two angles in radians.
     """
     while angle1 - angle2 > +np.pi:
-        angle1 = angle1 - 2 * np.pi
+        angle1 -= 2 * np.pi
     while angle1 - angle2 < -np.pi:
-        angle1 = angle1 + 2 * np.pi
+        angle1 += 2 * np.pi
     return angle1 - angle2
 
 
@@ -127,3 +127,4 @@ def diff_angle_180(angle1: float, angle2: float) -> float:
     while angle1 - angle2 < -180.0:
         angle1 = angle1 + 360.0
     return angle1 - angle2
+

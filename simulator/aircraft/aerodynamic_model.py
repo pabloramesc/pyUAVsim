@@ -91,15 +91,15 @@ class AerodynamicModel:
             exp_neg = np.exp(-self.params.M * (alpha - self.params.alpha0))
             exp_pos = np.exp(+self.params.M * (alpha + self.params.alpha0))
             sigma = (1.0 + exp_neg + exp_pos) / ((1.0 + exp_neg) * (1.0 + exp_pos))
-            CL_linear = self.params.CL0 + self.params.CL_alpha * alpha
+            CL_linear = self.params.CL_0 + self.params.CL_alpha * alpha
             CL_stall = 2.0 * np.sign(alpha) * np.sin(alpha) ** 2 * np.cos(alpha)
             CL_vs_alpha = (1.0 - sigma) * CL_linear + sigma * CL_stall
         elif model == "linear":
             # CL_alpha = (np.pi * self.params.AR) / (
             #     1.0 + np.sqrt(1.0 + (0.5 * self.params.AR) ** 2)
             # )  # CL_alpha aproximation for small aircrafts
-            # CL_vs_alpha = self.params.CL0 + CL_alpha * alpha
-            CL_vs_alpha = self.params.CL0 + self.params.CL_alpha * alpha
+            # CL_vs_alpha = self.params.CL_0 + CL_alpha * alpha
+            CL_vs_alpha = self.params.CL_0 + self.params.CL_alpha * alpha
         else:
             raise ValueError("Model parameter must be 'accurate' or 'linear'!")
         return CL_vs_alpha
@@ -160,7 +160,7 @@ class AerodynamicModel:
                 np.pi * self.params.e * self.params.AR
             )
         elif model == "linear":
-            CD_vs_alpha = self.params.CD0 + self.params.CD_alpha * alpha
+            CD_vs_alpha = self.params.CD_0 + self.params.CD_alpha * alpha
         else:
             raise ValueError("Model parameter must be 'quadratic' or 'linear'!")
         return CD_vs_alpha
@@ -207,7 +207,7 @@ class AerodynamicModel:
         float
             The pitching moment acting on the aircraft in newton-meters (Nm)
         """
-        Cm_vs_alpha = self.params.Cm0 + self.params.Cm_alpha * state.alpha
+        Cm_vs_alpha = self.params.Cm_0 + self.params.Cm_alpha * state.alpha
         Cm_vs_q = self.params.Cm_q * (0.5 * self.params.c / state.airspeed) * state.q
         Cm_vs_sigma_e = self.params.Cm_delta_e * deltas.delta_e
         m = (
@@ -235,10 +235,7 @@ class AerodynamicModel:
         float
             The lateral force acting on the aircraft in newtons (N)
         """
-        # CY_vs_beta = (
-        #     self.params.CY0 + self.params.CY_beta * state.beta
-        # )  # CY0 = 0 for symmetrical aircrafts in XZ plane
-        CY_vs_beta = self.params.CY_beta * state.beta
+        CY_vs_beta = self.params.CY_0 + self.params.CY_beta * state.beta
         CY_vs_p = self.params.CY_p * (0.5 * self.params.b / state.airspeed) * state.p
         CY_vs_r = self.params.CY_r * (0.5 * self.params.b / state.airspeed) * state.r
         CY_vs_delta_a = self.params.CY_delta_a * deltas.delta_a
@@ -267,10 +264,7 @@ class AerodynamicModel:
         float
             The roll moment acting on the aircraft in newton-meters (Nm)
         """
-        # Cl_vs_beta = (
-        #     self.params.Cl0 + self.params.Cl_beta * state.beta
-        # )  # Cl0 = 0 for symmetrical aircrafts in XZ plane
-        Cl_vs_beta = self.params.Cl_beta * state.beta
+        Cl_vs_beta = self.params.Cl_0 + self.params.Cl_beta * state.beta
         Cl_vs_p = self.params.Cl_p * (0.5 * self.params.b / state.airspeed) * state.p
         Cl_vs_r = self.params.Cl_r * (0.5 * self.params.b / state.airspeed) * state.r
         Cl_vs_delta_a = self.params.Cl_delta_a * deltas.delta_a
@@ -300,10 +294,7 @@ class AerodynamicModel:
         float
             The yaw moment acting on the aircraft in newton-meters (Nm)
         """
-        # Cn_vs_beta = (
-        #     self.params.Cn0 + self.params.Cn_beta * state.beta
-        # )  # Cn0 = 0 for symmetrical aircrafts in XZ plane
-        Cn_vs_beta = self.params.Cn_beta * state.beta
+        Cn_vs_beta = self.params.Cn_0 + self.params.Cn_beta * state.beta
         Cn_vs_p = self.params.Cn_p * (0.5 * self.params.b / state.airspeed) * state.p
         Cn_vs_r = self.params.Cn_r * (0.5 * self.params.b / state.airspeed) * state.r
         Cn_vs_delta_a = self.params.Cn_delta_a * deltas.delta_a

@@ -24,10 +24,10 @@ def jacobian(func: callable, x0: np.ndarray, eps: float = 1e-6) -> np.ndarray:
     np.ndarray
         The Jacobian as m-by-n matrix 
     """
-    f0 = func
+    f0 = func(x0)
     n = x0.size
-    m = len(func(x0))
-    Jac = np.zeros(m, n)
+    m = f0.size
+    Jac = np.zeros((m, n))
     for i in range(n):
         x_eps = np.copy(x0)
         x_eps[i] += eps # increment the ith state
