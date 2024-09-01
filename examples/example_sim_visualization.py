@@ -31,5 +31,5 @@ while True:
     x = np.array([north, east, down, 0, 0, 0, roll, pitch, yaw, 0, 0, 0])
     state = AircraftState(x)
 
-    cli.print_state(t, state)
+    cli.print_aircraft_state(t, state)
     gui.update(x, pause=0.01)

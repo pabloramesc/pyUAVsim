@@ -37,5 +37,5 @@ while True:
 
     if sim_step % 10 == 0:
         t_real = time.time() - t0
-        cli.print_state(t_sim, t_real, uav.state)
+        cli.print_aircraft_state(t_sim, t_real, uav.state)
         gui.update(uav.state, pause=0.01)

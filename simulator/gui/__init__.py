@@ -1,1 +1,1 @@
-from .panels import AttitudePositionPanel, MainStatusPanel
+from .panels import AttitudePositionPanel, MainStatusPanel, FlightControlPanel

@@ -36,5 +36,5 @@ while True:
     x = np.array([north, east, down, 0, 0, 0, q[0], q[1], q[2], q[3], 0, 0, 0])
     state = AircraftState(x, use_quat=True)
 
-    cli.print_state(t, state)
+    cli.print_aircraft_state(t, state)
     gui.update(state, pause=0.01)

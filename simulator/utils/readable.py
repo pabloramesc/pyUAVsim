@@ -17,7 +17,10 @@ def wait_animation(duration: float) -> None:
     
 def seconds_to_hhmmss(t: float) -> str:
     td = timedelta(seconds=t)
-    return td.__str__()[:-4]
+    if td.microseconds == 0.0:
+        return td.__str__() + ".00"
+    else:
+        return td.__str__()[:-4]
 
 def seconds_to_dhms(t: float) -> str:
     txt = ""
@@ -46,4 +49,4 @@ if __name__ == "__main__":
     t = 0.0
     while True:
         t += 12.34
-        print(seconds_to_dhms(t))
+        print(seconds_to_dhms(t), seconds_to_hhmmss(t))

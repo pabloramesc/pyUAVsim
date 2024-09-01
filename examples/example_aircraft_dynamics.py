@@ -35,6 +35,6 @@ while True:
     state = uav.kinematics_dynamics(uav.state.x, u)
     uav.state.update(state)
 
-    cli.print_state(t, uav.state, style="table")
+    cli.print_aircraft_state(t, uav.state, style="table")
 
     gui.update(uav.state.x, pause=0.01)

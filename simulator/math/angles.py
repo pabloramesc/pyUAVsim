@@ -8,7 +8,8 @@
 import numpy as np
 
 def clip_angle_pi(angle: float) -> float:
-    """Modify angle value to fit inside the range (-PI, PI].
+    """
+    Modify angle value to fit inside the range (-PI, PI].
 
     Parameters
     ----------
@@ -27,7 +28,8 @@ def clip_angle_pi(angle: float) -> float:
 
 
 def clip_angle_2pi(angle: float) -> float:
-    """Modify angle value to fit inside the range (0, 2*PI].
+    """
+    Modify angle value to fit inside the range (0, 2*PI].
 
     Parameters
     ----------
@@ -46,7 +48,8 @@ def clip_angle_2pi(angle: float) -> float:
 
 
 def clip_angle_180(angle: float) -> float:
-    """Modify angle value to fit inside the range (-180, 180].
+    """
+    Modify angle value to fit inside the range (-180, 180].
 
     Parameters
     ----------
@@ -65,7 +68,8 @@ def clip_angle_180(angle: float) -> float:
 
 
 def clip_angle_360(angle: float) -> float:
-    """Modify angle value to fit inside the range (0, 360].
+    """
+    Modify angle value to fit inside the range (0, 360].
 
     Parameters
     ----------
@@ -84,7 +88,8 @@ def clip_angle_360(angle: float) -> float:
 
 
 def diff_angle_pi(angle1: float, angle2: float) -> float:
-    """Compute the difference between two angles in radians,
+    """
+    Compute the difference between two angles in radians,
     returning a result in the range (-PI, PI].
 
     Parameters
@@ -107,7 +112,8 @@ def diff_angle_pi(angle1: float, angle2: float) -> float:
 
 
 def diff_angle_180(angle1: float, angle2: float) -> float:
-    """Compute the difference between two angles in degrees,
+    """
+    Compute the difference between two angles in degrees,
     returning a result in the range (-180, 180].
 
     Parameters

@@ -13,7 +13,8 @@ from simulator.math.angles import clip_angle_pi
 class ControlDeltas:
 
     def __init__(self, delta0: np.ndarray = None, max_angle: float = np.pi / 2) -> None:
-        """Initialize de ControlDeltas class.
+        """
+        Initialize de ControlDeltas class.
 
         Parameters
         ----------
@@ -35,7 +36,8 @@ class ControlDeltas:
         self.max_angle = max_angle
 
     def update(self, delta: np.ndarray) -> None:
-        """Update the control deltas.
+        """
+        Update the control deltas.
 
         Parameters
         ----------
@@ -64,8 +66,25 @@ class ControlDeltas:
         """Throttle setting between 0.0 and 1.0"""
         return np.clip(self.delta[3], 0.0, 1.0)
 
+    @delta_a.setter
+    def delta_a(self, value: float) -> None:
+        self.delta[0] = np.clip(value, -self.max_angle, +self.max_angle)
+
+    @delta_e.setter
+    def delta_e(self, value: float) -> None:
+        self.delta[1] = np.clip(value, -self.max_angle, +self.max_angle)
+
+    @delta_r.setter
+    def delta_r(self, value: float) -> None:
+        self.delta[2] = np.clip(value, -self.max_angle, +self.max_angle)
+
+    @delta_t.setter
+    def delta_t(self, value: float) -> None:
+        self.delta[3] = np.clip(value, 0.0, 1.0)
+
     def __str__(self) -> str:
-        """Return a string representation of the control deltas.
+        """
+        Return a string representation of the control deltas.
 
         Returns
         -------

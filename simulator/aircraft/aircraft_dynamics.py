@@ -35,7 +35,8 @@ class AircraftDynamics:
         x0: np.ndarray = None,
         delta0: np.ndarray = None,
     ) -> None:
-        """Initialize the AircraftDynamics class.
+        """
+        Initialize the AircraftDynamics class.
 
         Parameters
         ----------
@@ -67,7 +68,7 @@ class AircraftDynamics:
 
         self.params = params
         self.control_deltas = ControlDeltas(delta0)
-        self.state = AircraftState(x0, wind0, use_quat, self.control_deltas)
+        self.state = AircraftState(x0, wind0, use_quat)
         self.aerodynamics = AerodynamicModel(params)
         self.propulsion = PropulsionModel(params)
 
@@ -78,7 +79,8 @@ class AircraftDynamics:
         self.control_deltas.update(delta)
 
     def update(self, deltas: ControlDeltas = None) -> AircraftState:
-        """Update aircraft's state simulating the flight dynamics.
+        """
+        Update aircraft's state simulating the flight dynamics.
         Firstly, forces and moments are calculated using gravity, aerodynamics and propulsion models.
         Then, numeric integration of the kinematic and dynamic equations provide the new updated state.
 
@@ -105,7 +107,8 @@ class AircraftDynamics:
         self.state.update(x, x_dot)
 
     def forces_moments(self, state: AircraftState, deltas: ControlDeltas) -> np.ndarray:
-        """Calcuate external forces and moments acting on the aircraft due to gravity, aerodynamics and propulsion.
+        """
+        Calcuate external forces and moments acting on the aircraft due to gravity, aerodynamics and propulsion.
 
         Parameters
         ----------
@@ -133,7 +136,8 @@ class AircraftDynamics:
         return ug + ua + up
 
     def kinematics_dynamics(self, x: np.ndarray, u: np.ndarray) -> np.ndarray:
-        """Integrate the kinematics and dynamics equations to calculate the new state.
+        """
+        Integrate the kinematics and dynamics equations to calculate the new state.
 
         Parameters
         ----------
@@ -186,7 +190,8 @@ class AircraftDynamics:
         return x2
 
     def state_derivatives(self, x: np.ndarray, u: np.ndarray) -> np.ndarray:
-        """State transition or dynamics function for numeric integration: dx/dt = f(x, u)
+        """
+        State transition or dynamics function for numeric integration: dx/dt = f(x, u)
 
         Parameters
         ----------
@@ -235,7 +240,8 @@ class AircraftDynamics:
             return self._state_derivatives_euler(x, u)
 
     def _state_derivatives_quat(self, x: np.ndarray, u: np.ndarray) -> np.ndarray:
-        """State transition function for quaternion representation of attitude.
+        """
+        State transition function for quaternion representation of attitude.
 
         Parameters
         ----------
@@ -282,7 +288,8 @@ class AircraftDynamics:
         return x_dot
 
     def _state_derivatives_euler(self, x: np.ndarray, u: np.ndarray) -> np.ndarray:
-        """State transition function for euler angles representation of attitude.
+        """
+        State transition function for euler angles representation of attitude.
 
         Parameters
         ----------
@@ -331,24 +338,26 @@ class AircraftDynamics:
     def trim(
         self,
         Va: float,
-        gamma: float,
-        R_orb: float,
+        gamma: float = 0.0,
+        R_orb: float = np.inf,
         update: bool = True,
         verbose: bool = True,
     ) -> tuple[np.ndarray, np.ndarray]:
-        """Calculate the trimmed states and deltas for the trim conditions,
+        """
+        Calculate the trimmed states and deltas for the trim conditions,
         such that the aircraft maintains a steady flight.
 
-        If `update` is True, the internal `state` and `deltas` of the aircraft are updated with the computed trim values.
+        If `update` is True, the internal `state` and `deltas` of the aircraft are updated
+        with the computed trim values.
 
         Parameters
         ----------
         Va : float
             The trim airspeed value in m/s
-        gamma : float
-            The trim path angle in radians
-        R_orb : float
-            The trim orbit radius in meters
+        gamma : float, optional
+            The trim path angle in radians, by default 0.0
+        R_orb : float, optional
+            The trim orbit radius in meters, by default np.inf
         update : bool, optional
             To update internal state and deltas with calculated trim,
             by default True
@@ -416,7 +425,7 @@ class AircraftDynamics:
                 {"type": "eq", "fun": cons_eq_x},
                 {"type": "ineq", "fun": cons_ineq_u},
             ],
-            options={"maxiter": 1000, "disp": True},
+            options={"maxiter": 1000, "disp": verbose},
         )
         state_trim = AircraftState(result.x[0:12], use_quat=False)
         deltas_trim = ControlDeltas(result.x[12:16])

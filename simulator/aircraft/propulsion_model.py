@@ -15,7 +15,8 @@ from simulator.aircraft.control_deltas import ControlDeltas
 class PropulsionModel:
 
     def __init__(self, params: AirframeParameters) -> None:
-        """Initialize the ForcesMoments class.
+        """
+        Initialize the ForcesMoments class.
 
         Parameters
         ----------
@@ -27,7 +28,8 @@ class PropulsionModel:
     def calculate_forces_moments(
         self, state: AircraftState, deltas: ControlDeltas
     ) -> np.ndarray:
-        """Calcuate propulsion forces and moments acting on the aircraft.
+        """
+        Calcuate propulsion forces and moments acting on the aircraft.
 
         Parameters
         ----------
@@ -56,7 +58,8 @@ class PropulsionModel:
         return u
 
     def propeller_speed(self, Vin: float, Va: float) -> float:
-        """Calculate the propeller speed using the DC motor model.
+        """
+        Calculate the propeller speed using the DC motor model.
 
         Parameters
         ----------
@@ -93,7 +96,8 @@ class PropulsionModel:
         return Omega
 
     def propulsion_force(self, Vin: float, Va: float) -> float:
-        """Calculate the motor force acting on the aircraft.
+        """
+        Calculate the motor force acting on the aircraft.
 
         Parameters
         ----------
@@ -121,7 +125,8 @@ class PropulsionModel:
         return Tp  # motor thrust
 
     def propulsion_moment(self, Vin: float, Va: float) -> float:
-        """Calculate the motor moment acting on the aircraft.
+        """
+        Calculate the motor moment acting on the aircraft.
 
         Parameters
         ----------

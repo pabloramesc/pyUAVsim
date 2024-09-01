@@ -23,9 +23,9 @@ class AircraftState:
         x0: np.ndarray = None,
         wind0: np.ndarray = np.zeros(3),
         use_quat: bool = False,
-        control_deltas: ControlDeltas = None,
     ) -> None:
-        """Initialize the AircraftState class.
+        """
+        Initialize the AircraftState class.
 
         Parameters
         ----------
@@ -82,8 +82,6 @@ class AircraftState:
 
         self._R_wb = rot_matrix_wind(self.alpha, self.beta)  # wind to body frame
         self._R_sb = rot_matrix_wind(self.alpha, 0.0)  # stability to body frame
-
-        self.control_deltas = control_deltas
 
     @property
     def x(self) -> np.ndarray:
@@ -293,7 +291,8 @@ class AircraftState:
         x_dot: np.ndarray = None,
         wind: np.ndarray = None,
     ) -> None:
-        """Update the aircraft's state `x`,
+        """
+        Update the aircraft's state `x`,
         and optionally the state derivative `x_dot` or the wind vector `wind`.
 
         Parameters
@@ -345,7 +344,8 @@ class AircraftState:
 
 
     def __str__(self) -> str:
-        """Return a string representation of the aircraft's state.
+        """
+        Return a string representation of the aircraft's state.
 
         Returns
         -------

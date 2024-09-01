@@ -15,7 +15,8 @@ from simulator.aircraft.control_deltas import ControlDeltas
 class AerodynamicModel:
 
     def __init__(self, params: AirframeParameters) -> None:
-        """Initialize the ForcesMoments class.
+        """
+        Initialize the ForcesMoments class.
 
         Parameters
         ----------
@@ -27,7 +28,8 @@ class AerodynamicModel:
     def calculate_forces_moments(
         self, state: AircraftState, deltas: ControlDeltas
     ) -> np.ndarray:
-        """Calcuate aerodynamic forces and moments acting on the aircraft.
+        """
+        Calcuate aerodynamic forces and moments acting on the aircraft.
 
         Parameters
         ----------
@@ -67,7 +69,8 @@ class AerodynamicModel:
         return u
 
     def lift_coefficient_vs_alpha(self, alpha: float, model: str = "accurate") -> float:
-        """Calculate the lift coefficient as a function of angle of attack.
+        """
+        Calculate the lift coefficient as a function of angle of attack.
 
         Parameters
         ----------
@@ -105,7 +108,8 @@ class AerodynamicModel:
         return CL_vs_alpha
 
     def lift_force(self, state: AircraftState, deltas: ControlDeltas) -> float:
-        """Calculate the lift force acting on the aircraft.
+        """
+        Calculate the lift force acting on the aircraft.
 
         Parameters
         ----------
@@ -134,7 +138,8 @@ class AerodynamicModel:
     def drag_coefficient_vs_alpha(
         self, alpha: float, model: str = "quadratic"
     ) -> float:
-        """Calculate the drag coefficient as a function of angle of attack
+        """
+        Calculate the drag coefficient as a function of angle of attack
 
         Parameters
         ----------
@@ -166,7 +171,8 @@ class AerodynamicModel:
         return CD_vs_alpha
 
     def drag_force(self, state: AircraftState, deltas: ControlDeltas) -> float:
-        """Calculate the drag force acting on the aircraft.
+        """
+        Calculate the drag force acting on the aircraft.
 
         Parameters
         ----------
@@ -193,7 +199,8 @@ class AerodynamicModel:
         return F_drag
 
     def pitch_moment(self, state: AircraftState, deltas: ControlDeltas) -> float:
-        """Calculate the pitching moment acting on the aircraft.
+        """
+        Calculate the pitching moment acting on the aircraft.
 
         Parameters
         ----------
@@ -221,7 +228,8 @@ class AerodynamicModel:
         return m
 
     def lateral_force(self, state: AircraftState, deltas: ControlDeltas) -> float:
-        """Calculate the lateral force acting on the aircraft.
+        """
+        Calculate the lateral force acting on the aircraft.
 
         Parameters
         ----------
@@ -250,7 +258,8 @@ class AerodynamicModel:
         return fy
 
     def roll_moment(self, state: AircraftState, deltas: ControlDeltas) -> float:
-        """Calculate the roll moment acting on the aircraft.
+        """
+        Calculate the roll moment acting on the aircraft.
 
         Parameters
         ----------

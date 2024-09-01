@@ -83,6 +83,31 @@ class FlightControl:
         )
         return np.clip(delta_a, self.config.min_aileron, self.config.max_aileron)
 
+    def pitch_hold_with_elevator(
+        self, pitch_ref: float, pitch: float, pitch_rate: float
+    ) -> float:
+        """Compute the elevator deflection needed to hold the desired pitch angle.
+
+        Parameters
+        ----------
+        pitch_ref : float
+            Desired pitch angle (rad).
+        pitch : float
+            Current pitch angle (rad).
+        pitch_rate : float
+            Current pitch rate (rad/s).
+
+        Returns
+        -------
+        float
+            The computed elevator deflection (rad), clipped to the allowed range.
+        """
+        delta_e = (
+            self.config.kp_pitch_elevator * (pitch_ref - pitch)
+            - self.config.kd_pitch_elevator * pitch_rate
+        )
+        return np.clip(delta_e, self.config.min_elevator, self.config.max_elevator)
+
     @staticmethod
     def wrap_course(course_ref: float, course: float):
         """Wrap the reference course angle to the range [-pi, pi].
@@ -166,35 +191,10 @@ class FlightControl:
         else:
             Ts = self.config.Ts_damper
         self.xi_damper = self.xi_damper + Ts * (
-            -self.config.p_wo * self.xi_damper + self.config.kr * yaw_rate
+            -self.config.p_wo * self.xi_damper + self.config.kr_damper * yaw_rate
         )
-        delta_r = -self.config.p_wo * self.xi_damper + self.config.kr * yaw_rate
+        delta_r = -self.config.p_wo * self.xi_damper + self.config.kr_damper * yaw_rate
         return delta_r
-
-    def pitch_hold_with_elevator(
-        self, pitch_ref: float, pitch: float, pitch_rate: float
-    ) -> float:
-        """Compute the elevator deflection needed to hold the desired pitch angle.
-
-        Parameters
-        ----------
-        pitch_ref : float
-            Desired pitch angle (rad).
-        pitch : float
-            Current pitch angle (rad).
-        pitch_rate : float
-            Current pitch rate (rad/s).
-
-        Returns
-        -------
-        float
-            The computed elevator deflection (rad), clipped to the allowed range.
-        """
-        delta_e = (
-            self.config.kp_pitch_elevator * (pitch_ref - pitch)
-            - self.config.kd_pitch_elevator * pitch_rate
-        )
-        return np.clip(delta_e, self.config.min_elevator, self.config.max_elevator)
 
     def altitude_hold_with_pitch(
         self, altitude_ref: float, altitude: float, dt: float
