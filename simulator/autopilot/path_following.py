@@ -118,22 +118,25 @@ class LineFollower:
         h_ref = -rd - np.sqrt(sn**2 + se**2) * (qd / np.sqrt(qn**2 + qe**2))
         return h_ref
 
-    def guidance(self, state: AircraftState) -> float:
+    def guidance(self, pos_ned: np.ndarray, course: float = 0.0) -> tuple[float, float]:
         """
         Provide both lateral and longitudinal guidance.
 
         Parameters
         ----------
-        state : AircraftState
-            The current state of the aircraft.
+        pos_ned : np.ndarray
+            A 3-element array representing the position in NED (North-East-Down) frame.
+        course : float, optional
+            Current course angle of the aircraft (default is 0.0).
 
         Returns
         -------
-        tuple
-            The reference course angle and altitude for line following.
+        tuple[float, float]
+            The reference course angle and altitude for line following
+            as `(course_ref, altitude_ref)`.
         """
-        course_ref = self.lateral_guidance(state.ned_position, state.course_angle)
-        altitude_ref = self.longitudinal_guidance(state.ned_position)
+        course_ref = self.lateral_guidance(pos_ned, course)
+        altitude_ref = self.longitudinal_guidance(pos_ned)
         return course_ref, altitude_ref
 
     def plot_course_field(self, density: int = 20, distance: float = 100.0) -> None:

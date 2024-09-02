@@ -36,7 +36,7 @@ while True:
     ap.control_course_altitude(course_target=np.deg2rad(180.0), altitude_target=1e3)
     uav.update(ap.control_deltas)  # update simulation states
     
-    gui.add_data(time=t_sim, state=uav.state)
+    gui.add_data(state=uav.state)
 
     if k_sim % 10 == 0:  # update interface each 10 steps
         t_real = time.time() - t0

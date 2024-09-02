@@ -1,1 +1,3 @@
-from .panels import AttitudePositionPanel, MainStatusPanel, FlightControlPanel
+from .attitude_position_panel import AttitudePositionPanel
+from .flight_control_panel import FlightControlPanel
+from .main_status_panel import MainStatusPanel
