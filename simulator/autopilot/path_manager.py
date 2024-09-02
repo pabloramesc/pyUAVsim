@@ -35,6 +35,16 @@ class PathManager:
     """
 
     def __init__(self, config: AutopilotConfig, path_types: str = "lines") -> None:
+        """
+        Initialize the PathManager with autopilot configuration and path type.
+
+        Parameters
+        ----------
+        config : AutopilotConfig
+            Configuration parameters for the autopilot.
+        path_types : str, optional
+            The type of path management strategy ('lines', 'fillets', or 'dubins').
+        """
         self.config = config
         self.path_types = path_types
 
