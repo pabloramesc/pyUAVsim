@@ -108,10 +108,10 @@ class AutopilotConfig:
     ##### GUIDANCE PARAMETERS #####
     ###############################
 
-    # course in the infinit for path guidance
+    # course in the infinit for path following
     course_inf = np.deg2rad(90.0)
 
-    # min aircraft turn radius (used as gain for guidance)
+    # min aircraft turn radius (used as gain for path following)
     min_turn_radius = 50.0
 
     # max slope for paths between waypoints (avoid creating vertical stacked waypoints)
@@ -121,9 +121,9 @@ class AutopilotConfig:
     # default wait orbit radius
     wait_orbit_radius = 100.0
 
-    ################################
-    ##### AUTOPILOT PARAMETERS #####
-    ################################
+    #####################################
+    ##### AUTOPILOT MODE PARAMETERS #####
+    #####################################
 
     ##### FLY-BY-WIRE MODE #####
     fbw_max_pitch_rate = 5.0
@@ -139,7 +139,7 @@ class AutopilotConfig:
     climb_airspeed = 20.0
     climb_altitude = 50.0
 
-    waypoint_default_radius = 10.0
+    wp_default_radius = 10.0
 
     def calculate_control_gains(
         self, params: AirframeParameters, state_trim: AircraftState, deltas_trim: ControlDeltas
