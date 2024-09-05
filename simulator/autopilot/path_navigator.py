@@ -95,7 +95,7 @@ class LinePathNavigator(PathNavigator):
             self.follower_needs_update = True
 
         if self.follower_needs_update:
-            self.line_follower.set_line(wp0, dir_wp0_wp1)
+            self.line_follower.set_path(wp0, dir_wp0_wp1)
             self.follower_needs_update = False
 
         return self.line_follower.guidance(pos_ned, course)
@@ -158,11 +158,11 @@ class FilletPathNavigator(PathNavigator):
                 orbit_center = wp1 - fillet_radius / np.sin(fillet_angle / 2) * (
                     dir_wp0_wp1 - dir_wp1_wp2
                 ) / np.linalg.norm(dir_wp0_wp1 - dir_wp1_wp2)
-                self.orbit_follower.set_orbit(orbit_center, fillet_radius, 1)
+                self.orbit_follower.set_path(orbit_center, fillet_radius, 1)
             return self.orbit_follower.guidance(pos_ned, course)
         else:
             if self.follower_needs_update:
-                self.line_follower.set_line(wp0, dir_wp0_wp1)
+                self.line_follower.set_path(wp0, dir_wp0_wp1)
             return self.line_follower.guidance(pos_ned, course)
 
 

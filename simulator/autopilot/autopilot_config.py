@@ -25,36 +25,36 @@ class AutopilotConfig:
 
     ##### CONTROL LIMITS #####
     # aileron deflection limits (deflection angle in rads)
-    max_aileron = np.deg2rad(+45.0)
-    min_aileron = np.deg2rad(-45.0)
+    max_aileron = np.deg2rad(+60.0)
+    min_aileron = np.deg2rad(-60.0)
     # elevator deflection limits (deflection angle in rads)
-    max_elevator = np.deg2rad(+45.0)
-    min_elevator = np.deg2rad(-45.0)
+    max_elevator = np.deg2rad(+60.0)
+    min_elevator = np.deg2rad(-60.0)
     # rudder deflection limits (deflection angle in rads)
-    max_rudder = np.deg2rad(+45.0)
-    min_rudder = np.deg2rad(-45.0)
+    max_rudder = np.deg2rad(+60.0)
+    min_rudder = np.deg2rad(-60.0)
     # throttle thrust limits (percentage %)
     max_throttle = 1.0
     min_throttle = 0.0
     # aircraft control roll limit
-    max_roll = np.deg2rad(+45.0)
-    min_roll = np.deg2rad(-45.0)
+    max_roll = np.deg2rad(+60.0)
+    min_roll = np.deg2rad(-60.0)
     # aircraft control pitch limit
     max_pitch = np.deg2rad(+30.0)
     min_pitch = np.deg2rad(-30.0)
 
     ##### ROLL CONTROL WITH AILERON #####
     # design parameters
-    wn_roll = 10.0
-    zeta_roll = 0.7
+    wn_roll = 20.0
+    zeta_roll = 1.0
     # computed gains
     kp_roll_aileron = 0.0
     kd_roll_aileron = 0.0
 
     ##### COURSE CONTROL WITH ROLL #####
     # design parameters
-    BW_course = 15.0  # usually between 10.0 and 20.0
-    zeta_course = 0.6
+    BW_course = 20.0  # usually between 10.0 and 20.0
+    zeta_course = 2.0
     # computed gains
     kp_course_roll = 0.0
     ki_course_roll = 0.0
@@ -75,7 +75,7 @@ class AutopilotConfig:
     ##### PITCH CONTROL WITH ELEVATOR #####
     # design parameters
     wn_pitch = 20.0
-    zeta_pitch = 0.7
+    zeta_pitch = 1.0
     # computed gains
     kp_pitch_elevator = 0.0
     kd_pitch_elevator = 0.0

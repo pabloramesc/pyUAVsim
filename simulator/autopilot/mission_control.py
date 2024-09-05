@@ -6,16 +6,19 @@
 """
 
 import json
+
 import numpy as np
+
 from simulator.autopilot.autopilot_config import AutopilotConfig
 from simulator.autopilot.line_follower import LineFollower
 from simulator.autopilot.orbit_follower import OrbitFollower
 from simulator.autopilot.path_navigator import (
-    PathNavigator,
-    LinePathNavigator,
-    FilletPathNavigator,
     DubinPathNavigator,
+    FilletPathNavigator,
+    LinePathNavigator,
+    PathNavigator,
 )
+from simulator.autopilot.waypoints import WaypointsList
 from simulator.autopilot.waypoints_manager import WaypointsManager
 
 
@@ -131,46 +134,31 @@ class MissionControl:
             self.wps_manager.wp_target
         )
         orbit_radius = self.config.wait_orbit_radius
-        self.orbit_follower.set_orbit(orbit_center, orbit_radius)
+        self.orbit_follower.set_path(orbit_center, orbit_radius)
 
-    def load_waypoints_from_json(self, filename: str) -> None:
+    def load_waypoints_from_txt(self, filename: str) -> None:
         """
-        Load waypoints from a JSON file and set them in the WaypointsManager.
-
-        The JSON file should contain a list of waypoints, where each waypoint
-        is represented as a dictionary with 'x', 'y', and 'z' coordinates.
+        Load waypoints from a text file and set them in the WaypointsManager.
 
         Parameters
         ----------
         filename : str
-            The path to the JSON file containing waypoints data.
+            The path to the text file containing waypoints data.
 
         Raises
         ------
         FileNotFoundError
             If the specified file does not exist.
         ValueError
-            If the JSON data is not in the expected format or waypoints are invalid.
+            If the file content is not in the expected format.
         """
-        try:
-            with open(filename, "r") as file:
-                waypoints_data = json.load(file)
+        waypoints_list = WaypointsList()
+        waypoints_list.load_from_txt(filename)
 
-            if not isinstance(waypoints_data, list) or not all(
-                isinstance(wp, dict) for wp in waypoints_data
-            ):
-                raise ValueError(
-                    "Invalid waypoints data format: expected a list of dictionaries."
-                )
+        # Convert the list of Waypoints to a format suitable for WaypointsManager
+        waypoints = np.array(
+            [[wp.pn, wp.pe, wp.h] for wp in waypoints_list.get_waypoints()]
+        )
 
-            waypoints = np.array([[wp["x"], wp["y"], wp["z"]] for wp in waypoints_data])
-
-            if waypoints.shape[1] != 3:
-                raise ValueError("Each waypoint must have three coordinates (x, y, z).")
-
-            self.wps_manager.set_waypoints(waypoints)
-
-        except FileNotFoundError:
-            print(f"Error: The file '{filename}' was not found.")
-        except (json.JSONDecodeError, KeyError, ValueError) as e:
-            print(f"Error loading waypoints from JSON: {e}")
+        # Pass the waypoints to WaypointsManager
+        self.wps_manager.set_waypoints(waypoints)

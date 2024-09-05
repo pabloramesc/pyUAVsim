@@ -34,7 +34,7 @@ class LineFollower(PathFollower):
         self.path_course = 0.0
         self.R_ip = np.eye(3)  # rotation matrix from NED (inertia frame) to path frame
 
-    def set_line(self, origin: np.ndarray, direction: np.ndarray) -> None:
+    def set_path(self, origin: np.ndarray, direction: np.ndarray) -> None:
         """
         Set the line path with a given origin and direction.
 
@@ -50,7 +50,7 @@ class LineFollower(PathFollower):
         ValueError
             If `origin` or `direction` does not have the shape (3,).
         """
-        if origin == self.path_origin and direction == self.path_direction:
+        if np.all(origin == self.path_origin) and np.all(direction == self.path_direction):
             return # no calculation needed
 
         if origin.shape != (3,):

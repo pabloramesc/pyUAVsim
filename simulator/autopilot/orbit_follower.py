@@ -31,7 +31,7 @@ class OrbitFollower(PathFollower):
         self.orbit_radius = 0.0
         self.orbit_direction = 0  # 1 (clockwise) or -1 (counter-clockwise)
 
-    def set_orbit(self, center: np.ndarray, radius: float, direction: int = 1) -> None:
+    def set_path(self, center: np.ndarray, radius: float, direction: int = 1) -> None:
         """
         Set the orbit with a given center, radius, and direction.
 
