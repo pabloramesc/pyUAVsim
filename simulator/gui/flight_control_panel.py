@@ -81,7 +81,7 @@ class FlightControlPanel(Panel):
         )
         self.fig.tight_layout(pad=2)
 
-    def add_data(self, *args: Any, **kwargs: Any) -> None:
+    def add_data(self, time: float, ap_status: AutopilotStatus) -> None:
         """
         Add autopilot data to the time series plots.
 
@@ -97,14 +97,6 @@ class FlightControlPanel(Panel):
         ValueError
             If the required keyword argument 'time' or 'ap_status' is not provided.
         """
-        time: float = kwargs.get("time")
-        ap_status: AutopilotStatus = kwargs.get("ap_status")
-
-        if time is None:
-            raise ValueError("Missing required keyword argument 'time'")
-        if ap_status is None:
-            raise ValueError("Missing required keyword argument 'ap_status'")
-
         self.roll_plot.add_data(
             np.rad2deg([ap_status.roll, ap_status.roll_target]), time
         )
@@ -139,7 +131,7 @@ class FlightControlPanel(Panel):
         self.airspeed_plot.update_plot()
         self.altitude_plot.update_plot()
 
-    def update_views(self, **kwargs: Any) -> None:
+    def update_views(self) -> None:
         """
         Update the views within the panel.
         This panel does not use additional views beyond plots.
@@ -147,7 +139,7 @@ class FlightControlPanel(Panel):
         pass
 
     @override
-    def update(self, pause: float = 0.01, **kwargs: Any) -> None:
+    def update(self, pause: float = 0.01) -> None:
         """
         Update the plots within the panel.
         This panel does not use additional views beyond plots.
@@ -157,4 +149,4 @@ class FlightControlPanel(Panel):
         pause : float, optional
             Time in seconds to pause the plot update, by default 0.01
         """
-        return super().update(pause)
+        return super().update(pause=pause)

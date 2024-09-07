@@ -51,7 +51,7 @@ class OrbitFollower(PathFollower):
             If `center` does not have the shape (3,) or if `radius` is not greater than zero.
         """
         if (
-            center == self.orbit_center
+            np.all(center == self.orbit_center)
             and radius == self.orbit_radius
             and direction == self.orbit_direction
         ):

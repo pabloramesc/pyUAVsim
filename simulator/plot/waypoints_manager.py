@@ -1,14 +1,14 @@
 import numpy as np
 from matplotlib import pyplot as plt
 
-from simulator.autopilot.waypoints_manager import WaypointsManager
+from simulator.autopilot.route_manager import RouteManager
 from simulator.plot.base_plotter import BasePlotter
 
 
 class WaypointsManagerPlotter(BasePlotter):
 
     def __init__(
-        self, wps_manager: WaypointsManager, ax: plt.Axes = None, is_3d: bool = True
+        self, wps_manager: RouteManager, ax: plt.Axes = None, is_3d: bool = True
     ) -> None:
         super().__init__(ax, is_3d)
 

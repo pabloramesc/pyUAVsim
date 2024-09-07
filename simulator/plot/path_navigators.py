@@ -10,7 +10,7 @@ from abc import ABC, abstractmethod
 import numpy as np
 from matplotlib import pyplot as plt
 
-from simulator.autopilot.waypoints_manager import WaypointsManager
+from simulator.autopilot.route_manager import RouteManager
 from simulator.autopilot.path_navigator import (
     PathNavigator,
     LinePathNavigator,

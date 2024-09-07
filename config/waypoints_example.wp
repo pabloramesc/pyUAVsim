@@ -1,6 +1,6 @@
 # Waypoints File
-# Format: id, pn, pe, h, command, param1, param2, param3, ...
-# Note: command and params are optional
+# Format: id, pn, pe, h, action, param1, param2, param3, ...
+# Note: action and params are optional
 
 1, 0.0, 0.0, 0.0
 2, 1000.0, 0.0, 50.0
@@ -11,7 +11,7 @@
 7, 1000.0, 1000.0, 50.0
 8, 2000.0, 1000.0, 0.0, ORBIT_UNLIM, 200.0 # radius in meters
 
-# Other commands:
+# Other actions:
 # 0, 0.0, 0.0, 0.0, SET_AIRSPEED, 25.0 # airspeed in m/s
 # 0, 0.0, 0.0, 0.0, GO_WAYPOINT, 2 # waypoint id
 # 0, 0.0, 0.0, 0.0, ORBIT_TIME, 60.0, 200.0 # wait time in seconds, radius (optional - use default)

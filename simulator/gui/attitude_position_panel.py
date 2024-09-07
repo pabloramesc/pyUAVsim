@@ -25,7 +25,7 @@ class AttitudePositionPanel(Panel):
         The position plot component.
     """
 
-    def __init__(self, figsize=(10, 5), use_blit: bool = False, **kwargs) -> None:
+    def __init__(self, figsize=(10, 5), use_blit: bool = False, pos_3d: bool = True) -> None:
         """
         Initialize the AttitudePositionPanel with attitude and position views.
 
@@ -40,15 +40,13 @@ class AttitudePositionPanel(Panel):
         """
         super().__init__(figsize, use_blit)
 
-        pos_3d: bool = kwargs.get('pos_3d', True)
-
         self.attitude_view = AttitudeView(self.fig, pos=121)
         self.position_plot = PositionPlot(self.fig, pos=122, is_3d=pos_3d)
 
         self.add_components([self.attitude_view, self.position_plot])
         self.fig.tight_layout(pad=2)
 
-    def add_data(self, **kwargs: Any) -> None:
+    def add_data(self, state: AircraftState) -> None:
         """
         Add data to the attitude and position views.
 
@@ -62,9 +60,6 @@ class AttitudePositionPanel(Panel):
         ValueError
             If the required keyword argument 'state' is not provided.
         """
-        state: AircraftState = kwargs.get("state")
-        if state is None:
-            raise ValueError("Missing required keyword argument 'state'")
         self.position_plot.add_data(state.ned_position)
 
     def update_plots(self) -> None:
@@ -73,7 +68,7 @@ class AttitudePositionPanel(Panel):
         """
         self.position_plot.update_plot()
 
-    def update_views(self, **kwargs: Any) -> None:
+    def update_views(self, state: AircraftState) -> None:
         """
         Update the attitude view.
 
@@ -87,13 +82,10 @@ class AttitudePositionPanel(Panel):
         ValueError
             If the required keyword argument 'state' is not provided.
         """
-        state: AircraftState = kwargs.get("state")
-        if state is None:
-            raise ValueError("Missing required keyword argument 'state'")
         self.attitude_view.update_view(state.attitude_angles)
 
     @override
-    def update(self, pause: float = 0.01, **kwargs: Any) -> None:
+    def update(self, state: AircraftState, pause: float = 0.01) -> None:
         """
         Update the attitude view and the position plot.
 
@@ -109,7 +101,4 @@ class AttitudePositionPanel(Panel):
         ValueError
             If the required keyword argument 'state' is not provided.
         """
-        state: AircraftState = kwargs.get("state")
-        if state is None:
-            raise ValueError("Missing required keyword argument 'state'")
-        return super().update(pause, state=state)
+        return super().update(state=state, pause=pause)

@@ -86,7 +86,7 @@ class MainStatusPanel(Panel):
         )
         self.fig.subplots_adjust(wspace=0.4, hspace=0.4)
 
-    def add_data(self, **kwargs: Any) -> None:
+    def add_data(self, time: float, state: AircraftState) -> None:
         """
         Add data to the main status views and plots.
 
@@ -102,14 +102,6 @@ class MainStatusPanel(Panel):
         ValueError
             If the required keyword argument 'time' or 'state' is not provided.
         """
-        time: float = kwargs.get("time")
-        state: AircraftState = kwargs.get("state")
-
-        if time is None:
-            raise ValueError("Missing required keyword argument 'time'")
-        if state is None:
-            raise ValueError("Missing required keyword argument 'state'")
-
         self.position_plot.add_data(state.ned_position)
         self.altitude_plot.add_data(state.altitude, time)
         self.airspeed_plot.add_data(state.airspeed, time)
@@ -122,7 +114,7 @@ class MainStatusPanel(Panel):
         self.altitude_plot.update_plot()
         self.airspeed_plot.update_plot()
 
-    def update_views(self, **kwargs: Any) -> None:
+    def update_views(self, state: AircraftState, deltas: ControlDeltas) -> None:
         """
         Update the attitude and control deltas views.
 
@@ -138,14 +130,6 @@ class MainStatusPanel(Panel):
         ValueError
             If the required keyword argument 'state' or 'deltas' is not provided.
         """
-        state: AircraftState = kwargs.get("state")
-        deltas: ControlDeltas = kwargs.get("deltas")
-
-        if state is None:
-            raise ValueError("Missing required keyword argument 'state'")
-        if deltas is None:
-            raise ValueError("Missing required keyword argument 'deltas'")
-
         self.attitude_view.update_view(state.attitude_angles)
         self.delta_a_view.update_view(deltas.delta_a)
         self.delta_e_view.update_view(deltas.delta_e)
@@ -153,31 +137,23 @@ class MainStatusPanel(Panel):
         self.delta_t_view.update_view(deltas.delta_t)
 
     @override
-    def update(self, pause: float = 0.01, **kwargs: Any) -> None:
+    def update(self, state: AircraftState, deltas: ControlDeltas, pause: float = 0.01) -> None:
         """
         Update the attitude and control deltas view;
         and the position, altitude, and airspeed plots.
 
         Parameters
         ----------
-        pause : float, optional
-            Time in seconds to pause the plot update, by default 0.01
         state : AircraftState
             The current state of the aircraft.
         deltas : ControlDeltas
             The current control surface deflections.
+        pause : float, optional
+            Time in seconds to pause the plot update, by default 0.01
 
         Raises
         ------
         ValueError
             If the required keyword argument 'state' or 'deltas' is not provided.
         """
-        state: AircraftState = kwargs.get("state")
-        deltas: ControlDeltas = kwargs.get("deltas")
-
-        if state is None:
-            raise ValueError("Missing required keyword argument 'state'")
-        if deltas is None:
-            raise ValueError("Missing required keyword argument 'deltas'")
-
-        return super().update(pause, state=state, deltas=deltas)
+        return super().update(state=state, deltas=deltas, pause=pause)

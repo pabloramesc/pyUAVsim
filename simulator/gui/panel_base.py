@@ -44,7 +44,7 @@ class Panel(ABC):
         self.components: List[PanelComponent] = []
 
     @abstractmethod
-    def add_data(self, **kwargs: Any) -> None:
+    def add_data(self, *args: Any, **kwargs: Any) -> None:
         """
         Interface method for adding data to the panel components.
         """
@@ -58,7 +58,7 @@ class Panel(ABC):
         pass
 
     @abstractmethod
-    def update_views(self, **kwargs: Any) -> None:
+    def update_views(self, *args: Any, **kwargs: Any) -> None:
         """
         Interface method for updating the views within the panel.
         """
@@ -77,7 +77,7 @@ class Panel(ABC):
             self.components.append(component)
             component.use_blit = self.use_blit
 
-    def update(self, pause: float = 0.01, **kwargs: Any) -> None:
+    def update(self, *args, pause: float = 0.01, **kwargs: Any) -> None:
         """
         Update the panel by updating views and plots.
 
@@ -85,10 +85,8 @@ class Panel(ABC):
         ----------
         pause : float, optional
             Time in seconds to pause the plot update, by default 0.01
-        **kwargs : Any
-            Keyword arguments for updates.
         """
-        self.update_views(**kwargs)
+        self.update_views(*args, **kwargs)
         self.update_plots()
         plt.pause(pause)
 
