@@ -5,7 +5,7 @@
  https://opensource.org/licenses/MIT
 """
 
-from typing import List, Dict
+from typing import List, Dict, Iterator
 
 import numpy as np
 
@@ -76,6 +76,15 @@ class Waypoint:
 class WaypointsList:
     def __init__(self) -> None:
         self.waypoints: List[Waypoint] = []
+
+    def __iter__(self) -> Iterator[Waypoint]:
+        return iter(self.waypoints)
+
+    def __getitem__(self, index: int) -> Waypoint:
+        return self.waypoints[index]
+
+    def __len__(self) -> int:
+        return len(self.waypoints)
 
     def add_waypoint(self, waypoint: Waypoint) -> None:
         self.validate_waypoint(waypoint)

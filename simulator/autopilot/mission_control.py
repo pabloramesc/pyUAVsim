@@ -260,7 +260,7 @@ class MissionControl:
         action = waypoint.action
         action_code = waypoint.action_code
         if action_code in action_map:
-            action_map[action_code](action, pos_ned, course, dt)
+            action_map[action_code](waypoint, action, pos_ned, course, dt)
         else:
             raise ValueError(
                 f"Invalid action code: {action_code}, for waypoint id: {waypoint.id}"

@@ -11,4 +11,5 @@ waypoints_file = "config/waypoints_example.wp"
 waypoints_list = WaypointsList()
 waypoints_list.load_from_txt(waypoints_file)
 
-pass
+for wp in waypoints_list:
+    print(wp)
