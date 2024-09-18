@@ -204,7 +204,7 @@ class SimConsole:
             row.append(f"{dt_sim:.4f} s")
         else:
             row.append("N/A")
-        
+
         if k_sim is not None:
             row.append(f"{k_sim:d}")
         else:
@@ -339,22 +339,22 @@ class SimConsole:
             "[bold magenta underline]Autopilot Status[/bold magenta underline]"
         )
         self.console.print(
-            f"Roll: {np.rad2deg(status.roll):.2f} deg, Target Roll: {np.rad2deg(status.roll_target):.2f} deg, Error: {np.rad2deg(status.roll_error):.2f} deg"
+            f"Roll: {np.rad2deg(status.roll):.2f} deg, Target Roll: {np.rad2deg(status.target_roll):.2f} deg, Error: {np.rad2deg(status.roll_error):.2f} deg"
         )
         self.console.print(
-            f"Course: {np.rad2deg(status.course):.2f} deg, Target Course: {np.rad2deg(status.course_target):.2f} deg, Error: {np.rad2deg(status.course_error):.2f} deg"
+            f"Course: {np.rad2deg(status.course):.2f} deg, Target Course: {np.rad2deg(status.target_course):.2f} deg, Error: {np.rad2deg(status.course_error):.2f} deg"
         )
         self.console.print(
-            f"Sideslip Angle: {np.rad2deg(status.beta):.2f} deg, Target Sideslip Angle: {np.rad2deg(status.beta_target):.2f} deg, Error: {np.rad2deg(status.beta_error):.2f} deg"
+            f"Sideslip Angle: {np.rad2deg(status.beta):.2f} deg, Target Sideslip Angle: {np.rad2deg(status.target_beta):.2f} deg, Error: {np.rad2deg(status.beta_error):.2f} deg"
         )
         self.console.print(
-            f"Pitch: {np.rad2deg(status.pitch):.2f} deg, Target Pitch: {np.rad2deg(status.pitch_target):.2f} deg, Error: {np.rad2deg(status.pitch_error):.2f} deg"
+            f"Pitch: {np.rad2deg(status.pitch):.2f} deg, Target Pitch: {np.rad2deg(status.target_pitch):.2f} deg, Error: {np.rad2deg(status.pitch_error):.2f} deg"
         )
         self.console.print(
-            f"Altitude: {status.altitude:.2f} m, Target Altitude: {status.altitude_target:.2f} m, Error: {status.altitude_error:.2f} m"
+            f"Altitude: {status.altitude:.2f} m, Target Altitude: {status.target_altitude:.2f} m, Error: {status.altitude_error:.2f} m"
         )
         self.console.print(
-            f"Airspeed: {status.airspeed:.2f} m/s, Target Airspeed: {status.airspeed_target:.2f} m/s, Error: {status.airspeed_error:.2f} m/s"
+            f"Airspeed: {status.airspeed:.2f} m/s, Target Airspeed: {status.target_airspeed:.2f} m/s, Error: {status.airspeed_error:.2f} m/s"
         )
         self.console.rule()
 

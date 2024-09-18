@@ -9,6 +9,7 @@ import numpy as np
 
 from simulator.autopilot.autopilot_config import AutopilotConfig
 from simulator.autopilot.pid_controller import PIDController
+from simulator.common.constants import EARTH_GRAVITY_CONSTANT as g
 
 
 class FlightControl:
@@ -39,6 +40,14 @@ class FlightControl:
 
         self.xi_damper = 0.0
 
+        self.pid_turn_coord = PIDController(
+            kp=self.config.kp_turn_coord,
+            ki=self.config.ki_turn_coord,
+            kd=self.config.kd_turn_coord,
+            max_output=self.config.max_rudder,
+            min_output=self.config.min_rudder,
+        )
+
         self.pid_altitude_pitch = PIDController(
             kp=self.config.kp_altitude_pitch,
             ki=self.config.ki_altitude_pitch,
@@ -58,9 +67,7 @@ class FlightControl:
             min_output=self.config.min_pitch,
         )
 
-    def roll_hold_with_aileron(
-        self, roll_ref: float, roll: float, roll_rate: float
-    ) -> float:
+    def roll_hold_with_aileron(self, roll_ref: float, roll: float, p: float) -> float:
         """Compute the aileron deflection needed to hold the desired roll angle.
 
         Parameters
@@ -69,8 +76,8 @@ class FlightControl:
             Desired roll angle (rad).
         roll : float
             Current roll angle (rad).
-        roll_rate : float
-            Current roll rate (rad/s).
+        p : float
+            Current x-axis roll rate (rad/s).
 
         Returns
         -------
@@ -79,12 +86,12 @@ class FlightControl:
         """
         delta_a = (
             self.config.kp_roll_aileron * (roll_ref - roll)
-            - self.config.kd_roll_aileron * roll_rate
+            - self.config.kd_roll_aileron * p
         )
         return np.clip(delta_a, self.config.min_aileron, self.config.max_aileron)
 
     def pitch_hold_with_elevator(
-        self, pitch_ref: float, pitch: float, pitch_rate: float
+        self, pitch_ref: float, pitch: float, q: float
     ) -> float:
         """Compute the elevator deflection needed to hold the desired pitch angle.
 
@@ -94,8 +101,8 @@ class FlightControl:
             Desired pitch angle (rad).
         pitch : float
             Current pitch angle (rad).
-        pitch_rate : float
-            Current pitch rate (rad/s).
+        q : float
+            Current y-axis pitch rate (rad/s).
 
         Returns
         -------
@@ -104,7 +111,7 @@ class FlightControl:
         """
         delta_e = (
             self.config.kp_pitch_elevator * (pitch_ref - pitch)
-            - self.config.kd_pitch_elevator * pitch_rate
+            - self.config.kd_pitch_elevator * q
         )
         return np.clip(delta_e, self.config.min_elevator, self.config.max_elevator)
 
@@ -171,13 +178,13 @@ class FlightControl:
         delta_r = self.pid_sideslip_rudder.update(0.0, beta, dt)
         return delta_r
 
-    def yaw_damper_with_rudder(self, yaw_rate: float, dt: float) -> float:
+    def yaw_damper_with_rudder(self, r: float, dt: float) -> float:
         """Compute the rudder deflection needed for yaw damping.
 
         Parameters
         ----------
-        yaw_rate : float
-            Current yaw rate (rad/s).
+        r : float
+            Current z-axis yaw rate (rad/s).
         dt : float
             Time step (s).
 
@@ -186,15 +193,38 @@ class FlightControl:
         float
             The computed rudder deflection (rad).
         """
-        if self.config.Ts_damper is None:
-            Ts = 5.0 * dt
-        else:
-            Ts = self.config.Ts_damper
+        Ts = self.config.Ts_damper or 5.0 * dt
         self.xi_damper = self.xi_damper + Ts * (
-            -self.config.p_wo * self.xi_damper + self.config.kr_damper * yaw_rate
+            -self.config.pwo_damper * self.xi_damper + self.config.kr_damper * r
         )
-        delta_r = -self.config.p_wo * self.xi_damper + self.config.kr_damper * yaw_rate
+        delta_r = -self.config.pwo_damper * self.xi_damper + self.config.kr_damper * r
         return delta_r
+
+    def turn_coordination_with_rudder(
+        self, yaw_rate: float, Vg: float, roll: float, dt: float
+    ) -> float:
+        """
+        Compute rudder deflection for coordinated turns.
+
+        Parameters
+        ----------
+        yaw_rate : float
+            Current body yaw rate (rad/s).
+        Vg : float
+            Ground speed (m/s).
+        roll : float
+            Current roll angle (rad).
+        dt : float
+            Time step (s).
+
+        Returns
+        -------
+        float
+            The computed rudder deflection (rad) for turn coordination.
+        """
+        yaw_rate_ref = g * roll / Vg
+        delta_r = self.pid_turn_coord.update(yaw_rate_ref, yaw_rate, dt)
+        return -delta_r  # rudder positive deflection for left turn
 
     def altitude_hold_with_pitch(
         self, altitude_ref: float, altitude: float, dt: float

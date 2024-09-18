@@ -98,25 +98,25 @@ class FlightControlPanel(Panel):
             If the required keyword argument 'time' or 'ap_status' is not provided.
         """
         self.roll_plot.add_data(
-            np.rad2deg([ap_status.roll, ap_status.roll_target]), time
+            np.rad2deg([ap_status.roll, ap_status.target_roll]), time
         )
         self.beta_plot.add_data(
-            np.rad2deg([ap_status.beta, ap_status.beta_target]), time
+            np.rad2deg([ap_status.beta, ap_status.target_beta]), time
         )
         self.course_plot.add_data(
-            np.rad2deg([ap_status.course, ap_status.course_target]),
+            np.rad2deg([ap_status.course, ap_status.target_course]),
             time,
         )
         self.pitch_plot.add_data(
-            np.rad2deg([ap_status.pitch, ap_status.pitch_target]),
+            np.rad2deg([ap_status.pitch, ap_status.target_pitch]),
             time,
         )
         self.airspeed_plot.add_data(
-            np.array([ap_status.airspeed, ap_status.airspeed_target]),
+            np.array([ap_status.airspeed, ap_status.target_airspeed]),
             time,
         )
         self.altitude_plot.add_data(
-            np.array([ap_status.altitude, ap_status.altitude_target]),
+            np.array([ap_status.altitude, ap_status.target_altitude]),
             time,
         )
 

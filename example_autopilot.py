@@ -46,13 +46,13 @@ x_trim, delta_trim = uav.trim(Va=25.0)
 
 autopilot = Autopilot(dt, aerosonde_params, uav.state)
 line_follower = LineFollower(autopilot.config)
-line_follower.set_path(np.array([0, 500, 0]), np.array([1, 0, 0]))
+line_follower.set_path(np.array([0, 500, -1e3]), np.array([1, 0, -0.2]))
 orbit_follower = OrbitFollower(autopilot.config)
-orbit_follower.set_path(np.zeros(3), 1e3, 1)
+orbit_follower.set_path(np.array([0, 0, -2e3]), 200.0, 1)
 
 cli = SimConsole()
-gui = AttitudePositionPanel(use_blit=False, pos_3d=False)
-# gui = FlightControlPanel(use_blit=True)
+gui1 = AttitudePositionPanel(use_blit=False, pos_3d=True)
+gui2 = FlightControlPanel(use_blit=True)
 
 t_sim = 0.0  # simulation time
 k_sim = 0  # simulation steps
@@ -63,31 +63,31 @@ while True:
     
     uav.update(autopilot.control_deltas)  # update simulation states
 
-    roll_cmd = np.deg2rad(0.0) * signal.square(2*np.pi*0.1*t_sim)
-    pitch_cmd = np.deg2rad(90.0) * signal.square(2*np.pi*0.1*t_sim)
+    # roll_cmd = np.deg2rad(0.0) * signal.square(2*np.pi*0.1*t_sim)
+    # roll_cmd = np.deg2rad(45.0) * np.sin(2*np.pi*(t_sim/60.0)*t_sim)
+    # pitch_cmd = np.deg2rad(0.0) * signal.square(2*np.pi*0.1*t_sim)
 
     Va_cmd = 25.0 + 0.0 * signal.sawtooth(2*np.pi*0.05*t_sim, width=0.5)
-    h_cmd = 0.0 * signal.sawtooth(2*np.pi*0.01*t_sim, width=0.5)
-    X_cmd = np.deg2rad(60.0) * signal.square(2*np.pi*0.005*t_sim)
+    # h_cmd = 0.0 * signal.sawtooth(2*np.pi*0.01*t_sim, width=0.5)
+    # X_cmd = np.deg2rad(90.0) * signal.square(2*np.pi*0.01*t_sim)
 
     # X_cmd, h_cmd = line_follower.guidance(uav.state.ned_position, uav.state.course_angle)
     X_cmd, h_cmd = orbit_follower.guidance(uav.state.ned_position, uav.state.course_angle)
 
-    # autopilot.control_roll_pitch_airspeed(roll_target=roll_cmd, pitch_target=pitch_cmd, airspeed_target=Va_cmd)
-    autopilot.control_course_altitude_airspeed(altitude_target=h_cmd, course_target=X_cmd, airspeed_target=25.0)
-
     autopilot.update(dt, uav.state)
+    # autopilot.control_roll_pitch_airspeed(roll_cmd, pitch_cmd, Va_cmd)
+    autopilot.control_course_altitude_airspeed(X_cmd, h_cmd, Va_cmd)
 
-    gui.add_data(state=uav.state)
-    # gui.add_data(time=t_sim, ap_status=autopilot.status)
+    gui1.add_data(state=uav.state)
+    gui2.add_data(time=t_sim, ap_status=autopilot.status)
 
-    if k_sim % 100 == 0:  # update interface each 10 steps
+    if k_sim % 10 == 0:  # update interface each 10 steps
         t_real = time.time() - t0
         cli.print_time(t_sim, t_real, dt, k_sim, style='simple')
         cli.print_aircraft_state(uav.state, style='simple')
         cli.print_control_deltas(uav.control_deltas, style='simple')
         cli.print_autopilot_status(autopilot.status, style='simple')
-        gui.update(state=uav.state, pause=0.01)
-        # gui.update(pause=0.01)
+        gui1.update(state=uav.state, pause=0.01)
+        gui2.update(pause=0.01)
 
 

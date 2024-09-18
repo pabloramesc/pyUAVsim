@@ -194,7 +194,7 @@ class AirframeParameters:
     b: float = 0.0  # wingspan in m
     c: float = 0.0  # mean aerodynamic chord in m
     e: float = 0.0  # Oswald efficiency factor (dimensionless)
-    
+
     rho: float = 0.0  # air density in kg/m^3
 
     # Motor parameters
@@ -227,7 +227,7 @@ class AirframeParameters:
     CD_p: float = 0.0  # parasitic drag coefficient due to roll rate
     CD_q: float = 0.0  # slope of CD vs pitch rate curve
     CD_delta_e: float = 0.0  # slope of CD vs elevator deflection curve
-    
+
     Cm_0: float = 0.0  # pitching moment coefficient at zero angle of attack
     Cm_alpha: float = 0.0  # slope of Cm vs alpha curve
     Cm_q: float = 0.0  # slope of Cm vs pitch rate curve
@@ -257,51 +257,10 @@ class AirframeParameters:
     def __post_init__(self) -> None:
         # Calculate wing aspect ratio
         self.AR = self.b**2 / self.S
-
-        # Calculate inertia matrix
-        self.J = np.array(
-            [
-                [self.Jx, 0.0, -self.Jxz],
-                [0.0, self.Jy, 0.0],
-                [-self.Jxz, 0.0, self.Jz],
-            ]
-        )
-        self.Jinv = np.linalg.inv(self.J)  # inverse inertia matrix
-
-        # Calculate Gammas
-        self.Gamma = self.Jx * self.Jz - self.Jxz**2
-        self.Gamma1 = (self.Jxz * (self.Jx - self.Jy + self.Jz)) / self.Gamma
-        self.Gamma2 = (self.Jz * (self.Jz - self.Jy) + self.Jxz**2) / self.Gamma
-        self.Gamma3 = self.Jz / self.Gamma
-        self.Gamma4 = self.Jxz / self.Gamma
-        self.Gamma5 = (self.Jz - self.Jx) / self.Jy
-        self.Gamma6 = self.Jxz / self.Jy
-        self.Gamma7 = ((self.Jx - self.Jy) * self.Jx + self.Jxz**2) / self.Gamma
-        self.Gamma8 = self.Jx / self.Gamma
-
-        # calculate Cp coeficients
-        self.Cp_0 = self.Gamma3 * self.Cl_0 + self.Gamma4 * self.Cn_0
-        self.Cp_beta = self.Gamma3 * self.Cl_beta + self.Gamma4 * self.Cn_beta
-        self.Cp_p = self.Gamma3 * self.Cl_p + self.Gamma4 * self.Cn_p
-        self.Cp_r = self.Gamma3 * self.Cl_r + self.Gamma4 * self.Cn_r
-        self.Cp_delta_a = (
-            self.Gamma3 * self.Cl_delta_a + self.Gamma4 * self.Cn_delta_a
-        )
-        self.Cp_delta_r = (
-            self.Gamma3 * self.Cl_delta_r + self.Gamma4 * self.Cn_delta_r
-        )
-
-        # calculate Cr coeficeints
-        self.Cr_0 = self.Gamma4 * self.Cl_0 + self.Gamma8 * self.Cn_0
-        self.Cr_beta = self.Gamma4 * self.Cl_beta + self.Gamma8 * self.Cn_beta
-        self.Cr_p = self.Gamma4 * self.Cl_p + self.Gamma8 * self.Cn_p
-        self.Cr_r = self.Gamma4 * self.Cl_r + self.Gamma8 * self.Cn_r
-        self.Cr_delta_a = (
-            self.Gamma4 * self.Cl_delta_a + self.Gamma8 * self.Cn_delta_a
-        )
-        self.Cr_delta_r = (
-            self.Gamma4 * self.Cl_delta_r + self.Gamma8 * self.Cn_delta_r
-        )
+        self._calculate_inertia_matrix()
+        self._calculate_gammas()
+        self._calculate_Cp_coeficients()
+        self._calculate_Cr_coeficients()
 
     def __str__(self):
         params_dict = asdict(self)
@@ -313,6 +272,43 @@ class AirframeParameters:
         for key, value in params_dict.items():
             lines.append(f"{key.ljust(max_key_length)}: {value}")
         return "\n".join(lines)
+
+    def _calculate_inertia_matrix(self) -> None:
+        self.J = np.array(
+            [
+                [self.Jx, 0.0, -self.Jxz],
+                [0.0, self.Jy, 0.0],
+                [-self.Jxz, 0.0, self.Jz],
+            ]
+        )
+        self.Jinv = np.linalg.inv(self.J)  # inverse inertia matrix
+
+    def _calculate_gammas(self) -> None:
+        self.Gamma = self.Jx * self.Jz - self.Jxz**2
+        self.Gamma1 = (self.Jxz * (self.Jx - self.Jy + self.Jz)) / self.Gamma
+        self.Gamma2 = (self.Jz * (self.Jz - self.Jy) + self.Jxz**2) / self.Gamma
+        self.Gamma3 = self.Jz / self.Gamma
+        self.Gamma4 = self.Jxz / self.Gamma
+        self.Gamma5 = (self.Jz - self.Jx) / self.Jy
+        self.Gamma6 = self.Jxz / self.Jy
+        self.Gamma7 = ((self.Jx - self.Jy) * self.Jx + self.Jxz**2) / self.Gamma
+        self.Gamma8 = self.Jx / self.Gamma
+
+    def _calculate_Cp_coeficients(self) -> None:
+        self.Cp_0 = self.Gamma3 * self.Cl_0 + self.Gamma4 * self.Cn_0
+        self.Cp_beta = self.Gamma3 * self.Cl_beta + self.Gamma4 * self.Cn_beta
+        self.Cp_p = self.Gamma3 * self.Cl_p + self.Gamma4 * self.Cn_p
+        self.Cp_r = self.Gamma3 * self.Cl_r + self.Gamma4 * self.Cn_r
+        self.Cp_delta_a = self.Gamma3 * self.Cl_delta_a + self.Gamma4 * self.Cn_delta_a
+        self.Cp_delta_r = self.Gamma3 * self.Cl_delta_r + self.Gamma4 * self.Cn_delta_r
+
+    def _calculate_Cr_coeficients(self) -> None:
+        self.Cr_0 = self.Gamma4 * self.Cl_0 + self.Gamma8 * self.Cn_0
+        self.Cr_beta = self.Gamma4 * self.Cl_beta + self.Gamma8 * self.Cn_beta
+        self.Cr_p = self.Gamma4 * self.Cl_p + self.Gamma8 * self.Cn_p
+        self.Cr_r = self.Gamma4 * self.Cl_r + self.Gamma8 * self.Cn_r
+        self.Cr_delta_a = self.Gamma4 * self.Cl_delta_a + self.Gamma8 * self.Cn_delta_a
+        self.Cr_delta_r = self.Gamma4 * self.Cl_delta_r + self.Gamma8 * self.Cn_delta_r
 
 
 def load_airframe_parameters_from_json(file_path):

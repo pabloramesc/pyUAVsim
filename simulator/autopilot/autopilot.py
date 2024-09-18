@@ -16,6 +16,7 @@ from simulator.aircraft.control_deltas import ControlDeltas
 from simulator.autopilot.autopilot_config import AutopilotConfig
 from simulator.autopilot.autopilot_status import AutopilotStatus
 from simulator.autopilot.flight_control import FlightControl
+from simulator.common.constants import EARTH_GRAVITY_CONSTANT as g
 
 AUTOPILOT_MODES = ["manual", "fbw", "cruise", "auto"]
 
@@ -67,15 +68,17 @@ class Autopilot:
         self.aircraft_state = state
 
         self.config = AutopilotConfig()
-        self.status = AutopilotStatus(airspeed_target=state.airspeed)
-        self.mode: str = None
-
         uav = AircraftDynamics(dt, params, use_quat=True)
         x_trim, delta_trim = uav.trim(Va=state.airspeed)
-        self.control_deltas = ControlDeltas(delta_trim, max_angle=np.deg2rad(45.0))
-        self.config.calculate_control_gains(params, uav.state, self.control_deltas)
+        self.config.calculate_control_gains(
+            params, AircraftState(x_trim, use_quat=True), ControlDeltas(delta_trim)
+        )
 
         self.flight_control = FlightControl(self.config)
+
+        self.mode: str = None
+        self.status = AutopilotStatus(target_airspeed=state.airspeed)
+        self.control_deltas = ControlDeltas(delta_trim, max_angle=np.deg2rad(45.0))
 
     def update(self, dt: float, state: AircraftState) -> ControlDeltas:
         _dt = dt or self.dt
@@ -105,23 +108,20 @@ class Autopilot:
         pass
 
     def control_roll_pitch_airspeed(
-        self,
-        roll_target: float = None,
-        pitch_target: float = None,
-        airspeed_target: float = None,
+        self, roll: float = None, pitch: float = None, airspeed: float = None
     ) -> ControlDeltas:
         """
         Compute control inputs to achieve the desired roll, pitch, and airspeed.
 
         Parameters
         ----------
-        roll_target : float, optional
+        roll : float, optional
             Desired roll angle in radians. If not provided, the current roll target from `status` is used.
 
-        pitch_target : float, optional
+        pitch : float, optional
             Desired pitch angle in radians. If not provided, the current pitch target from `status` is used.
 
-        airspeed_target : float, optional
+        airspeed : float, optional
             Desired airspeed in m/s. If not provided, the current airspeed target from `status` is used.
 
         Returns
@@ -135,50 +135,55 @@ class Autopilot:
 
         Notes
         -----
-        Updates `roll_target`, `pitch_target`, and `airspeed_target` from `status` based on the provided values.
+        Updates `target_roll`, `target_pitch`, and `target_airspeed` from `status` based on the provided values.
         Computes control deltas for roll, pitch, yaw, and airspeed using these updated targets.
         """
         # Update targets if new values are provided
         self.status.update_targets(
-            roll_target=roll_target,
-            pitch_target=pitch_target,
-            airspeed_target=airspeed_target,
+            target_roll=roll,
+            target_pitch=pitch,
+            target_airspeed=airspeed,
         )
 
         # Compute control inputs on roll, pitch, and airspeed targets
         self.control_deltas.delta_a = self.flight_control.roll_hold_with_aileron(
-            self.status.roll_target, self.aircraft_state.roll, self.aircraft_state.p
+            self.status.target_roll, self.aircraft_state.roll, self.aircraft_state.p
         )
         self.control_deltas.delta_e = self.flight_control.pitch_hold_with_elevator(
-            self.status.pitch_target, self.aircraft_state.pitch, self.aircraft_state.q
+            self.status.target_pitch, self.aircraft_state.pitch, self.aircraft_state.q
         )
         self.control_deltas.delta_r = self.flight_control.yaw_damper_with_rudder(
             self.aircraft_state.r, self.dt
         )
+        self.control_deltas.delta_r += (
+            self.flight_control.turn_coordination_with_rudder(
+                self.aircraft_state.yaw_rate,
+                self.aircraft_state.groundspeed,
+                self.aircraft_state.roll,
+                self.dt,
+            )
+        )
         self.control_deltas.delta_t = self.flight_control.airspeed_hold_with_throttle(
-            self.status.airspeed_target, self.aircraft_state.airspeed, self.dt
+            self.status.target_airspeed, self.aircraft_state.airspeed, self.dt
         )
 
         return self.control_deltas
 
     def control_course_altitude_airspeed(
-        self,
-        course_target: float = None,
-        altitude_target: float = None,
-        airspeed_target: float = None,
+        self, course: float = None, altitude: float = None, airspeed: float = None
     ) -> ControlDeltas:
         """
         Compute control inputs to achieve the desired course, altitude, and airspeed.
 
         Parameters
         ----------
-        course_target : float, optional
+        course : float, optional
             Desired course angle in radians. If not provided, the current course target from `status` is used.
 
-        altitude_target : float, optional
+        altitude : float, optional
             Desired altitude in meters. If not provided, the current altitude target from `status` is used.
 
-        airspeed_target : float, optional
+        airspeed : float, optional
             Desired airspeed in m/s. If not provided, the current airspeed target from `status` is used.
 
         Returns
@@ -192,26 +197,26 @@ class Autopilot:
 
         Notes
         -----
-        Updates `course_target`, `altitude_target`, and `airspeed_target` from `status` based on the provided values.
+        Updates `target_course`, `target_altitude`, and `target_airspeed` from `status` based on the provided values.
         Computes intermediate roll and pitch targets based on course and altitude hold requirements.
         Delegates to `control_roll_pitch_airspeed` to compute the final control inputs.
         """
         # Update targets if new values are provided
         self.status.update_targets(
-            course_target=course_target,
-            altitude_target=altitude_target,
-            airspeed_target=airspeed_target,
+            target_course=course,
+            target_altitude=altitude,
+            target_airspeed=airspeed,
         )
 
         # Calculate roll and pitch targets based on course and altitude
-        roll_target = self.flight_control.course_hold_with_roll(
-            self.status.course_target, self.aircraft_state.course_angle, self.dt
+        target_roll = self.flight_control.course_hold_with_roll(
+            self.status.target_course, self.aircraft_state.course_angle, self.dt
         )
-        pitch_target = self.flight_control.altitude_hold_with_pitch(
-            self.status.altitude_target, self.aircraft_state.altitude, self.dt
+        target_pitch = self.flight_control.altitude_hold_with_pitch(
+            self.status.target_altitude, self.aircraft_state.altitude, self.dt
         )
 
         # Compute control inputs based on new roll, pitch, and airspeed targets
-        self.control_roll_pitch_airspeed(roll_target, pitch_target, airspeed_target)
+        self.control_roll_pitch_airspeed(target_roll, target_pitch, airspeed)
 
         return self.control_deltas

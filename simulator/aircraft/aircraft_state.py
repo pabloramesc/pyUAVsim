@@ -11,6 +11,7 @@ from simulator.math.rotation import (
     rot_matrix_zyx,
     rot_matrix_wind,
     rot_matrix_quat,
+    euler_kinematics,
     euler2quat,
     quat2euler,
 )
@@ -64,16 +65,76 @@ class AircraftState:
 
         if self.use_quat:
             self._x = np.zeros(13)
-            self._x[6] = 1.0 # neutral quaternion is [1, 0, 0, 0]
+            self._x[6] = 1.0  # neutral quaternion is [1, 0, 0, 0]
             self._x_dot = np.zeros(13)
         else:
             self._x = np.zeros(12)
             self._x_dot = np.zeros(12)
 
-        if not x0 is None:
-            self._x = x0
+        if x0 is not None:
+            self._check_state_array(x0)
+            self._x = np.copy(x0)
 
-        self._wind = wind0
+        self._check_wind_array(wind0)
+        self._wind = np.copy(wind0)
+
+        if self.use_quat:
+            self._R_vb = rot_matrix_quat(self.quaternions)
+        else:
+            self._R_vb = rot_matrix_zyx(self.attitude_angles)  # vehicle to body frame
+
+        self._R_wb = rot_matrix_wind(self.alpha, self.beta)  # wind to body frame
+        self._R_sb = rot_matrix_wind(self.alpha, 0.0)  # stability to body frame
+
+    def update(
+        self, x: np.ndarray, x_dot: np.ndarray = None, wind: np.ndarray = None
+    ) -> None:
+        """
+        Update the aircraft's state `x`,
+        and optionally the state derivative `x_dot` or the wind vector `wind`.
+
+        Parameters
+        ----------
+        x : np.ndarray
+            Aircraft's state vector.
+            The structure of this array depends on the orientation representation selected by `use_quat`:
+            If euler angles are used, the array contains 12 elements: [pn, pe, pd, u, v, w, roll, pitch, yaw, p, q, r]
+            If quaternions are used, the array contains 13 elements: [pn, pe, pd, u, v, w, q0, q1, q2, q3, p, q, r]
+            By default None
+        x_dot : np.ndarray, optional
+            Aircraft's state derivative. The size corresponds to `x` state vector depending on `use_quat` value.
+            By defaut None
+        wind : np.ndarray, optional
+            3-size array with wind velocity in NED frame: [wn, we, wd], by defaut None
+
+        Notes
+        -----
+        The aircraft's state array `x` elements:
+        - pn: Position North (meters)
+        - pe: Position East (meters)
+        - pd: Position Down (meters)
+        - u: Velocity in body frame x-direction (m/s)
+        - v: Velocity in body frame y-direction (m/s)
+        - w: Velocity in body frame z-direction (m/s)
+        - roll: Roll angle (radians)
+        - pitch: Pitch angle (radians)
+        - yaw: Yaw angle (radians)
+        - p: Roll rate (radians/s)
+        - q: Pitch rate (radians/s)
+        - r: Yaw rate (radians/s)
+        - q0, q1, q2, q3: Quaternions representing the aircraft's orientation
+        """
+
+        self._check_state_array(x)
+        self._x = np.copy(x)
+
+        if x_dot is not None:
+            self._check_state_array(x_dot)
+            self._x_dot = np.copy(x_dot)
+
+        if wind is not None:
+            self._check_wind_array(wind)
+            self._wind = np.copy(wind)
 
         if self.use_quat:
             self._R_vb = rot_matrix_quat(self.quaternions)
@@ -87,8 +148,8 @@ class AircraftState:
     def x(self) -> np.ndarray:
         """Aircrfat's state array.
         The structure of this array depends on the orientation representation selected by `use_quat`:
-        If euler angles are used, the array contains 12 elements: [pn, pe, pd, u, v, w, roll, pitch, yaw, p, q, r]
-        If quaternions are used, the array contains 13 elements: [pn, pe, pd, u, v, w, q0, q1, q2, q3, p, q, r]
+        - If euler angles are used, the array contains 12 elements: [pn, pe, pd, u, v, w, roll, pitch, yaw, p, q, r]
+        - If quaternions are used, the array contains 13 elements: [pn, pe, pd, u, v, w, q0, q1, q2, q3, p, q, r]
         """
         return self._x
 
@@ -96,8 +157,8 @@ class AircraftState:
     def x_dot(self) -> np.ndarray:
         """Aircraft's state time derivative (dx/dt).
         The structure of this array depends on the orientation representation selected by `use_quat`:
-        If euler angles are used, the array contains 12 elements: [pn, pe, pd, u, v, w, roll, pitch, yaw, p, q, r]
-        If quaternions are used, the array contains 13 elements: [pn, pe, pd, u, v, w, q0, q1, q2, q3, p, q, r]
+        - If euler angles are used, the array contains 12 elements: [pn, pe, pd, u, v, w, roll, pitch, yaw, p, q, r]
+        - If quaternions are used, the array contains 13 elements: [pn, pe, pd, u, v, w, q0, q1, q2, q3, p, q, r]
         """
         return self._x_dot
 
@@ -156,6 +217,12 @@ class AircraftState:
             return self.x[9:12]
 
     @property
+    def attitude_rates(self) -> np.ndarray:
+        """3-size array with attitude rates d(roll, pitch, yaw)/dt in radians/s"""
+        R_euler = euler_kinematics(self.attitude_angles)
+        return R_euler @ self.angular_rates
+
+    @property
     def pn(self) -> float:
         """North position (meters)"""
         return self.x[0]
@@ -202,18 +269,33 @@ class AircraftState:
 
     @property
     def p(self) -> float:
-        """Roll rate (radians/s)"""
+        """x-axis rate (radians/s)"""
         return self.angular_rates[0]
 
     @property
     def q(self) -> float:
-        """Pitch rate (radians/s)"""
+        """t-axis rate (radians/s)"""
         return self.angular_rates[1]
 
     @property
     def r(self) -> float:
-        """Yaw rate (radians/s)"""
+        """z-axis rate (radians/s)"""
         return self.angular_rates[2]
+    
+    @property
+    def roll_rate(self) -> float:
+        """Roll rate (radians/s)"""
+        return self.attitude_rates[0]
+
+    @property
+    def pitch_rate(self) -> float:
+        """Pitch rate (radians/s)"""
+        return self.attitude_rates[1]
+
+    @property
+    def yaw_rate(self) -> float:
+        """Yaw rate (radians/s)"""
+        return self.attitude_rates[2]
 
     @property
     def altitude(self) -> float:
@@ -285,63 +367,18 @@ class AircraftState:
         """3-size array with body frame accelerations [ax, ay, az] in m/s^2"""
         return self.x_dot[3:6]
 
-    def update(
-        self,
-        x: np.ndarray,
-        x_dot: np.ndarray = None,
-        wind: np.ndarray = None,
-    ) -> None:
-        """
-        Update the aircraft's state `x`,
-        and optionally the state derivative `x_dot` or the wind vector `wind`.
+    def _check_state_array(self, x: np.ndarray) -> None:
+        if not isinstance(x, np.ndarray):
+            raise ValueError("type must be a numpy array!")
+        expected_shape = (13,) if self.use_quat else (12,)
+        if x.shape != expected_shape:
+            raise ValueError(f"shape must be {expected_shape}")
 
-        Parameters
-        ----------
-        x : np.ndarray
-            Aircraft's state vector.
-            The structure of this array depends on the orientation representation selected by `use_quat`:
-            If euler angles are used, the array contains 12 elements: [pn, pe, pd, u, v, w, roll, pitch, yaw, p, q, r]
-            If quaternions are used, the array contains 13 elements: [pn, pe, pd, u, v, w, q0, q1, q2, q3, p, q, r]
-            By default None
-        x_dot : np.ndarray, optional
-            Aircraft's state derivative. The size corresponds to `x` state vector depending on `use_quat` value.
-            By defaut None
-        wind : np.ndarray, optional
-            3-size array with wind velocity in NED frame: [wn, we, wd], by defaut None
-
-        Notes
-        -----
-        The aircraft's state array `x` elements:
-        - pn: Position North (meters)
-        - pe: Position East (meters)
-        - pd: Position Down (meters)
-        - u: Velocity in body frame x-direction (m/s)
-        - v: Velocity in body frame y-direction (m/s)
-        - w: Velocity in body frame z-direction (m/s)
-        - roll: Roll angle (radians)
-        - pitch: Pitch angle (radians)
-        - yaw: Yaw angle (radians)
-        - p: Roll rate (radians/s)
-        - q: Pitch rate (radians/s)
-        - r: Yaw rate (radians/s)
-        - q0, q1, q2, q3: Quaternions representing the aircraft's orientation
-        """
-        self._x = x
-
-        if not x_dot is None:
-            self._x_dot = x_dot
-
-        if not wind is None:
-            self._wind = wind
-
-        if self.use_quat:
-            self._R_vb = rot_matrix_quat(self.quaternions)
-        else:
-            self._R_vb = rot_matrix_zyx(self.attitude_angles)  # vehicle to body frame
-
-        self._R_wb = rot_matrix_wind(self.alpha, self.beta)  # wind to body frame
-        self._R_sb = rot_matrix_wind(self.alpha, 0.0)  # stability to body frame
-
+    def _check_wind_array(self, w: np.ndarray) -> None:
+        if not isinstance(w, np.ndarray):
+            raise ValueError("type must be a numpy array!")
+        if w.shape != (3,):
+            raise ValueError("shape must be (3,)")
 
     def __str__(self) -> str:
         """

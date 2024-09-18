@@ -32,7 +32,8 @@ class ControlDeltas:
         if delta0 is None:
             self.delta = np.zeros(4)
         else:
-            self.delta = delta0
+            self._check_delta(delta0)
+            self.delta = np.copy(delta0)
         self.max_angle = max_angle
 
     def update(self, delta: np.ndarray) -> None:
@@ -44,7 +45,8 @@ class ControlDeltas:
         delta : np.ndarray
             4-size array with initial control deltas array [da, de, dr, dt]
         """
-        self.delta = delta
+        self._check_delta(delta)
+        self.delta = np.copy(delta)
 
     @property
     def delta_a(self) -> float:
@@ -81,6 +83,12 @@ class ControlDeltas:
     @delta_t.setter
     def delta_t(self, value: float) -> None:
         self.delta[3] = np.clip(value, 0.0, 1.0)
+
+    def _check_delta(self, delta: np.ndarray) -> None:
+        if not isinstance(delta, np.ndarray):
+            raise ValueError("type must be a numpy array!")
+        if delta.shape != (4,):
+            raise ValueError("shape must be (4,)")
 
     def __str__(self) -> str:
         """
