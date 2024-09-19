@@ -18,10 +18,10 @@ from simulator.autopilot.path_navigator import (
     DubinPathNavigator,
 )
 from simulator.plot.base_plotter import BasePlotter
-from simulator.plot.waypoints_manager import WaypointsManagerPlotter
+from simulator.plot.route_manager import RouteManagerPlotter
 
 
-class PathNavigatorPlotter(WaypointsManagerPlotter):
+class PathNavigatorPlotter(RouteManagerPlotter):
 
     def __init__(
         self, path_nav: PathNavigator, ax: plt.Axes = None, is_3d: bool = True
@@ -48,7 +48,7 @@ class LinePathNavigatorPlotter(PathNavigatorPlotter):
         super().__init__(path_nav, ax, is_3d)
 
     def plot_paths(self) -> None:
-        self.plot_waypoints(style="ro-")
+        self.plot_waypoints()
 
 
 class FilletPathNavigatorPlotter(PathNavigatorPlotter):

@@ -64,7 +64,7 @@ class Waypoint:
             else:
                 return action_class(*params)
         else:
-            raise ValueError("not valid action code!")
+            raise ValueError(f"not valid action code: {action_code}")
 
     def __repr__(self) -> str:
         return (
@@ -92,10 +92,13 @@ class WaypointsList:
 
     def get_waypoint(self, id: int) -> Waypoint:
         wp = self.waypoints[id - 1]
-        if wp.id == id:
-            return wp
-        else:
-            raise Exception("waypoints list is not sorted by id!")
+        return wp
+
+    def get_waypoint_coords(self) -> np.ndarray:
+        wps = np.zeros((self.__len__(), 3))
+        for k, wp in enumerate(self.waypoints):
+            wps[k, :] = wp.ned_coords
+        return wps
 
     def validate_waypoint(self, waypoint: Waypoint) -> None:
         action = waypoint.action_code
@@ -127,40 +130,48 @@ class WaypointsList:
                     f"should be of type {expected_type.__name__}, but got {type(param).__name__}."
                 )
 
-    def load_from_txt(self, filename: str) -> None:
-        with open(filename, "r") as file:
-            lines = file.readlines()
+def load_waypoints_from_txt(filename: str) -> WaypointsList:
+    wps_list = WaypointsList()
 
-        for i, line in enumerate(lines):
-            line = line.strip()
+    with open(filename, "r") as file:
+        lines = file.readlines()
 
-            # Skip lines that are comments or empty
-            if not line or line.startswith("#"):
-                continue
+    for i, line in enumerate(lines):
+        line = line.strip()
 
-            # Remove comments that start with '#'
-            line = line.split("#")[0].strip()
+        # Skip lines that are comments or empty
+        if not line or line.startswith("#"):
+            continue
 
-            parts = line.strip().split(",")
-            if len(parts) < 4:
-                raise ValueError(f"Invalid waypoint format: {line}, in line {i+1}")
+        # Remove comments that start with '#'
+        line = line.split("#")[0].strip()
 
-            id = int(parts[0].strip())
-            pn = float(parts[1].strip())
-            pe = float(parts[2].strip())
-            h = float(parts[3].strip())
+        # Check waypoint number of parameters
+        parts = line.strip().split(",")
+        if len(parts) < 4:
+            raise ValueError(f"Invalid waypoint format: {line}, in line {i+1}")
 
-            action = parts[4].strip() if len(parts) > 4 else "NONE"
-            params = []
+        id = int(parts[0].strip())
+        pn = float(parts[1].strip())
+        pe = float(parts[2].strip())
+        h = float(parts[3].strip())
 
-            if action in WAYPOINT_ACTION_PARAMS:
-                expected_types = WAYPOINT_ACTION_PARAMS[action]
-                for i, param_type in enumerate(expected_types):
-                    param_type = expected_types[i]
-                    param_str = str(parts[5 + i].strip())
-                    params.append(param_type(param_str))
-            else:
-                raise ValueError(f"Invalid waypoint action: {action}, in line {i+1}")
+        action_code = parts[4].strip() if len(parts) > 4 else "NONE"
+        action_code = action_code or "NONE"
+        params = []
 
-            waypoint = Waypoint(id, pn, pe, h, action, *params)
-            self.add_waypoint(waypoint)
+        if action_code in WAYPOINT_ACTION_PARAMS:
+            expected_types = WAYPOINT_ACTION_PARAMS[action_code]
+            for i, param_type in enumerate(expected_types):
+                param_type = expected_types[i]
+                param_str = str(parts[5 + i].strip())
+                params.append(param_type(param_str))
+        else:
+            raise ValueError(
+                f"Invalid waypoint action code: {action_code}, in line {i+1}"
+            )
+
+        waypoint = Waypoint(id, pn, pe, h, action_code, *params)
+        wps_list.add_waypoint(waypoint)
+
+    return wps_list

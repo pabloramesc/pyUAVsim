@@ -151,7 +151,7 @@ class AutopilotConfig:
     climb_airspeed = 20.0
     climb_altitude = 50.0
 
-    wp_default_radius = 10.0
+    wp_default_radius = 50.0
 
     def calculate_control_gains(
         self,

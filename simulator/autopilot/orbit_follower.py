@@ -5,12 +5,21 @@ This software is released under the MIT License.
 https://opensource.org/licenses/MIT
 """
 
+from dataclasses import dataclass
+
 import numpy as np
 from matplotlib import pyplot as plt
 
 from simulator.autopilot.autopilot_config import AutopilotConfig
 from simulator.autopilot.flight_control import FlightControl
-from simulator.autopilot.path_follower import PathFollower
+from simulator.autopilot.path_follower import PathFollower, BasePathParams
+
+
+@dataclass
+class OrbitPathParams(BasePathParams):
+    center: np.ndarray
+    radius: float
+    direction: int = 1
 
 
 class OrbitFollower(PathFollower):

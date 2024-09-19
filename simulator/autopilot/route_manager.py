@@ -13,34 +13,34 @@ ROUTE_MANAGER_STATUS = ["init", "run", "end", "fail"]
 
 
 class RouteManager:
-    def __init__(self, config: AutopilotConfig) -> None:
+    def __init__(self, config: AutopilotConfig = None) -> None:
         """
         Initialize the RouteManager.
 
         Parameters
         ----------
-        config : AutopilotConfig
-            Configuration parameters for the autopilot.
+        config : AutopilotConfig, optional
+            Configuration parameters for the autopilot, by default None.
         """
-        self.config = config
+        self.config = config or AutopilotConfig()
         self.wp_coords: np.ndarray = None
         self.wp_target: int = 0  # initial waypoint index
         self.status: str = "init"
 
     def restart(self) -> None:
         """
-        Restart the waypoints manager to initial conditions.
+        Restart the route manager to initial conditions.
 
-        Resets the waypoints to the initial state, with the first waypoint
-        set to the origin (0, 0, 0), and resets the target index and status.
+        Deletes all waypoints and set the first waypoint to the origin `[0, 0, 0]`.
+        Then, resets the target index to `0` and set status to `init`.
         """
-        self.wp_coords[0, :] = np.zeros(3)  # reset the aux initial waypoint
+        self.wp_coords = np.zeros(3)
         self.wp_target = 0
         self.status = "init"
 
     def initialize(self, pos_ned: np.ndarray) -> None:
         """
-        Initialize the waypoints manager based on the current position.
+        Initialize the route manager based on the current position.
 
         Sets the initial state for waypoint navigation based on whether the
         vehicle is within the first waypoint area. If inside, advances to
@@ -56,11 +56,12 @@ class RouteManager:
             return
 
         # if the aircraft is inside the WP1 area, run to next waypoint
-        if self.is_on_waypoint(1, pos_ned):
+        if self.is_on_waypoint(pos_ned, 1):
             self.wp_target = 2
+
         # if not, set WP0 at current aircraft position and set a path to WP1
         else:
-            self.set_waypoint_coords(0, pos_ned)
+            self.set_waypoint_coords(pos_ned, 0)
             self.wp_target = 1
 
         self.status = "run"
@@ -70,8 +71,9 @@ class RouteManager:
         Advance to the next waypoint by incrementing `wp_target`.
 
         Updates the target waypoint if the vehicle is within the
-        current waypoint area. If the target waypoint is the last,
-        status is set to 'end'. If not within the area, status is set to 'fail'.
+        current waypoint area. If not within the area, status is
+        set to 'fail'. If the target waypoint is the last, status
+        is set to 'end'.
 
         Parameters
         ----------
@@ -84,29 +86,20 @@ class RouteManager:
         # if the aircraft is not inside the target waypoint area
         if not self.is_on_waypoint(pos_ned, self.wp_target, is_3d=False):
             self.status = "fail"
+
         # if the target waypoint is the last
         elif self.is_target_last():
             self.status = "end"
+
         # advance to the next waypoint
         else:
             self.wp_target += 1
-
-    def is_target_last(self) -> bool:
-        """
-        Check if the current target waypoint is the last in the sequence.
-
-        Returns
-        -------
-        bool
-            `True` if the current target waypoint is the last, otherwise `False`.
-        """
-        return self.wp_target >= self.wp_coords.shape[0]
 
     def set_waypoints(self, wps: np.ndarray) -> None:
         """
         Set the waypoints for navigation.
 
-        Initializes the waypoint coordinates and sets the manager status to 'init'.
+        Restarts the route manager to initial conditions and set the new waypoints.
         The waypoints array must be a 2D array with three columns representing
         NED coordinates (North, East, Down).
 
@@ -128,7 +121,7 @@ class RouteManager:
             raise ValueError("'wps' must contain at least 3 waypoints!")
 
         self.restart()
-        self.wp_coords[1:, :] = wps
+        self.wp_coords = np.vstack((self.wp_coords, wps))
 
     def set_target_waypoint(self, wp_id: int) -> None:
         """
@@ -148,7 +141,7 @@ class RouteManager:
             raise ValueError(f"'wp_id' must be between 1 and {self.wp_coords.shape[0]}")
         self.wp_target = wp_id
 
-    def set_waypoint_coords(self, coords: np.ndarray, wp_id: int) -> None:
+    def set_waypoint_coords(self, coords: np.ndarray, wp_id: int = None) -> None:
         """
         Set coordinates for a specific waypoint.
 
@@ -157,7 +150,7 @@ class RouteManager:
         coords : np.ndarray
             3-size array with the coordinates for the selected
             waypoint refered to NED frame in meters.
-        wp_id : int
+        wp_id : int, optional
             The index of the waypoint. If not provided, it uses the target waypoint.
             Default is None.
         """
@@ -270,3 +263,17 @@ class RouteManager:
         _index = wp_id or self.wp_target
         dist = self.get_distance_to_waypoint(pos_ned, _index, is_3d)
         return dist < self.config.wp_default_radius
+
+    def is_target_last(self) -> bool:
+        """
+        Check if the current target waypoint is the last in the sequence.
+
+        Returns
+        -------
+        bool
+            `True` if the current target waypoint is the last, otherwise `False`.
+        """
+        return self.wp_target >= self.wp_coords.shape[0]
+
+    def force_fail_mode(self) -> None:
+        self.status = "fail"

@@ -136,10 +136,11 @@ class Autopilot:
         Notes
         -----
         Updates `target_roll`, `target_pitch`, and `target_airspeed` from `status` based on the provided values.
-        Computes control deltas for roll, pitch, yaw, and airspeed using these updated targets.
+        Computes control deltas for aileron, elevator, rudder, and throttle to achieve these target values.
+        Then updates and returns `control_deltas` inputs.
         """
         # Update targets if new values are provided
-        self.status.update_targets(
+        self.status.update_control_targets(
             target_roll=roll,
             target_pitch=pitch,
             target_airspeed=airspeed,
@@ -199,10 +200,10 @@ class Autopilot:
         -----
         Updates `target_course`, `target_altitude`, and `target_airspeed` from `status` based on the provided values.
         Computes intermediate roll and pitch targets based on course and altitude hold requirements.
-        Delegates to `control_roll_pitch_airspeed` to compute the final control inputs.
+        Delegates to `control_roll_pitch_airspeed` to compute and updates `control_deltas` inputs.
         """
         # Update targets if new values are provided
-        self.status.update_targets(
+        self.status.update_control_targets(
             target_course=course,
             target_altitude=altitude,
             target_airspeed=airspeed,

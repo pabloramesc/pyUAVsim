@@ -7,7 +7,14 @@
 
 from dataclasses import dataclass
 
+import numpy as np
+
 from simulator.aircraft.aircraft_state import AircraftState
+from simulator.autopilot.route_manager import RouteManager
+from simulator.autopilot.path_follower import PathFollower
+from simulator.autopilot.line_follower import LineFollower
+from simulator.autopilot.orbit_follower import OrbitFollower
+from simulator.autopilot.mission_control import MissionControl
 from simulator.math.angles import diff_angle_pi
 
 
@@ -44,23 +51,32 @@ class AutopilotStatus:
         Desired airspeed for the aircraft.
     """
 
+    # aircraft's NED position
+    pos_ned: np.ndarray = None
+
+    ##### FLIGHT CONTROL #####
     roll: float = 0.0
     target_roll: float = 0.0
-
     course: float = 0.0
     target_course: float = 0.0
-
     beta: float = 0.0
     target_beta: float = 0.0
-
     pitch: float = 0.0
     target_pitch: float = 0.0
-
     altitude: float = 0.0
     target_altitude: float = 0.0
-
     airspeed: float = 0.0
     target_airspeed: float = 0.0
+
+    ##### PATH FOLLOWER #####
+    active_follower: str = "None"
+    lateral_distance: float = 0.0
+    angular_position: float = 0.0
+
+    ##### ROUTE MANAGER #####
+    target_wp: int = 0
+    dist_to_wp: float = 0.0
+    route_status: str = "--"
 
     def update_aircraft_state(self, state: AircraftState) -> None:
         """
@@ -71,6 +87,7 @@ class AutopilotStatus:
         state : AircraftState
             The current state of the aircraft.
         """
+        self.pos_ned = state.ned_position
         self.roll = state.roll
         self.course = state.course_angle
         self.beta = state.beta
@@ -78,16 +95,16 @@ class AutopilotStatus:
         self.altitude = state.altitude
         self.airspeed = state.airspeed
 
-    def update_targets(self, **kwargs) -> None:
+    def update_control_targets(self, **kwargs) -> None:
         """
-        Update the target values for the autopilot system.
+        Update the target values for the flight control system.
 
         Parameters
         ----------
         kwargs : dict
             Key-value pairs where keys are target names and values are the new targets.
-            Possible keys include 'target_roll', 'target_course', 'target_beta', 'target_pitch',
-            'target_altitude', and 'target_airspeed'.
+            Possible keys include `target_roll`, `target_course`, `target_beta`, `target_pitch`,
+            `target_altitude`, and `target_airspeed`.
         """
         valid_keys = {
             "target_roll",
@@ -102,6 +119,32 @@ class AutopilotStatus:
                 setattr(self, key, value)
             elif key not in valid_keys:
                 raise ValueError(f"Invalid target: {key}")
+            
+    def update_mission_status(self, mission_control: MissionControl) -> None:
+        self.update_route_status(mission_control.route_manager)
+        self.update_follower_status(mission_control.active_follower)
+
+    def update_route_status(self, route_manager: RouteManager) -> None:
+        self.target_wp = route_manager.wp_target
+        self.dist_to_wp = route_manager.get_distance_to_waypoint(
+            self.pos_ned, self.target_wp, is_3d=True
+        )
+        self.route_status = route_manager.status
+
+    def update_follower_status(self, path_follower: PathFollower = None) -> None:
+        if path_follower is None:
+            self.active_follower = "None"
+        elif isinstance(path_follower, LineFollower):
+            self.active_follower = "Line"
+            line_follower: LineFollower = path_follower
+            self.lateral_distance = line_follower.get_lateral_distance(self.pos_ned)
+        elif isinstance(path_follower, OrbitFollower):
+            self.active_follower = "Orbit"
+            orbit_follower: OrbitFollower = path_follower
+            self.lateral_distance = orbit_follower.get_angular_position(self.pos_ned)
+        else:
+            raise ValueError("not valid path follower provided!")
+
 
     @property
     def roll_error(self) -> float:

@@ -10,6 +10,8 @@ from abc import ABC, abstractmethod
 import numpy as np
 from matplotlib import pyplot as plt
 
+from simulator.math.rotation import ned2xyz
+
 
 class BasePlotter(ABC):
 
@@ -17,7 +19,7 @@ class BasePlotter(ABC):
         if ax is not None:
             self.ax = ax
         else:
-            fig = plt.figure(figsize=(12, 6))
+            fig = plt.figure(figsize=(6, 6))
             self.ax = fig.add_subplot(111, projection="3d" if is_3d else None)
         self.is_3d = is_3d
 
@@ -31,7 +33,8 @@ class BasePlotter(ABC):
         circle[:, 1] = radius * np.sin(ang) + center[1]
         if self.is_3d:
             circle[:, 2] = center[2] * np.ones_like(ang)
-        self.ax.plot(circle[0], circle[1], circle[2] if self.is_3d else None, style)
+        xyz = ned2xyz(circle)
+        self.ax.plot(xyz[:, 0], xyz[:, 1], xyz[:, 2] if self.is_3d else None, style)
 
     def show(self) -> None:
         plt.show()

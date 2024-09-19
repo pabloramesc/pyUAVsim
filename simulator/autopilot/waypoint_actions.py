@@ -9,8 +9,6 @@ from abc import ABC, abstractmethod
 
 import numpy as np
 
-from simulator.autopilot.route_manager import RouteManager
-from simulator.autopilot.autopilot_status import AutopilotStatus
 from simulator.math.angles import diff_angle_pi
 
 
@@ -29,6 +27,10 @@ class WaypointAction(ABC):
     def is_done(self) -> bool:
         pass
 
+    @abstractmethod
+    def restart(self) -> None:
+        pass
+
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({', '.join(map(str, self.params))})"
 
@@ -43,6 +45,9 @@ class OrbitUnlimited(WaypointAction):
     
     def is_done(self) -> bool:
         return False
+    
+    def restart(self) -> None:
+        return None
 
 
 class OrbitTime(WaypointAction):
@@ -58,6 +63,9 @@ class OrbitTime(WaypointAction):
 
     def is_done(self) -> bool:
         return self._elapsed_time >= self.time
+    
+    def restart(self) -> None:
+        self._elapsed_time = 0.0
 
 
 class OrbitTurns(WaypointAction):
@@ -75,6 +83,10 @@ class OrbitTurns(WaypointAction):
 
     def is_done(self) -> bool:
         return abs(self._accumulated_angular_position) >= 2.0 * self.turns * np.pi
+    
+    def restart(self) -> None:
+        self._previous_angular_position = 0.0
+        self._accumulated_angular_position = 0.0
 
 
 class OrbitAlt(WaypointAction):
@@ -92,6 +104,9 @@ class OrbitAlt(WaypointAction):
         if self._current_altitude is None:
             return False
         return self._current_altitude >= self.altitude
+    
+    def restart(self) -> None:
+        self._current_altitude = None
 
 
 class GoWaypoint(WaypointAction):
@@ -106,6 +121,9 @@ class GoWaypoint(WaypointAction):
 
     def is_done(self) -> bool:
         return self._is_done
+    
+    def restart(self) -> None:
+        self._is_done = False
 
 
 class SetAirspeed(WaypointAction):
@@ -120,4 +138,7 @@ class SetAirspeed(WaypointAction):
     
     def is_done(self) -> bool:
         return self._is_done
+    
+    def restart(self) -> None:
+        self._is_done = False
 

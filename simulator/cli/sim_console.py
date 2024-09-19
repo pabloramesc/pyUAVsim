@@ -144,23 +144,36 @@ class SimConsole:
                 "Not valid style parameter! Valid options are 'simple' or 'table'."
             )
 
+    def print_mission_status(self, status: AutopilotStatus) -> None:
+        self.console.print(
+            "[bold magenta underline]Mission Status[/bold magenta underline]"
+        )
+        self.console.print(
+            f"Target WP: {status.target_wp}, Distance to WP: {status.dist_to_wp:.1f} m"
+        )
+        if status.route_status == "run":
+            status_color = "green"
+        elif status.route_status == "fail":
+            status_color = "red"
+        else:
+            status_color = "cyan"
+        self.console.print(
+            f"Route Status: [bold {status_color}]{status.route_status.upper()}[bold {status_color}]"
+        )
+        self.console.print(f"Path Follower: [bold cyan]{status.active_follower}[bold cyan]", end="")
+        if status.active_follower == "Line":
+            self.console.print(f", lateral error: {status.lateral_distance:.1f} m")
+        elif status.active_follower == "Orbit":
+            self.console.print(
+                f", angular position: {np.rad2deg(status.angular_position):.1f} deg"
+            )
+        else:
+            self.console.print()
+        self.console.rule()
+
     def _print_time_simple(
         self, t_sim: float, t_real: float, dt_sim: float = None, k_sim: int = None
     ) -> None:
-        """
-        Prints the simulation and real time in a simple text format.
-
-        Parameters
-        ----------
-        t_sim : float
-            The current simulation time in seconds.
-        t_real : float
-            The current real time in seconds.
-        dt_sim : float, optional
-            The time step of the simulation in seconds (default is None).
-        k_sim : int, optional
-            The current iteration count of the simulation (default is None).
-        """
         self.console.clear()
         t_sim_str = seconds_to_dhms(t_sim)
         t_real_str = seconds_to_dhms(t_real)
@@ -175,20 +188,6 @@ class SimConsole:
     def _print_time_table(
         self, t_sim: float, t_real: float, dt_sim: float = None, k_sim: int = None
     ) -> None:
-        """
-        Prints the simulation and real time in a tabular format.
-
-        Parameters
-        ----------
-        t_sim : float
-            The current simulation time in seconds.
-        t_real : float
-            The current real time in seconds.
-        dt_sim : float, optional
-            The time step of the simulation in seconds (default is None).
-        k_sim : int, optional
-            The current iteration count of the simulation (default is None).
-        """
         self.console.clear()
         table = Table()
 
@@ -215,14 +214,6 @@ class SimConsole:
         self.console.print(table)
 
     def _print_control_deltas_simple(self, deltas: ControlDeltas) -> None:
-        """
-        Prints the control deltas in a simple text format.
-
-        Parameters
-        ----------
-        deltas : ControlDeltas
-            An instance of the ControlDeltas class containing control inputs.
-        """
         self.console.print(
             "[bold magenta underline]Control Deltas[/bold magenta underline]"
         )
@@ -233,14 +224,6 @@ class SimConsole:
         self.console.rule()
 
     def _print_control_deltas_table(self, deltas: ControlDeltas) -> None:
-        """
-        Prints the control deltas in a tabular format.
-
-        Parameters
-        ----------
-        deltas : ControlDeltas
-            An instance of the ControlDeltas class containing control inputs.
-        """
         table = Table()
 
         # Define columns
@@ -256,17 +239,6 @@ class SimConsole:
         self.console.print(table)
 
     def _print_aircraft_state_simple(self, state: AircraftState) -> None:
-        """
-        Prints the aircraft state in a simple text format.
-
-        Parameters
-        ----------
-        state : AircraftState
-            An instance of the AircraftState class representing the current state of the aircraft.
-        """
-        self.console.print(
-            "[bold magenta underline]Aircraft State[/bold magenta underline]"
-        )
         self.console.print(
             f"NED position (m): pn: {state.pn:.2f}, pe: {state.pe:.2f}, pd: {state.pd:.2f}"
         )
@@ -282,14 +254,6 @@ class SimConsole:
         self.console.rule()
 
     def _print_aircraft_state_table(self, state: AircraftState) -> None:
-        """
-        Prints the aircraft state in a tabular format.
-
-        Parameters
-        ----------
-        state : AircraftState
-            An instance of the AircraftState class representing the current state of the aircraft.
-        """
         table = Table()
 
         # Define columns
@@ -327,14 +291,6 @@ class SimConsole:
         self.console.print(table)
 
     def _print_autopilot_status_simple(self, status: AutopilotStatus) -> None:
-        """
-        Prints the autopilot status in a simple text format.
-
-        Parameters
-        ----------
-        status : AutopilotStatus
-            An instance of the AutopilotStatus class representing the current autopilot status.
-        """
         self.console.print(
             "[bold magenta underline]Autopilot Status[/bold magenta underline]"
         )
@@ -359,14 +315,6 @@ class SimConsole:
         self.console.rule()
 
     def _print_autopilot_status_table(self, status: AutopilotStatus) -> None:
-        """
-        Prints the autopilot status in a tabular format.
-
-        Parameters
-        ----------
-        status : AutopilotStatus
-            An instance of the AutopilotStatus class representing the current autopilot status.
-        """
         table = Table()
 
         # Define columns

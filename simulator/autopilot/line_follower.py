@@ -5,13 +5,21 @@ This software is released under the MIT License.
 https://opensource.org/licenses/MIT
 """
 
+from dataclasses import dataclass
+
 import numpy as np
 from matplotlib import pyplot as plt
 
 from simulator.autopilot.autopilot_config import AutopilotConfig
 from simulator.autopilot.flight_control import FlightControl
-from simulator.autopilot.path_follower import PathFollower
+from simulator.autopilot.path_follower import PathFollower, BasePathParams
 from simulator.math.rotation import rot_matrix_zyx
+
+
+@dataclass
+class LinePathParams(BasePathParams):
+    origin: np.ndarray
+    direction: np.ndarray
 
 
 class LineFollower(PathFollower):
@@ -50,8 +58,10 @@ class LineFollower(PathFollower):
         ValueError
             If `origin` or `direction` does not have the shape (3,).
         """
-        if np.all(origin == self.path_origin) and np.all(direction == self.path_direction):
-            return # no calculation needed
+        if np.all(origin == self.path_origin) and np.all(
+            direction == self.path_direction
+        ):
+            return  # no calculation needed
 
         if origin.shape != (3,):
             raise ValueError("origin parameter must be a np.ndarray with shape (3,)")
@@ -120,7 +130,7 @@ class LineFollower(PathFollower):
         qn, qe, qd = self.path_direction
         h_ref = -rd - np.sqrt(sn**2 + se**2) * (qd / np.sqrt(qn**2 + qe**2))
         return h_ref
-    
+
     def get_lateral_distance(self, pos_ned: np.ndarray) -> float:
         """
         Calculate the lateral distance of the aircraft to the linear path.

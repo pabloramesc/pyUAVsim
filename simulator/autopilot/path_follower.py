@@ -5,11 +5,15 @@
  https://opensource.org/licenses/MIT
 """
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 
 import numpy as np
 
 from simulator.autopilot.autopilot_config import AutopilotConfig
 
+@dataclass
+class BasePathParams(ABC):
+    pass
 
 class PathFollower(ABC):
     """Base class for path following guidance."""

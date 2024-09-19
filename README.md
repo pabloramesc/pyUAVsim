@@ -69,13 +69,16 @@ Uses the estimated state along with mission parameters or joystick/controller in
 - [x] Multi functional visualization tool based on Matplotlib
 - [x] Trim calculation
 - [x] Quaternions support
-- [ ] Wind and atmospheric model integration
+- [ ] Wind and atmospheric models integration
 - [ ] Realistic sensor data simulation including IMU, GPS, and barometer.
 - [ ] Actuators simulation (servos and DC motor) with realistic transfer functions
 - [ ] Estimation filters for airtcraft's state estimation
-- [ ] Implement all autopilot layers: flight control, path following, path manager...
+- [ ] Implement all autopilot layers: flight control, path following, path navigator, route manager and mission control.
 - [ ] Mission parametes (waypoints) and autopilot modes (manual, FBW, auto...) support
 - [ ] Add TECS and LQR control
+- [ ] Add PX4 attitude controller
+- [ ] Add control gain atotuning method
+- [ ] Implement Genetic Algorithm optimization
 - [ ] Real-time external joystick/controller support
 - [ ] Unity 3D visualiztion framework 
 
