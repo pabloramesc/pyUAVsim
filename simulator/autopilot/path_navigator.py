@@ -4,14 +4,12 @@ from dataclasses import dataclass
 import numpy as np
 
 from simulator.autopilot.autopilot_config import AutopilotConfig
-from simulator.autopilot.path_follower import BasePathParams
-from simulator.autopilot.line_follower import LinePathParams
-from simulator.autopilot.orbit_follower import OrbitPathParams
+from simulator.autopilot.path_follower import BasePathParams, LinePathParams, OrbitPathParams
 from simulator.autopilot.route_manager import RouteManager
 
 
 @dataclass
-class PathCommand:
+class PathNavCommand:
     """
     Data structure for holding path navigation output commands.
 
@@ -27,7 +25,6 @@ class PathCommand:
     path_type: str = None  # 'line' or 'orbit'
     path_params: BasePathParams = None
     is_new_path: bool = True
-
 
 class PathNavigator(ABC):
     """
@@ -49,11 +46,11 @@ class PathNavigator(ABC):
         """
         self.config = config
         self.route_manager = route_manager or RouteManager(config)
-        self.nav_cmd = PathCommand()
+        self.nav_cmd = PathNavCommand()
         self.nav_cmd.is_new_path = True
 
     @abstractmethod
-    def navigate_path(self, pos_ned: np.ndarray, course: float) -> PathCommand:
+    def navigate_path(self, pos_ned: np.ndarray, course: float) -> PathNavCommand:
         """
         Navigate and provide guidance for a specific path navigating strategy.
 
@@ -76,7 +73,7 @@ class LinePathNavigator(PathNavigator):
     Path navigator for line paths between waypoints.
     """
 
-    def navigate_path(self, pos_ned: np.ndarray, course: float = None) -> PathCommand:
+    def navigate_path(self, pos_ned: np.ndarray, course: float = None) -> PathNavCommand:
         """
         Provide guidance for following a line path between waypoints.
 
@@ -127,7 +124,7 @@ class FilletPathNavigator(PathNavigator):
         super().__init__(config, route_manager)
         self.on_fillet = False
 
-    def navigate_path(self, pos_ned: np.ndarray, course: float = None) -> PathCommand:
+    def navigate_path(self, pos_ned: np.ndarray, course: float = None) -> PathNavCommand:
         """
         Navigate and provide guidance for fillet path following.
 
@@ -201,6 +198,6 @@ class FilletPathNavigator(PathNavigator):
 
 class DubinPathNavigator(PathNavigator):
 
-    def navigate_path(self, pos_ned: np.ndarray, course: float) -> PathCommand:
+    def navigate_path(self, pos_ned: np.ndarray, course: float) -> PathNavCommand:
         # TODO: implement dubins path navigator
         raise NotImplementedError

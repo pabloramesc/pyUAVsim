@@ -7,6 +7,7 @@
 
 import numpy as np
 
+
 def clip_angle_pi(angle: float) -> float:
     """
     Modify angle value to fit inside the range (-PI, PI].
@@ -134,3 +135,26 @@ def diff_angle_180(angle1: float, angle2: float) -> float:
         angle1 = angle1 + 360.0
     return angle1 - angle2
 
+
+def wrap_angle(angle1: float, angle2: float):
+    """
+    Wrap the angle1 so its difference with angle2
+    is in the range (-pi, pi].
+
+    Parameters
+    ----------
+    angle1 : float
+        First angle in radians.
+    angle2 : float
+        Second angle in radians.
+
+    Returns
+    -------
+    float
+        The wrapped first angle in radians.
+    """
+    while angle1 - angle2 > +np.pi:
+        angle1 -= 2 * np.pi
+    while angle1 - angle2 < -np.pi:
+        angle1 += 2 * np.pi
+    return angle1

@@ -12,6 +12,7 @@ from rich.table import Table
 from simulator.aircraft.aircraft_state import AircraftState
 from simulator.aircraft.control_deltas import ControlDeltas
 from simulator.autopilot.autopilot_status import AutopilotStatus
+from simulator.autopilot.mission_control import MissionControl
 from simulator.utils.readable import seconds_to_dhms, seconds_to_hhmmss
 
 
@@ -144,32 +145,44 @@ class SimConsole:
                 "Not valid style parameter! Valid options are 'simple' or 'table'."
             )
 
-    def print_mission_status(self, status: AutopilotStatus) -> None:
+    def print_mission_status(self, mission: MissionControl) -> None:
         self.console.print(
             "[bold magenta underline]Mission Status[/bold magenta underline]"
         )
         self.console.print(
-            f"Target WP: {status.target_wp}, Distance to WP: {status.dist_to_wp:.1f} m"
+            f"Mission Control Status: {self._format_status(mission.status)}, "
+            f"Wait Orbit: {mission.is_on_wait_orbit}, "
+            f"Action Running: {mission.is_action_running}, "
         )
-        if status.route_status == "run":
-            status_color = "green"
-        elif status.route_status == "fail":
-            status_color = "red"
-        else:
-            status_color = "cyan"
+        rm = mission.route_manager
         self.console.print(
-            f"Route Status: [bold {status_color}]{status.route_status.upper()}[bold {status_color}]"
+            f"Route Manager Status: {self._format_status(rm.status)}, "
+            f"Target WP: {rm.wp_target}, "
+            f"Distance to WP: {rm.get_distance_to_waypoint(mission.pos_ned):.1f} m"
         )
-        self.console.print(f"Path Follower: [bold cyan]{status.active_follower}[bold cyan]", end="")
-        if status.active_follower == "Line":
-            self.console.print(f", lateral error: {status.lateral_distance:.1f} m")
-        elif status.active_follower == "Orbit":
-            self.console.print(
-                f", angular position: {np.rad2deg(status.angular_position):.1f} deg"
-            )
-        else:
-            self.console.print()
+        wp = mission.active_waypoint
+        self.console.print(
+            f"Active Waypoint: {wp.id}, Action Code: {wp.action_code}"
+        )
+        pf = mission.path_follower
+        self.console.print(
+            f"Path Follower Status: {self._format_status(pf.status)}, "
+            f"Active Follower: [bold cyan]{pf.active_follower_type.upper()}[/bold cyan], "
+            f"{pf.active_follower_info}, {pf.active_follower_status}"
+        )
         self.console.rule()
+
+    def _format_status(self, status: str, upper: bool = True) -> str:
+        if status.lower() in ["run", "follow"]:
+            color = "green"
+        elif status.lower() in ["end", "fail"]:
+            color = "red"
+        elif status.lower() in ["wait"]:
+            color = "grey"
+        else:
+            color = "cyan"
+        _status = status.upper() if upper else status
+        return f"[bold {color}]{_status}[/bold {color}]"
 
     def _print_time_simple(
         self, t_sim: float, t_real: float, dt_sim: float = None, k_sim: int = None

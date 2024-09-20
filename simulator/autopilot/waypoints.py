@@ -105,7 +105,7 @@ class WaypointsList:
         params = waypoint.params
 
         if waypoint.id <= 0:
-            raise ValueError(f"Waypoint ID {waypoint.id} must be positive.")
+            raise ValueError(f"Waypoint ID {waypoint.id} must be greater than zero.")
         if any(wp.id == waypoint.id for wp in self.waypoints):
             raise ValueError(f"Waypoint ID {waypoint.id} already exists in the list.")
 
@@ -129,6 +129,7 @@ class WaypointsList:
                     f"Parameter {i+1} for action '{action}' on Waypoint ID {waypoint.id}"
                     f"should be of type {expected_type.__name__}, but got {type(param).__name__}."
                 )
+
 
 def load_waypoints_from_txt(filename: str) -> WaypointsList:
     wps_list = WaypointsList()

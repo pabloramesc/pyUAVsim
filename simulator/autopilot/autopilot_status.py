@@ -12,8 +12,6 @@ import numpy as np
 from simulator.aircraft.aircraft_state import AircraftState
 from simulator.autopilot.route_manager import RouteManager
 from simulator.autopilot.path_follower import PathFollower
-from simulator.autopilot.line_follower import LineFollower
-from simulator.autopilot.orbit_follower import OrbitFollower
 from simulator.autopilot.mission_control import MissionControl
 from simulator.math.angles import diff_angle_pi
 
@@ -68,15 +66,25 @@ class AutopilotStatus:
     airspeed: float = 0.0
     target_airspeed: float = 0.0
 
-    ##### PATH FOLLOWER #####
-    active_follower: str = "None"
-    lateral_distance: float = 0.0
-    angular_position: float = 0.0
+    # ##### PATH FOLLOWER #####
+    # active_follower: str = "none"
+    # follower_info: str = "none"
+    # follower_status: str = "none"
+    # lateral_distance: float = None
+    # angular_position: float = None
 
-    ##### ROUTE MANAGER #####
-    target_wp: int = 0
-    dist_to_wp: float = 0.0
-    route_status: str = "--"
+    # ##### ROUTE MANAGER #####
+    # route_status: str = "wait"
+    # target_wp: int = None
+    # dist_to_wp: float = None
+
+    # ##### MISSION CONTROL #####
+    # mission_status: str = "wait"
+    # is_on_wait_orbit: bool = False
+    # is_action_running: bool = False
+
+    # ##### ACTION MANAGER #####
+    # action_code: str = "--"
 
     def update_aircraft_state(self, state: AircraftState) -> None:
         """
@@ -120,31 +128,12 @@ class AutopilotStatus:
             elif key not in valid_keys:
                 raise ValueError(f"Invalid target: {key}")
             
-    def update_mission_status(self, mission_control: MissionControl) -> None:
-        self.update_route_status(mission_control.route_manager)
-        self.update_follower_status(mission_control.active_follower)
-
-    def update_route_status(self, route_manager: RouteManager) -> None:
-        self.target_wp = route_manager.wp_target
-        self.dist_to_wp = route_manager.get_distance_to_waypoint(
-            self.pos_ned, self.target_wp, is_3d=True
-        )
-        self.route_status = route_manager.status
-
-    def update_follower_status(self, path_follower: PathFollower = None) -> None:
-        if path_follower is None:
-            self.active_follower = "None"
-        elif isinstance(path_follower, LineFollower):
-            self.active_follower = "Line"
-            line_follower: LineFollower = path_follower
-            self.lateral_distance = line_follower.get_lateral_distance(self.pos_ned)
-        elif isinstance(path_follower, OrbitFollower):
-            self.active_follower = "Orbit"
-            orbit_follower: OrbitFollower = path_follower
-            self.lateral_distance = orbit_follower.get_angular_position(self.pos_ned)
-        else:
-            raise ValueError("not valid path follower provided!")
-
+    # def update_path_follower(self, path_follower: PathFollower) -> None:
+    #     self.active_follower = path_follower.active_follower_type
+    #     self.follower_info = path_follower.active_follower_info
+    #     self.follower_status = path_follower.active_follower_status
+    #     self.lateral_distance: float = None
+    #     self.angular_position: float = None
 
     @property
     def roll_error(self) -> float:

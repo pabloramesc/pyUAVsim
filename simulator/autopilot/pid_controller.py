@@ -7,7 +7,7 @@
 
 import numpy as np
 
-from simulator.common.constants import EPS
+EPSILON = 1e-12  # a constant that is almost zero
 
 
 class PIDController:
@@ -123,16 +123,14 @@ class PIDController:
         alpha = (2.0 * tau - dt) / (2.0 * tau + dt)
         return alpha * diff_prev + (2.0 / (2.0 * tau + dt)) * (error - error_prev)
 
-    def update(self, x_ref: float, x: float, dt):
+    def update(self, error: float, dt):
         """
         Updates the PID controller with a new command and state, computes the control output.
 
         Parameters
         ----------
-        x_ref : float
-            Desired setpoint.
-        x : float
-            Current process variable.
+        error : float
+            Error to minimize with the controller, calculated as `error = x_ref - x`
         dt : float
             Time step.
 
@@ -141,18 +139,16 @@ class PIDController:
         float
             The control output.
         """
-        error = x_ref - x
-
         # Proportional term
         u = self.kp * error
 
         # Integral term
-        if np.abs(self.ki) > EPS:
+        if np.abs(self.ki) > EPSILON:
             self.prev_intg = self.integrate(error, self.prev_error, self.prev_intg, dt)
             u += self.ki * self.prev_intg
 
         # Derivative term
-        if np.abs(self.kd) > EPS:
+        if np.abs(self.kd) > EPSILON:
             self.prev_diff = self.differentiate(
                 error, self.prev_error, self.prev_diff, dt, self.tau
             )
@@ -165,7 +161,7 @@ class PIDController:
         u = np.clip(u, self.min_output, self.max_output)
 
         # Anti-windup
-        if np.abs(self.ki) > EPS:
+        if np.abs(self.ki) > EPSILON:
             self.prev_intg += dt / self.ki * (u - u_unsat)
 
         return u

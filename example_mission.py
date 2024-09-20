@@ -18,10 +18,9 @@ from simulator.aircraft import (
     ControlDeltas,
     load_airframe_parameters_from_yaml,
 )
-from simulator.autopilot import Autopilot, LineFollower, OrbitFollower
+from simulator.autopilot import Autopilot
 from simulator.cli import SimConsole
-from simulator.gui import AttitudePositionPanel, FlightControlPanel
-from simulator.utils import wait_animation
+from simulator.gui import AttitudePositionPanel
 
 params_file = r"config/aerosonde_parameters.yaml"
 aerosonde_params = load_airframe_parameters_from_yaml(params_file)
@@ -34,9 +33,8 @@ autopilot = Autopilot(dt, aerosonde_params, uav.state)
 
 waypoints_file = r"config/waypoints_example.wp"
 waypoints_list = load_waypoints_from_txt(waypoints_file)
-mission = MissionControl(autopilot.config)
-mission.initialize(dt, Va=25.0, h=0.0, chi=0.0)
-mission.set_waypoints(waypoints_list)
+mission = MissionControl(dt, autopilot.config)
+mission.initialize(waypoints_list, Va=25.0, h=0.0, chi=0.0)
 
 cli = SimConsole()
 gui = AttitudePositionPanel(use_blit=False, pos_3d=True)
@@ -54,7 +52,6 @@ while True:
         uav.state.ned_position, uav.state.course_angle
     )
     autopilot.status.update_aircraft_state(uav.state)
-    autopilot.status.update_mission_status(mission)
     autopilot.control_course_altitude_airspeed(course_ref, altitude_ref, airspeed=25.0)
 
     gui.add_data(state=uav.state)
@@ -65,5 +62,5 @@ while True:
         cli.print_aircraft_state(uav.state, style="simple")
         cli.print_control_deltas(uav.control_deltas, style="simple")
         cli.print_autopilot_status(autopilot.status, style="simple")
-        cli.print_mission_status(autopilot.status)
+        cli.print_mission_status(mission)
         gui.update(state=uav.state, pause=0.01)

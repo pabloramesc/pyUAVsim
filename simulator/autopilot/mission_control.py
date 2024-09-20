@@ -12,26 +12,41 @@
  https://opensource.org/licenses/MIT
 """
 
-from dataclasses import dataclass
+from dataclasses import asdict, astuple, dataclass
 
 import numpy as np
 
 from simulator.autopilot.autopilot_config import AutopilotConfig
-from simulator.autopilot.path_follower import PathFollower, BasePathParams
-from simulator.autopilot.line_follower import LineFollower, LinePathParams
-from simulator.autopilot.orbit_follower import OrbitFollower, OrbitPathParams
+from simulator.autopilot.path_follower import (
+    PathFollower,
+    BasePathFollower,
+    BasePathParams,
+    LinePathFollower,
+    LinePathParams,
+    OrbitPathFollower,
+    OrbitPathParams,
+)
 from simulator.autopilot.path_navigator import (
     DubinPathNavigator,
     FilletPathNavigator,
     LinePathNavigator,
+    PathNavCommand,
     PathNavigator,
-    PathCommand,
+)
+from simulator.autopilot.route_manager import RouteManager
+from simulator.autopilot.waypoint_actions import (
+    GoWaypoint,
+    OrbitAlt,
+    OrbitTime,
+    OrbitTurns,
+    OrbitUnlimited,
+    SetAirspeed,
 )
 from simulator.autopilot.waypoints import Waypoint, WaypointsList
-from simulator.autopilot.waypoint_actions import *
-from simulator.autopilot.route_manager import RouteManager
 
-PATH_TYPES = ["lines", "fillets", "dubins"]
+NAV_PATH_TYPES = ["lines", "fillets", "dubins"]
+MISSION_CONTROL_STATUS = ["wait", "init", "nav", "exe", "end", "fail"]
+ACTIONS_MANAGER_STATUS = ["wait", "exe", "done", "fail"]
 
 
 @dataclass
@@ -67,44 +82,63 @@ class MissionControl:
         The type of path navigation strategy ('lines', 'fillets', or 'dubins').
     """
 
-    def __init__(self, config: AutopilotConfig, nav_type: str = "lines") -> None:
+    def __init__(
+        self, dt: float, config: AutopilotConfig, nav_type: str = "lines"
+    ) -> None:
         """
         Initialize the MissionControl with autopilot configuration and path type.
 
         Parameters
         ----------
+        dt : float
+            The time step of the simulation.
         config : AutopilotConfig
             Configuration parameters for the autopilot.
         nav_type : str, optional
             The type of path navigation strategy ('lines', 'fillets', or 'dubins').
         """
+        self.dt = dt
         self.config = config
         self.nav_type = nav_type
 
-        self.active_follower: PathFollower = None
-        self.line_follower = LineFollower(config)
-        self.orbit_follower = OrbitFollower(config)
-        self.is_on_wait_orbit = False
-
+        self.path_follower = PathFollower(config)
         self.route_manager = RouteManager(config)
-        self.path_navigator = self._build_path_navigator(nav_type)
+        self.path_navigator = self._create_path_navigator(nav_type)
 
         self.waypoints: WaypointsList = None
+        self.flight_cmd: FlightCommand = None
+        self.path_cmd: PathNavCommand = None
+
+        self.status = "wait"
+        self.is_on_wait_orbit = False
+        self.is_action_running = False
+        self.active_waypoint: Waypoint = None
+
+        self.pos_ned: np.ndarray = None
+        self.course: float = None
+
+    def reset(self) -> None:
+        self.path_follower.reset()
+        self.route_manager.reset()
+
+        self.waypoints: WaypointsList = None
+        self.flight_cmd: FlightCommand = None
+        self.path_cmd: PathNavCommand = None
+
+        self.status = "wait"
+        self.is_on_wait_orbit = False
         self.is_action_running = False
 
-        self.dt: int = None
-        self.flight_cmd: FlightCommand = None
-        self.path_cmd: PathCommand = None
-        self.status = "wait"
-
-    def initialize(self, dt: float, Va: float, h: float, chi: float) -> FlightCommand:
+    def initialize(
+        self, wps_list: WaypointsList, Va: float, h: float, chi: float
+    ) -> FlightCommand:
         """
-        Initialize guidance commands and parameters.
+        Reset and initialize guidance commands and parameters.
 
         Parameters
         ----------
-        dt : float
-            Time step for updates.
+        wps_list : WaypointsList
+            The waypoints list
         Va : float
             Target airspeed.
         h : float
@@ -114,14 +148,14 @@ class MissionControl:
 
         Returns
         -------
-        GuidanceCommand
-            The initialized guidance command.
+        FlightCommand
+            The initialized flight command.
         """
-        self.dt = dt
+        self.set_waypoints(wps_list)
         self.flight_cmd = FlightCommand(h, chi, Va)
-        self.path_cmd = PathCommand()
+        self.path_cmd = PathNavCommand()
         self.status = "init"
-        self.route_manager.restart()
+        self.path_follower.reset()
         return self.flight_cmd
 
     def update(
@@ -145,91 +179,43 @@ class MissionControl:
             The updated flight command from path follower.
         """
         _dt = dt or self.dt
+        self.pos_ned = pos_ned
+        self.course = course
+
+        if self.status == "wait":
+            raise Exception("Initialize mission control before update!")
+        if self.status == "init":
+            self.route_manager.restart(pos_ned)
+
         waypoint = (
-            self.waypoints.get_waypoint(self.route_manager.wp_target)
+            self.waypoints.get_waypoint(self.route_manager.wp_target + 1)
             if self.waypoints
             else None
         )
+        if waypoint is None:
+            raise Exception("Load waypoints before update!")
+        else:
+            self.active_waypoint = waypoint
 
-        if self.status == "wait":
-            raise Exception(
-                "cannot update mission control without previous initialization!"
-            )
-
-        if self.status == "init":
-            self.status = "run"
-            self.route_manager.initialize(pos_ned)
-
-        if waypoint and self.is_action_running:
+        if self.is_action_running:
             self._execute_waypoint_action(waypoint, pos_ned, course, _dt)
             if waypoint.action.is_done():
                 self.is_action_running = False
-
+                self.route_manager.advance(pos_ned)
+            self.status = "exe"
         else:
-            self.update_path_navigation(pos_ned, course)
-            self.status = "run:path_nav:" + self.route_manager.status
+            self._update_navigation(pos_ned, course)
+            self.status = "nav"
 
-        if (
-            not self.is_action_running
-            and waypoint.action is not None
-            and self.route_manager.is_on_waypoint(pos_ned, waypoint.id)
+        if (waypoint.action is not None) and (
+            self.route_manager.is_on_waypoint(pos_ned, waypoint.id)
         ):
             self.is_action_running = True
 
-        course_ref, altitude_ref = self.active_follower.guidance(pos_ned, course)
+        course_ref, altitude_ref = self.path_follower.update(pos_ned, course)
         self.flight_cmd.target_altitude = altitude_ref
         self.flight_cmd.target_course = course_ref
         return course_ref, altitude_ref
-
-    def update_path_navigation(self, pos_ned: np.ndarray, course: float) -> None:
-        """
-        Update the path navigation based on the vehicle's current position and course.
-
-        Depending on the waypoints manager status, it either follows the path
-        using the navigator or enters a holding pattern using an orbit.
-
-        Parameters
-        ----------
-        pos_ned : np.ndarray
-            The current position of the vehicle in North-East-Down (NED) coordinates.
-        course : float
-            The current heading/course angle of the vehicle.
-        """
-        if self.route_manager.status == "run":
-            self.path_cmd = self.path_navigator.navigate_path(pos_ned, course)
-
-            if self.path_cmd.path_type is None:
-                self.route_manager.force_fail_mode()
-                self.enter_wait_orbit(pos_ned)
-                self.active_follower = self.orbit_follower
-
-            elif self.path_cmd.path_type == "line":
-                if self.path_cmd.is_new_path:
-                    self.line_follower.set_path(**self.path_cmd.path_params.__dict__)
-                self.active_follower = self.line_follower
-
-            elif self.path_cmd.path_type == "orbit":
-                if self.path_cmd.is_new_path:
-                    self.orbit_follower.set_path(*self.path_cmd.path_params)
-                self.active_follower = self.orbit_follower
-
-            else:
-                raise ValueError(
-                    f"not valid path navigator command path type: {self.path_cmd.path_type}"
-                )
-
-        elif self.route_manager.status == "init":
-            self.enter_wait_orbit(pos_ned)
-            self.active_follower = self.line_follower
-
-        elif self.route_manager.status in ["end", "fail"]:
-            self.enter_wait_orbit()
-            self.active_follower = self.line_follower
-
-        else:
-            raise ValueError(
-                f"not valid route manager status: {self.route_manager.status}"
-            )
 
     def enter_wait_orbit(self, pos_ned: np.ndarray) -> None:
         """
@@ -238,23 +224,12 @@ class MissionControl:
         Parameters
         ----------
         pos_ned : np.ndarray
-            The current position of the obrit center in North-East-Down (NED) coordinates.
-            If not provided, the method uses the target waypoint coordinates from the
-            route manager.
+            The orbit center position in North-East-Down (NED) coordinates.
         """
         if self.is_on_wait_orbit:
             return
+        self._enter_orbit_path(pos_ned)
         self.is_on_wait_orbit = True
-
-        orbit_center = pos_ned
-        orbit_radius = self.config.wait_orbit_radius
-        self.orbit_follower.set_path(orbit_center, orbit_radius)
-
-        self.path_cmd.path_type = "orbit"
-        self.path_cmd.path_params = OrbitPathParams(orbit_center, orbit_radius)
-        self.path_cmd.is_new_path = False
-
-        self.active_follower = self.orbit_follower
 
     def set_waypoints(self, wps_list: WaypointsList) -> None:
         """
@@ -269,7 +244,8 @@ class MissionControl:
         self.route_manager.set_waypoints(wps)
         self.waypoints = wps_list
 
-    def _build_path_navigator(self, nav_type: str) -> PathNavigator:
+    def _create_path_navigator(self, nav_type: str) -> PathNavigator:
+        """Create a line, fillet or dubin path navigator according to the type string provided."""
         if nav_type is None:
             raise ValueError("None is not a path type!")
         elif nav_type == "lines":
@@ -279,7 +255,51 @@ class MissionControl:
         elif nav_type == "dubins":
             return DubinPathNavigator(self.config, self.route_manager)
         else:
-            raise ValueError(f"Invalid path navigator type: {nav_type}")
+            raise ValueError(f"Invalid path navigator type: {nav_type}!")
+
+    def _enter_orbit_path(self, pos_ned: np.ndarray) -> None:
+        """Set path follower in orbit mode and update path command."""
+        orbit_center = pos_ned
+        orbit_radius = self.config.wait_orbit_radius
+        params = OrbitPathParams(orbit_center, orbit_radius)
+        self.path_follower.follow_orbit(params)
+        self.path_cmd = PathNavCommand()
+        self.path_cmd.path_type = "orbit"
+        self.path_cmd.path_params = params
+        self.path_cmd.is_new_path = False
+
+    def _update_navigation(self, pos_ned: np.ndarray, course: float) -> None:
+        """Update path command from path navigator or enter in wait orbit,
+        depending on route manager status"""
+        if self.route_manager.status in ["init", "run"]:
+            self.path_cmd = self.path_navigator.navigate_path(pos_ned, course)
+            if self.path_cmd.is_new_path:
+                self._execute_path_command(self.path_cmd)
+        elif self.route_manager.status in ["end", "fail"]:
+            self.enter_wait_orbit(pos_ned)
+            self.status = self.route_manager.status
+        else:
+            raise ValueError(
+                f"Not valid route manager status: {self.route_manager.status}!"
+            )
+
+    def _execute_path_command(self, path_cmd: PathNavCommand) -> None:
+        """Set path follower params for line or orbit following according to path command.
+        Then update new path flag."""
+        if path_cmd.path_type is None:
+            self.route_manager.force_fail_mode()
+        elif path_cmd.path_type == "line":
+            params: LinePathParams = path_cmd.path_params
+            self.path_follower.follow_line(params)
+            path_cmd.is_new_path = False
+        elif path_cmd.path_type == "orbit":
+            params: OrbitPathParams = path_cmd.path_params
+            self.path_follower.follow_orbit(params)
+            path_cmd.is_new_path = False
+        else:
+            raise ValueError(
+                f"Not valid path navigator command path type: {path_cmd.path_type}!"
+            )
 
     def _execute_waypoint_action(
         self, wp: Waypoint, pos_ned: np.ndarray, course: float, dt: float
@@ -298,7 +318,7 @@ class MissionControl:
             action_map[action_code](wp, action, pos_ned, course, dt)
         else:
             raise ValueError(
-                f"Invalid action code: {action_code}, for waypoint id: {wp.id}"
+                f"Invalid action code: {action_code}, for waypoint id: {wp.id}!"
             )
 
     def _execute_orbit_unlimited(

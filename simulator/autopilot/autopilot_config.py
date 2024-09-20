@@ -19,9 +19,6 @@ from simulator.math.numeric_differentiation import jacobian
 
 @dataclass
 class AutopilotConfig:
-    ##############################
-    ##### CONTROL PARAMETERS #####
-    ##############################
 
     ##### CONTROL LIMITS #####
     # aileron deflection limits (deflection angle in rads)
@@ -77,7 +74,7 @@ class AutopilotConfig:
 
     ##### TURN CORDINATION WITH RUDDER #####
     kp_turn_coord = 0.5
-    ki_turn_coord = 0.0
+    ki_turn_coord = 0.1
     kd_turn_coord = 0.0
 
     ##### PITCH CONTROL WITH ELEVATOR #####
@@ -116,42 +113,31 @@ class AutopilotConfig:
     ki_airspeed_pitch = 0.0
     kd_airspeed_pitch = 0.0
 
-    ###############################
-    ##### GUIDANCE PARAMETERS #####
-    ###############################
-
-    # course in the infinit for path following
+    ##### PATH FOLLOWER PARAMETERS #####
+    # target course at an infinite distance from the line path
     course_inf = np.deg2rad(90.0)
-
     # min aircraft turn radius (used as gain for path following)
     min_turn_radius = 100.0
-
     # max slope for paths between waypoints (avoid creating vertical stacked waypoints)
     max_path_slope = np.deg2rad(+60.0)
     min_path_slope = np.deg2rad(-60.0)
-
     # default wait orbit radius
     wait_orbit_radius = 200.0
 
-    #####################################
     ##### AUTOPILOT MODE PARAMETERS #####
-    #####################################
-
-    ##### FLY-BY-WIRE MODE #####
+    # fly-by-wire mode
     fbw_max_pitch_rate = 5.0
     fbw_max_roll_rate = 5.0
-
-    ##### TAKE-OFF MODE #####
-    take_off_throttle = 1.0
-    take_off_pitch = np.deg2rad(5.0)
-    take_off_altitude = 10.0
-
-    ##### CLIMB MODE #####
-    climb_throttle = 1.0
-    climb_airspeed = 20.0
-    climb_altitude = 50.0
-
-    wp_default_radius = 50.0
+    # take off mode
+    take_off_throttle = 1.0  # max throttle
+    take_off_pitch = np.deg2rad(5.0)  # target pitch
+    take_off_altitude = 10.0  # end of take off mode
+    # climb mode
+    climb_throttle = 1.0  # max throttle
+    climb_airspeed = 20.0  # target airspeed
+    climb_altitude = 50.0  # end of climb mode
+    # auto mode
+    wp_default_radius = 50.0  # in meters
 
     def calculate_control_gains(
         self,
@@ -179,7 +165,6 @@ class AutopilotConfig:
         self._calculate_sideslip_gains(params, state_trim)
         self._calculate_yaw_damper_gains(params, state_trim, deltas_trim)
         self._update_min_turn_radius(params, state_trim)
-
         pass
 
     def _calculate_roll_gains(
@@ -267,11 +252,13 @@ class AutopilotConfig:
         )
         a_V2 = dTp_delta_t / params.m
         a_V3 = g * np.cos(state_trim.pitch - state_trim.alpha)
+
         # Airspeed control with throttle
         self.kp_airspeed_throttle = (
             2.0 * self.zeta_airspeed * self.wn_airspeed - a_V1
         ) / a_V2
         self.ki_airspeed_throttle = self.wn_airspeed**2 / a_V2
+
         # Airspeed control with pitch
         self.wn_airspeed2 = self.wn_pitch / self.BW_airspeed2
         K_pitch_DC = self.kp_pitch_elevator * deltas_trim.delta_e / self.wn_pitch**2
