@@ -29,16 +29,25 @@ WAYPOINT_ACTION_CLASSES: Dict[str, WaypointAction] = {
     "SET_AIRSPEED": SetAirspeed,
 }
 
-WAYPOINT_ACTION_PARAMS: Dict[str, List[type]] = {
+WAYPOINT_ACTION_PARAM_TYPES: Dict[str, List[type]] = {
     "NONE": [],
-    "ORBIT_UNLIM": [float],  # Expects: radius (float)
-    "ORBIT_TIME": [float, float],  # Expects: wait time (float), radius (float)
-    "ORBIT_TURNS": [float, float],  # Expects: turns (float), radius (float)
-    "ORBIT_ALT": [float, float],  # Expects: altitude (float), radius (float)
-    "GO_WAYPOINT": [int],  # Expects: waypoint id (int)
-    "SET_AIRSPEED": [float],  # Expects: airspeed (float)
+    "ORBIT_UNLIM": [float, int],  # radius (optional), direction (optional)
+    "ORBIT_TIME": [float, float, int],  # wait time, radius (optional), direction (optional)
+    "ORBIT_TURNS": [float, float, int],  # turns, radius (optional), direction (optional)
+    "ORBIT_ALT": [float, float, int],  # altitude, radius (optional), direction (optional)
+    "GO_WAYPOINT": [int, int],  # waypoint id, times to repeat (optional)
+    "SET_AIRSPEED": [float],  # airspeed
 }
 
+WAYPOINT_ACTION_REQUIRED_PARAMS: Dict[str, int] = {
+    "NONE": 0,
+    "ORBIT_UNLIM": 0,  # radius (optional), direction (optional)
+    "ORBIT_TIME": 1,  # wait time, radius (optional), direction (optional)
+    "ORBIT_TURNS": 1,  # turns, radius (optional), direction (optional)
+    "ORBIT_ALT": 1,  # altitude, radius (optional), direction (optional)
+    "GO_WAYPOINT": 1,  # waypoint id, times to repeat (optional)
+    "SET_AIRSPEED": 1,  # airspeed
+}
 
 class Waypoint:
     def __init__(
@@ -64,7 +73,7 @@ class Waypoint:
             else:
                 return action_class(*params)
         else:
-            raise ValueError(f"not valid action code: {action_code}")
+            raise ValueError(f"Not valid action code: {action_code}!")
 
     def __repr__(self) -> str:
         return (
@@ -105,29 +114,31 @@ class WaypointsList:
         params = waypoint.params
 
         if waypoint.id <= 0:
-            raise ValueError(f"Waypoint ID {waypoint.id} must be greater than zero.")
+            raise ValueError(f"Waypoint ID {waypoint.id} must be greater than zero!")
         if any(wp.id == waypoint.id for wp in self.waypoints):
-            raise ValueError(f"Waypoint ID {waypoint.id} already exists in the list.")
+            raise ValueError(f"Waypoint ID {waypoint.id} already exists in the list!")
 
-        if action not in WAYPOINT_ACTION_PARAMS:
+        if action not in WAYPOINT_ACTION_PARAM_TYPES:
             raise ValueError(
-                f"Invalid action '{action}' for Waypoint ID {waypoint.id}."
-                f"Valid actions are: {list(WAYPOINT_ACTION_PARAMS.keys())}."
+                f"Invalid action '{action}' for Waypoint ID: {waypoint.id}! "
+                f"Valid actions are: {list(WAYPOINT_ACTION_PARAM_TYPES.keys())}."
             )
 
-        expected_types = WAYPOINT_ACTION_PARAMS[action]
+        expected_types = WAYPOINT_ACTION_PARAM_TYPES[action]
+        required_params = WAYPOINT_ACTION_REQUIRED_PARAMS[action]
 
-        if len(params) != len(expected_types):
+        if len(params) < required_params:
             raise ValueError(
                 f"Action '{action}' for Waypoint ID {waypoint.id}"
-                f"expects {len(expected_types)} parameter(s), but got {len(params)}."
+                f"expects at least {required_params} parameter(s), but got {len(params)}!"
             )
 
-        for i, (param, expected_type) in enumerate(zip(params, expected_types)):
+        for i, param in enumerate(params):
+            expected_type = expected_types[i]
             if not isinstance(param, expected_type):
                 raise ValueError(
                     f"Parameter {i+1} for action '{action}' on Waypoint ID {waypoint.id}"
-                    f"should be of type {expected_type.__name__}, but got {type(param).__name__}."
+                    f"should be of type {expected_type.__name__}, but got {type(param).__name__}!"
                 )
 
 
@@ -150,7 +161,7 @@ def load_waypoints_from_txt(filename: str) -> WaypointsList:
         # Check waypoint number of parameters
         parts = line.strip().split(",")
         if len(parts) < 4:
-            raise ValueError(f"Invalid waypoint format: {line}, in line {i+1}")
+            raise ValueError(f"Invalid waypoint format: {line}, in line {i+1}!")
 
         id = int(parts[0].strip())
         pn = float(parts[1].strip())
@@ -161,15 +172,14 @@ def load_waypoints_from_txt(filename: str) -> WaypointsList:
         action_code = action_code or "NONE"
         params = []
 
-        if action_code in WAYPOINT_ACTION_PARAMS:
-            expected_types = WAYPOINT_ACTION_PARAMS[action_code]
-            for i, param_type in enumerate(expected_types):
+        if action_code in WAYPOINT_ACTION_PARAM_TYPES:
+            expected_types = WAYPOINT_ACTION_PARAM_TYPES[action_code]
+            for i, param_str in enumerate(parts[5:]):
                 param_type = expected_types[i]
-                param_str = str(parts[5 + i].strip())
-                params.append(param_type(param_str))
+                params.append(param_type(param_str.strip()))
         else:
             raise ValueError(
-                f"Invalid waypoint action code: {action_code}, in line {i+1}"
+                f"Invalid waypoint action code: {action_code}, in line {i+1}!"
             )
 
         waypoint = Waypoint(id, pn, pe, h, action_code, *params)

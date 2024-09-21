@@ -5,12 +5,39 @@
  https://opensource.org/licenses/MIT
 """
 
+from dataclasses import dataclass
+
 import numpy as np
 
 from simulator.autopilot.autopilot_config import AutopilotConfig
 from simulator.autopilot.pid_controller import PIDController
 from simulator.common.constants import EARTH_GRAVITY_CONSTANT as g
 from simulator.math.angles import diff_angle_pi
+
+
+@dataclass
+class FlightCommand:
+    """
+    Data structure for holding path following output commands.
+
+    Attributes
+    ----------
+    target_roll : float
+        The target roll angle for the vehicle.
+    target_pitch : float
+        The target pitch angle for the vehicle.
+    target_course : float
+        The target course angle for the vehicle.
+    target_altitude : float
+        The target altitude for the vehicle.
+    target_airspeed : float
+        The target airspeed for the vehicle.
+    """
+    target_roll: float = None
+    target_pitch: float = None
+    target_course: float = None
+    target_altitude: float = None
+    target_airspeed: float = None
 
 
 class FlightControl:

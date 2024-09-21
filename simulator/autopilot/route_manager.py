@@ -52,12 +52,16 @@ class RouteManager:
         pos_ned : np.ndarray
             Current position of the vehicle in North-East-Down (NED) coordinates.
         """
+        self._check_status()
+
         if self.wp_coords is None or self.status == "wait":
             raise Exception("Set waypoints before restart!")
+        
         # if the aircraft is not inside the WP0 area
         if not self.is_on_waypoint(pos_ned, wp_id=0):
             # set an initial waypoint at current aircraft position
             self.wp_coords = np.vstack((pos_ned, self.wp_coords))
+
         self.wp_target = 1
         self.status = "run"
 
@@ -75,6 +79,7 @@ class RouteManager:
         pos_ned : np.ndarray
             Current position of the vehicle in North-East-Down (NED) coordinates.
         """
+        self._check_status()
 
         if self.status != "run":
             return
@@ -92,8 +97,6 @@ class RouteManager:
         # advance to the next waypoint
         else:
             self.wp_target += 1
-
-
 
     def set_waypoints(self, wps: np.ndarray) -> None:
         """
@@ -278,3 +281,7 @@ class RouteManager:
 
     def force_fail_mode(self) -> None:
         self.status = "fail"
+
+    def _check_status(self) -> None:
+        if self.status not in ROUTE_MANAGER_STATUS:
+            raise ValueError(f"Not valid route manager status: {self.status}!")
