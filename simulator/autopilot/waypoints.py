@@ -32,9 +32,21 @@ WAYPOINT_ACTION_CLASSES: Dict[str, WaypointAction] = {
 WAYPOINT_ACTION_PARAM_TYPES: Dict[str, List[type]] = {
     "NONE": [],
     "ORBIT_UNLIM": [float, int],  # radius (optional), direction (optional)
-    "ORBIT_TIME": [float, float, int],  # wait time, radius (optional), direction (optional)
-    "ORBIT_TURNS": [float, float, int],  # turns, radius (optional), direction (optional)
-    "ORBIT_ALT": [float, float, int],  # altitude, radius (optional), direction (optional)
+    "ORBIT_TIME": [
+        float,
+        float,
+        int,
+    ],  # wait time, radius (optional), direction (optional)
+    "ORBIT_TURNS": [
+        float,
+        float,
+        int,
+    ],  # turns, radius (optional), direction (optional)
+    "ORBIT_ALT": [
+        float,
+        float,
+        int,
+    ],  # altitude, radius (optional), direction (optional)
     "GO_WAYPOINT": [int, int],  # waypoint id, times to repeat (optional)
     "SET_AIRSPEED": [float],  # airspeed
 }
@@ -49,10 +61,52 @@ WAYPOINT_ACTION_REQUIRED_PARAMS: Dict[str, int] = {
     "SET_AIRSPEED": 1,  # airspeed
 }
 
+
 class Waypoint:
+    """
+    Represents a waypoint with position (pn, pe, h) and an optional action.
+
+    Attributes
+    ----------
+    id : int
+        The unique ID of the waypoint.
+    pn : float
+        North coordinate of the waypoint.
+    pe : float
+        East coordinate of the waypoint.
+    h : float
+        Altitude of the waypoint.
+    ned_coords : np.ndarray
+        NED (North, East, Down) coordinates of the waypoint.
+    action : WaypointAction
+        The action associated with this waypoint, if any.
+    action_code : str
+            Code representing the action to be performed at this waypoint. Default is None.
+    params : tuple
+        Parameters for the specified action.
+    """
+
     def __init__(
         self, id: int, pn: float, pe: float, h: float, action_code: str = None, *params
     ) -> None:
+        """
+        Initializes a Waypoint object with position and optional action.
+
+        Parameters
+        ----------
+        id : int
+            Unique identifier for the waypoint.
+        pn : float
+            North position of the waypoint.
+        pe : float
+            East position of the waypoint.
+        h : float
+            Altitude of the waypoint.
+        action_code : str, optional
+            Code representing the action to be performed at this waypoint. Default is None.
+        *params : tuple
+            Parameters for the specified action.
+        """
         self.id = id
         self.pn = pn
         self.pe = pe
@@ -83,39 +137,82 @@ class Waypoint:
 
 
 class WaypointsList:
+    """
+    Manages a collection of waypoints.
+
+    Attributes
+    ----------
+    waypoints : dict of int: Waypoint
+        Dictionary of waypoints, where the key is the waypoint ID and the value is the Waypoint object.
+    """
+
     def __init__(self) -> None:
-        self.waypoints: List[Waypoint] = []
+        # Store waypoints in a dictionary, using their id as the key
+        self.waypoints: Dict[int, Waypoint] = {}
 
     def __iter__(self) -> Iterator[Waypoint]:
-        return iter(self.waypoints)
+        return iter(self.waypoints.values())
 
     def __getitem__(self, index: int) -> Waypoint:
-        return self.waypoints[index]
+        # Access waypoint by index (optional, if needed)
+        return list(self.waypoints.values())[index]
 
     def __len__(self) -> int:
         return len(self.waypoints)
 
     def add_waypoint(self, waypoint: Waypoint) -> None:
-        self.validate_waypoint(waypoint)
-        self.waypoints.append(waypoint)
+        self._validate_waypoint(waypoint)
+        # Add the waypoint to the dictionary, using its id as the key
+        self.waypoints[waypoint.id] = waypoint
 
     def get_waypoint(self, id: int) -> Waypoint:
-        wp = self.waypoints[id - 1]
-        return wp
+        """
+        Retrieves a waypoint by its ID.
+
+        Parameters
+        ----------
+        id : int
+            The ID of the waypoint.
+
+        Returns
+        -------
+        Waypoint
+            The waypoint with the specified ID.
+
+        Raises
+        ------
+        ValueError
+            If the waypoint with the specified ID is not found.
+        """
+        try:
+            # Directly access the waypoint by id
+            return self.waypoints[id]
+        except KeyError:
+            raise ValueError(f"Waypoint with ID {id} not found!")
 
     def get_waypoint_coords(self) -> np.ndarray:
+        """
+        Gets the NED (North, East, Down) coordinates of all waypoints in the list.
+
+        Returns
+        -------
+        np.ndarray
+            N-by-3 size array with the NED coordinates of all waypoints,
+            where N is the number of waypoints.
+        """
         wps = np.zeros((self.__len__(), 3))
-        for k, wp in enumerate(self.waypoints):
+        for k, wp in enumerate(self.waypoints.values()):
             wps[k, :] = wp.ned_coords
         return wps
 
-    def validate_waypoint(self, waypoint: Waypoint) -> None:
+    def _validate_waypoint(self, waypoint: Waypoint) -> None:
         action = waypoint.action_code
         params = waypoint.params
 
         if waypoint.id <= 0:
             raise ValueError(f"Waypoint ID {waypoint.id} must be greater than zero!")
-        if any(wp.id == waypoint.id for wp in self.waypoints):
+        
+        if waypoint.id in self.waypoints:
             raise ValueError(f"Waypoint ID {waypoint.id} already exists in the list!")
 
         if action not in WAYPOINT_ACTION_PARAM_TYPES:
@@ -133,8 +230,10 @@ class WaypointsList:
                 f"expects at least {required_params} parameter(s), but got {len(params)}!"
             )
 
-        for i, param in enumerate(params):
-            expected_type = expected_types[i]
+        # zip discards extra params if there are more than expected type
+        # also discards expected types ir there are more than provided params*
+        # *provided params have been already checked to be the minimum required
+        for i, (param, expected_type) in enumerate(zip(params, expected_types)):
             if not isinstance(param, expected_type):
                 raise ValueError(
                     f"Parameter {i+1} for action '{action}' on Waypoint ID {waypoint.id}"
@@ -143,6 +242,24 @@ class WaypointsList:
 
 
 def load_waypoints_from_txt(filename: str) -> WaypointsList:
+    """
+    Loads waypoints from a text file and returns a WaypointsList object.
+
+    Parameters
+    ----------
+    filename : str
+        Path to the text file containing the waypoints.
+
+    Returns
+    -------
+    WaypointsList
+        A list of waypoints loaded from the file.
+
+    Raises
+    ------
+    ValueError
+        If a waypoint line is invalid or if the action code is not valid.
+    """
     wps_list = WaypointsList()
 
     with open(filename, "r") as file:

@@ -14,8 +14,8 @@ from simulator.autopilot.base_follower import BasePathFollower, BasePathParams
 from simulator.autopilot.line_follower import LinePathFollower, LinePathParams
 from simulator.autopilot.orbit_follower import OrbitPathFollower, OrbitPathParams
 
+PATH_FOLLOWER_TYPES = ["none", "line", "orbit"]
 PATH_FOLLOWER_STATUS = ["wait", "init", "follow"]
-
 class PathFollower:
     """
     Manages switching between line following and orbit following for path guidance.
@@ -52,8 +52,8 @@ class PathFollower:
         self.active_follower: BasePathFollower = None
         self.status = "wait"
         self.active_follower_type = "none"
-        self.active_follower_info = "none"
-        self.active_follower_status = "none"
+        self.active_follower_info: str = None
+        self.active_follower_status: str = None
 
     def reset(self) -> None:
         """
@@ -62,8 +62,8 @@ class PathFollower:
         self.active_follower = None
         self.status = "wait"
         self.active_follower_type = "none"
-        self.active_follower_info = "none"
-        self.active_follower_status = "none"
+        self.active_follower_info = None
+        self.active_follower_status = None
 
     def follow_line(self, line_params: LinePathParams) -> None:
         """
@@ -130,14 +130,19 @@ class PathFollower:
         """
         if self.status == "wait":
             raise Exception("Select a follower before update!")
+        
         elif self.status in ["init", "follow"]:
             self.status = "follow"
+            
         else:
             raise ValueError(f"Not valid path follower status: {self.status}!")
 
         course_ref, altitude_ref = self.active_follower.guidance(pos_ned, course)
 
-        if self.active_follower_type == "line":
+        if self.active_follower_type == "none":
+            raise Exception("Select a follower before update!")
+        
+        elif self.active_follower_type == "line":
             lat_dev = self.line_follower.get_lateral_distance(pos_ned)
             self.active_follower_status = f"Lateral error: {lat_dev:.1f} m"
         

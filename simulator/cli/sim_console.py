@@ -32,6 +32,9 @@ class SimConsole:
         """
         self.console = Console()
 
+    def clear(self) -> None:
+        self.console.clear()
+
     def print_time(
         self,
         t_sim: float,
@@ -151,18 +154,26 @@ class SimConsole:
         )
         self.console.print(
             f"Mission Control Status: {self._format_status(mission.status)}, "
+            f"Elapsed Time: [bold cyan]{seconds_to_dhms(mission.t)}[/bold cyan], "
             f"Wait Orbit: {mission.is_on_wait_orbit}, "
-            f"Action Running: {mission.is_action_running}, "
+            f"Action Running: {mission.is_action_running}"
+        )
+        wp = mission.target_waypoint
+        self.console.print(
+            f"Target Waypoint ID: {wp.id}, "
+            f"Action Code: [bold cyan]{wp.action_code}[/bold cyan]"
+        )
+        am = mission.actions_manager
+        self.console.print(
+            f"Action Manager Status: {self._format_status(am.status)}, "
+            f"Active Action: [bold cyan]{am.active_action_code.upper()}[/bold cyan], "
+            f"{am.active_action_status}"
         )
         rm = mission.route_manager
         self.console.print(
             f"Route Manager Status: {self._format_status(rm.status)}, "
             f"Target WP: {rm.wp_target}, "
             f"Distance to WP: {rm.get_distance_to_waypoint(mission.pos_ned):.1f} m"
-        )
-        wp = mission.active_waypoint
-        self.console.print(
-            f"Active Waypoint: {wp.id}, Action Code: {wp.action_code}"
         )
         pf = mission.path_follower
         self.console.print(
@@ -172,13 +183,77 @@ class SimConsole:
         )
         self.console.rule()
 
+    def print_waypoints_table(self, mission: MissionControl) -> None:
+        table = Table()
+
+        table.add_column("Status", style="magenta")
+        table.add_column("WP")
+        table.add_column("ID")
+        table.add_column("PN (m)")
+        table.add_column("PE (m)")
+        table.add_column("H (m)")
+        table.add_column("Action")
+        table.add_column("Params")
+
+        if mission.route_manager.wp_coords.shape[0] == len(mission.waypoints):
+            _index_offset = 0
+
+        elif mission.route_manager.wp_coords.shape[0] == len(mission.waypoints) + 1:
+            _index_offset = 1
+
+        else:
+            raise Exception(
+                f"Expected {len(self.waypoints)} waypoints in route manager "
+                f"(or {len(self.waypoints) + 1} if aux initial waypoint is used), "
+                f"but got {self.route_manager.wp_coords.shape[0]}!"
+            )
+
+        for i, wp in enumerate(mission.waypoints):
+            if mission.target_waypoint.id > wp.id:
+                status = "DONE"
+                color = "cyan"
+
+            elif mission.target_waypoint.id == wp.id:
+                if mission.status == "end":
+                    status = "DONE"
+                    color = "cyan"
+
+                elif mission.status == "fail":
+                    status = "FAIL"
+                    color = "red"
+
+                else:
+                    status = ">>>>"
+                    color = "green"
+
+            else:
+                status = ""
+                color = ""
+
+            table.add_row(
+                f"[bold]{status}[/bold]",
+                f"{i + _index_offset}",
+                f"{wp.id}",
+                f"{wp.pn:.2f}",
+                f"{wp.pe:.2f}",
+                f"{wp.h:.2f}",
+                f"{wp.action_code}",
+                f"{wp.params}",
+                style=color,
+            )
+
+        self.console.print(
+            "[bold magenta underline]Waypoints Table[/bold magenta underline]"
+        )
+        self.console.print(table)
+
     def _format_status(self, status: str, upper: bool = True) -> str:
         if status.lower() in ["run", "follow"]:
             color = "green"
         elif status.lower() in ["end", "fail"]:
             color = "red"
-        elif status.lower() in ["wait"]:
-            color = "grey"
+        elif status.lower() in ["wait", "none"]:
+            color = "magenta"
         else:
             color = "cyan"
         _status = status.upper() if upper else status
@@ -187,10 +262,12 @@ class SimConsole:
     def _print_time_simple(
         self, t_sim: float, t_real: float, dt_sim: float = None, k_sim: int = None
     ) -> None:
-        self.console.clear()
         t_sim_str = seconds_to_dhms(t_sim)
         t_real_str = seconds_to_dhms(t_real)
-        txt = f"Real Time: {t_real_str}, Sim Time: {t_sim_str}"
+        txt = (
+            f"Real Time: [bold cyan]{t_real_str}[/bold cyan], "
+            f"Sim Time: [bold cyan]{t_sim_str}[/bold cyan]"
+        )
         if dt_sim is not None:
             txt += f", Sim Time Step: {dt_sim:.4f} s"
         if k_sim is not None:
@@ -201,7 +278,6 @@ class SimConsole:
     def _print_time_table(
         self, t_sim: float, t_real: float, dt_sim: float = None, k_sim: int = None
     ) -> None:
-        self.console.clear()
         table = Table()
 
         # Define columns
@@ -252,6 +328,9 @@ class SimConsole:
         self.console.print(table)
 
     def _print_aircraft_state_simple(self, state: AircraftState) -> None:
+        self.console.print(
+            "[bold magenta underline]Aircraft State[/bold magenta underline]"
+        )
         self.console.print(
             f"NED position (m): pn: {state.pn:.2f}, pe: {state.pe:.2f}, pd: {state.pd:.2f}"
         )
