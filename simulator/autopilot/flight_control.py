@@ -18,7 +18,7 @@ from simulator.math.angles import diff_angle_pi
 @dataclass
 class FlightCommand:
     """
-    Data structure for holding path following output commands.
+    Data structure for holding flight control commands.
 
     Attributes
     ----------
@@ -33,6 +33,7 @@ class FlightCommand:
     target_airspeed : float
         The target airspeed for the vehicle.
     """
+
     target_roll: float = None
     target_pitch: float = None
     target_course: float = None
@@ -45,7 +46,6 @@ class FlightCommand:
         self.target_course = None
         self.target_altitude = None
         self.target_airspeed = None
-
 
 
 class FlightControl:

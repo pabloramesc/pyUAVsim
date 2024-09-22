@@ -26,6 +26,11 @@ class PathNavCommand:
     path_params: BasePathParams = None
     is_new_path: bool = True
 
+    def reset(self) -> None:
+        self.path_type = None
+        self.path_params = None
+        self.is_new_path = True
+
 class PathNavigator(ABC):
     """
     Abstract base class for path navigators that provide guidance for different path following strategies.

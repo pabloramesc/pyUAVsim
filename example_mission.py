@@ -31,7 +31,7 @@ x_trim, delta_trim = uav.trim(Va=25.0)
 
 autopilot = Autopilot(dt, aerosonde_params, uav.state)
 
-waypoints_file = r"config/set_airspeed.wp"
+waypoints_file = r"config/go_waypoint.wp"
 waypoints_list = load_waypoints_from_txt(waypoints_file)
 mission = MissionControl(dt, autopilot.config)
 mission.initialize(waypoints_list, Va=25.0, h=0.0, chi=0.0)
@@ -56,7 +56,7 @@ while True:
 
     gui.add_data(state=uav.state)
 
-    if k_sim % 1000 == 0:  # update interface each 10 steps
+    if k_sim % 10 == 0:  # update interface each 10 steps
         t_real = time.time() - t0
         cli.clear()
         cli.print_time(t_sim, t_real, dt, k_sim, style="simple")
