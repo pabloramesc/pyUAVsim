@@ -74,12 +74,12 @@ Uses the estimated state along with mission parameters or joystick/controller in
 - [ ] Actuators simulation (servos and DC motor) with realistic transfer functions
 - [ ] Estimation filters for airtcraft's state estimation
 - [x] Implement all autopilot layers: flight control, path following, path navigator and route manager.
-- [ ] Mission parametes (waypoints) and autopilot modes (manual, FBW, auto...) support
+- [x] Mission parametes (waypoints) support
 - [ ] Add TECS and LQR control
 - [ ] Add PX4 attitude controller
 - [ ] Add control gain atotuning method
 - [ ] Implement Genetic Algorithm optimization
-- [ ] Real-time external joystick/controller support
+- [ ] Real-time external joystick/controller and autopilot modes (manual, FBW, auto...) support
 - [ ] Unity 3D visualiztion framework 
 
 ## Tests
