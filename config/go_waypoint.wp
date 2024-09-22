@@ -1,0 +1,11 @@
+# Waypoints File
+# Format: id, pn, pe, h, action, param1, param2, param3, ...
+# Note: action and params are optional
+
+111, 0.0, 0.0, 0.0
+222, 1000.0, 0.0, 50.0
+333, 2000.0, 0.0, 50.0
+444, 2000.0, 1000.0, 50.0, GO_WAYPOINT, 666, 3
+555, 3000.0, 1000.0, 50.0, ORBIT_UNLIM
+666, 1000.0, 1000.0, 50.0
+777, 1000.0, 0.0, 50.0, GO_WAYPOINT, 222

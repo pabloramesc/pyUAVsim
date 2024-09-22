@@ -29,36 +29,24 @@ WAYPOINT_ACTION_CLASSES: Dict[str, WaypointAction] = {
     "SET_AIRSPEED": SetAirspeed,
 }
 
-WAYPOINT_ACTION_PARAM_TYPES: Dict[str, List[type]] = {
-    "NONE": [],
-    "ORBIT_UNLIM": [float, int],  # radius (optional), direction (optional)
-    "ORBIT_TIME": [
-        float,
-        float,
-        int,
-    ],  # wait time, radius (optional), direction (optional)
-    "ORBIT_TURNS": [
-        float,
-        float,
-        int,
-    ],  # turns, radius (optional), direction (optional)
-    "ORBIT_ALT": [
-        float,
-        float,
-        int,
-    ],  # altitude, radius (optional), direction (optional)
-    "GO_WAYPOINT": [int, int],  # waypoint id, times to repeat (optional)
-    "SET_AIRSPEED": [float],  # airspeed
-}
-
 WAYPOINT_ACTION_REQUIRED_PARAMS: Dict[str, int] = {
     "NONE": 0,
     "ORBIT_UNLIM": 0,  # radius (optional), direction (optional)
-    "ORBIT_TIME": 1,  # wait time, radius (optional), direction (optional)
+    "ORBIT_TIME": 1,  # time, radius (optional), direction (optional)
     "ORBIT_TURNS": 1,  # turns, radius (optional), direction (optional)
     "ORBIT_ALT": 1,  # altitude, radius (optional), direction (optional)
-    "GO_WAYPOINT": 1,  # waypoint id, times to repeat (optional)
+    "GO_WAYPOINT": 1,  # id, repeat (optional)
     "SET_AIRSPEED": 1,  # airspeed
+}
+
+WAYPOINT_ACTION_PARAM_TYPES: Dict[str, List[type]] = {
+    "NONE": [],
+    "ORBIT_UNLIM": [float, int],  # radius, direction
+    "ORBIT_TIME": [float, float, int],  # time, radius, direction
+    "ORBIT_TURNS": [float, float, int],  # turns, radius, direction
+    "ORBIT_ALT": [float, float, int],  # altitude, radius, direction
+    "GO_WAYPOINT": [int, int],  # id, repeat
+    "SET_AIRSPEED": [float],  # airspeed
 }
 
 
@@ -87,7 +75,13 @@ class Waypoint:
     """
 
     def __init__(
-        self, id: int, pn: float, pe: float, h: float, action_code: str = None, *params
+        self,
+        id: int,
+        pn: float,
+        pe: float,
+        h: float,
+        action_code: str = None,
+        *params,
     ) -> None:
         """
         Initializes a Waypoint object with position and optional action.
@@ -116,6 +110,21 @@ class Waypoint:
 
         self.ned_coords = np.array([pn, pe, -h])
         self.action = self._build_action(action_code, *params)
+        if self.action is not None:
+            self.params = self.action.params
+
+    @property
+    def ned_coords(self) -> np.ndarray:
+        """3-size array with waypoint NED (North, East, Down) coordinates in meters"""
+        return np.array([self.pn, self.pe, -self.h])
+
+    @ned_coords.setter
+    def ned_coords(self, coords: np.ndarray) -> None:
+        if coords.shape != (3,):
+            raise ValueError("NED coordinates must be a 3-element array!")
+        self.pn = coords[0]
+        self.pe = coords[1]
+        self.h = -coords[2]  # Since Down is negative altitude
 
     def _build_action(self, action_code: str, *params) -> WaypointAction:
         if action_code is None:
@@ -131,7 +140,7 @@ class Waypoint:
 
     def __repr__(self) -> str:
         return (
-            f"Waypoint(id={self.id}, pn={self.pn}, pe={self.pe}, h={self.h}, "
+            f"Waypoint(id={self.id}, pn={self.pn:.2f} m, pe={self.pe:.2f} m, h={self.h:.2f} m, "
             f"action_code={self.action_code}, params={self.params})"
         )
 
@@ -142,28 +151,20 @@ class WaypointsList:
 
     Attributes
     ----------
-    waypoints : dict of int: Waypoint
+    waypoints : Dict[int, Waypoint]
         Dictionary of waypoints, where the key is the waypoint ID and the value is the Waypoint object.
     """
 
     def __init__(self) -> None:
         # Store waypoints in a dictionary, using their id as the key
         self.waypoints: Dict[int, Waypoint] = {}
-
-    def __iter__(self) -> Iterator[Waypoint]:
-        return iter(self.waypoints.values())
-
-    def __getitem__(self, index: int) -> Waypoint:
-        # Access waypoint by index (optional, if needed)
-        return list(self.waypoints.values())[index]
-
-    def __len__(self) -> int:
-        return len(self.waypoints)
+        self.sorted_waypoints: List[Waypoint] = []
 
     def add_waypoint(self, waypoint: Waypoint) -> None:
         self._validate_waypoint(waypoint)
         # Add the waypoint to the dictionary, using its id as the key
         self.waypoints[waypoint.id] = waypoint
+        self._sort_waypoints()
 
     def get_waypoint(self, id: int) -> Waypoint:
         """
@@ -185,12 +186,35 @@ class WaypointsList:
             If the waypoint with the specified ID is not found.
         """
         try:
-            # Directly access the waypoint by id
             return self.waypoints[id]
         except KeyError:
             raise ValueError(f"Waypoint with ID {id} not found!")
+        
+    def get_waypoint_index(self, id: int) -> int:
+        """
+        Retrieves the index of a waypoint by its ID.
 
-    def get_waypoint_coords(self) -> np.ndarray:
+        Parameters
+        ----------
+        id : int
+            The ID of the waypoint.
+
+        Returns
+        -------
+        int
+            The index of the waypoint in the sorted list.
+
+        Raises
+        ------
+        ValueError
+            If the waypoint with the specified ID is not found.
+        """
+        for index, wp in enumerate(self.sorted_waypoints):
+            if wp.id == id:
+                return index
+        raise ValueError(f"Waypoint with ID {id} not found!")
+
+    def get_all_waypoint_coords(self) -> np.ndarray:
         """
         Gets the NED (North, East, Down) coordinates of all waypoints in the list.
 
@@ -201,17 +225,17 @@ class WaypointsList:
             where N is the number of waypoints.
         """
         wps = np.zeros((self.__len__(), 3))
-        for k, wp in enumerate(self.waypoints.values()):
+        for k, wp in enumerate(self.sorted_waypoints):
             wps[k, :] = wp.ned_coords
         return wps
 
     def _validate_waypoint(self, waypoint: Waypoint) -> None:
-        action = waypoint.action_code
+        action = waypoint.action_code or "NONE"
         params = waypoint.params
 
-        if waypoint.id <= 0:
-            raise ValueError(f"Waypoint ID {waypoint.id} must be greater than zero!")
-        
+        if waypoint.id < 0:
+            raise ValueError(f"Waypoint ID {waypoint.id} must be positive!")
+
         if waypoint.id in self.waypoints:
             raise ValueError(f"Waypoint ID {waypoint.id} already exists in the list!")
 
@@ -239,6 +263,27 @@ class WaypointsList:
                     f"Parameter {i+1} for action '{action}' on Waypoint ID {waypoint.id}"
                     f"should be of type {expected_type.__name__}, but got {type(param).__name__}!"
                 )
+
+    def _sort_waypoints(self) -> None:
+        self.sorted_waypoints = sorted(self.waypoints.values(), key=lambda wp: wp.id)
+
+    def __str__(self) -> str:
+        return "\n".join([f"Waypoint {wp.id}: {wp}" for wp in self.sorted_waypoints])
+
+    def __repr__(self) -> str:
+        return f"WaypointsList({', '.join([repr(wp) for wp in self.sorted_waypoints])})"
+
+    def __len__(self) -> int:
+        return len(self.sorted_waypoints)
+
+    def __iter__(self) -> Iterator[Waypoint]:
+        return iter(self.sorted_waypoints)
+
+    def __getitem__(self, index: int) -> Waypoint:
+        return self.sorted_waypoints[index]
+    
+    def __contains__(self, wp_id: int) -> bool:
+        return wp_id in self.waypoints
 
 
 def load_waypoints_from_txt(filename: str) -> WaypointsList:
@@ -292,6 +337,8 @@ def load_waypoints_from_txt(filename: str) -> WaypointsList:
         if action_code in WAYPOINT_ACTION_PARAM_TYPES:
             expected_types = WAYPOINT_ACTION_PARAM_TYPES[action_code]
             for i, param_str in enumerate(parts[5:]):
+                if param_str == "":
+                    break
                 param_type = expected_types[i]
                 params.append(param_type(param_str.strip()))
         else:

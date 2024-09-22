@@ -39,6 +39,14 @@ class FlightCommand:
     target_altitude: float = None
     target_airspeed: float = None
 
+    def reset(self) -> None:
+        self.target_roll = None
+        self.target_pitch = None
+        self.target_course = None
+        self.target_altitude = None
+        self.target_airspeed = None
+
+
 
 class FlightControl:
 

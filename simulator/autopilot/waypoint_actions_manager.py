@@ -33,7 +33,7 @@ class WaypointActionsManager:
         self.active_action_code = "none"
         self.active_action_status = None
 
-    def update(self, wp: Waypoint, pos_ned: np.ndarray, dt: float) -> PathNavCommand:
+    def update(self, pos_ned: np.ndarray, dt: float) -> PathNavCommand:
 
         if self.status not in ACTIONS_MANAGER_STATUS:
             raise ValueError(f"Not valid waypoint actions manager status: {self.status}!")
@@ -43,20 +43,23 @@ class WaypointActionsManager:
             self.active_action_code = "none"
             self.active_action_status = None
 
-        if wp.action is not None:
-            if self.status == "wait" and self.route_manager.is_on_waypoint(pos_ned, wp.id):
-                wp.action.restart()
-                if self._is_orbit_action(wp.action_code):
-                    self._set_orbit_path(wp)
-                self.active_action_code = wp.action_code.lower()
+        target_wp = self.route_manager.get_waypoint()
+
+        if target_wp.action is not None:
+            if self.status == "wait" and self.route_manager.is_on_waypoint(pos_ned):
+                target_wp.action.restart()
+                if self._is_orbit_action(target_wp.action_code):
+                    self._set_orbit_path(target_wp)
+                self.active_action_code = target_wp.action_code.lower()
                 self.status = "run"
 
             if self.status == "run":
-                self._execute_action(wp, pos_ned, dt)
+                self._execute_action(target_wp, pos_ned, dt)
                 self.status = "run"
 
-            if wp.action.is_done():
-                self.route_manager.advance()
+            if target_wp.action.is_done():
+                if target_wp.action_code != "GO_WAYPOINT":
+                    self.route_manager.advance(pos_ned)
                 self.status = "done"
 
         return self.path_cmd
@@ -66,11 +69,19 @@ class WaypointActionsManager:
         return action_code in orbit_action_codes
 
     def _set_orbit_path(self, wp: Waypoint) -> None:
-        action: OrbitUnlimited = wp.action
+        # use orbit unlim as base class for other orbit actions
+        orbit_action: OrbitUnlimited = wp.action
         self.path_cmd.path_type = "orbit"
         self.path_cmd.path_params = OrbitPathParams(
-            wp.ned_coords, action.radius, action.direction
+            wp.ned_coords, orbit_action.radius, orbit_action.direction
         )
+
+        # modify orbit center and waypoint coordinates altitude
+        if wp.action_code == "ORBIT_ALT":
+            orbit_alt_action: OrbitAlt = wp.action
+            self.path_cmd.path_params.center[2] = -orbit_alt_action.altitude
+            self.route_manager.set_waypoint_coords(self.path_cmd.path_params.center)
+
         self.path_cmd.is_new_path = True
 
     def _execute_action(self, wp: Waypoint, pos_ned: np.ndarray, dt: float) -> None:
@@ -89,8 +100,8 @@ class WaypointActionsManager:
                 f"Invalid action code: {wp.action_code}, for waypoint id: {wp.id}!"
             )
 
-    def _orbit_info(radius: float, dir: int) -> str:
-        dir_str = "CCW" if dir > 0 else "CW"
+    def _orbit_info(self, radius: float, dir: int) -> str:
+        dir_str = "CW" if dir > 0 else "CCW"
         return f"Radius: {radius:.1f} m, Direction: {dir_str}"
 
     def _execute_orbit_unlimited(
@@ -105,7 +116,7 @@ class WaypointActionsManager:
         action.execute(dt)
         self.active_action_status = self._orbit_info(action.radius, action.direction)
         self.active_action_status += (
-            f"Orbit time: {action.time:.2f} s, Elapsed Time: {action.elapsed_time:.2f} s"
+            f", Orbit time: {action.time:.2f} s, Elapsed Time: {action.elapsed_time:.2f} s, "
             f"Progress: {action.elapsed_time/action.time*100.0:.2f}%"
         )
 
@@ -118,7 +129,7 @@ class WaypointActionsManager:
         action.execute(ang_pos)
         self.active_action_status = self._orbit_info(action.radius, action.direction)
         self.active_action_status += (
-            f"Orbit turns: {action.turns}, Completed turns: {action.completed_turns:.1f}, "
+            f", Orbit turns: {action.turns}, Completed turns: {action.completed_turns:.1f}, "
             f"Progress: {action.completed_turns/action.turns*100.0:.2f}%"
         )
 
@@ -128,8 +139,8 @@ class WaypointActionsManager:
         action.execute(alt)
         self.active_action_status = self._orbit_info(action.radius, action.direction)
         self.active_action_status += (
-            f"Orbit altitude: {action.altitude:.1f} m, Current altitude: {alt:.1f} m, "
-            f"Progress: {alt/action.altitude*100.0:.2f}%"
+            f", Orbit altitude: {action.altitude:.1f} m, Current altitude: {alt:.1f} m, "
+            f"Error: {alt - action.altitude:.2f} m"
         )
 
     def _execute_go_waypoint(
@@ -137,7 +148,7 @@ class WaypointActionsManager:
     ) -> None:
         action: GoWaypoint = wp.action
         if action.has_pending_jumps():
-            self.route_manager.set_target_waypoint(action.waypoint_id)
+            self.route_manager.set_target_waypoint(action.wp_id)
         action.execute()
         self.active_action_status = (
             f"Repeat: {action.repeat}, Repeat Count: {action.repeat_count}"

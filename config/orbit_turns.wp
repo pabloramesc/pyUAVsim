@@ -1,0 +1,7 @@
+# Waypoints File
+# Format: id, pn, pe, h, action, param1, param2, param3, ...
+# Note: action and params are optional
+
+111, 0.0, 0.0, 0.0
+222, 1000.0, 0.0, 50.0, ORBIT_TURNS, 3, 200.0, 1
+333, 2000.0, 0.0, 50.0

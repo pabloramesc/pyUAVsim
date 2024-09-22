@@ -23,6 +23,7 @@ class WaypointAction(ABC):
     params : tuple
         Stores the parameters for the action.
     """
+
     def __init__(self, *params) -> None:
         """
         Initialize the WaypointAction.
@@ -88,6 +89,7 @@ class OrbitUnlimited(WaypointAction):
     direction : int
         The direction of the orbit (1 for clockwise, -1 for counterclockwise).
     """
+
     def __init__(self, radius: float = DEFAULT_RADIUS, direction: int = 1) -> None:
         """
         Initialize the OrbitUnlimited action.
@@ -99,7 +101,7 @@ class OrbitUnlimited(WaypointAction):
         direction : int, optional
             The direction of the orbit (1 for clockwise, -1 for counterclockwise; default is 1).
         """
-        super().__init__(radius)
+        super().__init__(radius, direction)
         self.radius = radius
         self.direction = direction
 
@@ -149,7 +151,10 @@ class OrbitTime(WaypointAction):
     elapsed_time : float
         The accumulated time spent orbiting.
     """
-    def __init__(self, time: float, radius: float = DEFAULT_RADIUS, direction: int = 1) -> None:
+
+    def __init__(
+        self, time: float, radius: float = DEFAULT_RADIUS, direction: int = 1
+    ) -> None:
         """
         Initialize the OrbitTime action.
 
@@ -162,7 +167,7 @@ class OrbitTime(WaypointAction):
         direction : int, optional
             The direction of the orbit (1 for clockwise, -1 for counterclockwise; default is 1).
         """
-        super().__init__(time, radius)
+        super().__init__(time, radius, direction)
         self.time = time
         self.radius = radius
         self.direction = direction
@@ -222,25 +227,28 @@ class OrbitTurns(WaypointAction):
     completed_turns : float
         The number of completed turns.
     """
-    def __init__(self, turns: int, radius: float = DEFAULT_RADIUS, direction: int = 1) -> None:
+
+    def __init__(
+        self, turns: float, radius: float = DEFAULT_RADIUS, direction: int = 1
+    ) -> None:
         """
         Initialize the OrbitTurns action.
 
         Parameters
         ----------
-        turns : int
+        turns : float
             The number of turns to complete.
         radius : float, optional
             The radius of the orbit (default is 100.0).
         direction : int, optional
             The direction of the orbit (1 for clockwise, -1 for counterclockwise; default is 1).
         """
-        super().__init__(turns, radius)
+        super().__init__(turns, radius, direction)
         self.turns = turns
         self.radius = radius
         self.direction = direction
 
-        self._prev_ang_pos = 0.0
+        self._prev_ang_pos: float = None
         self._cum_ang_pos = 0.0
         self.completed_turns = 0.0
 
@@ -253,13 +261,17 @@ class OrbitTurns(WaypointAction):
         ang_pos : float
             The current angular position of the vehicle.
         """
-        ang_pos_inc = diff_angle_pi(ang_pos, self._prev_ang_pos)
+        if self._prev_ang_pos is not None:
+            ang_pos_inc = diff_angle_pi(ang_pos, self._prev_ang_pos)
+        else:
+            ang_pos_inc = 0.0
         self._cum_ang_pos += ang_pos_inc
-        self.completed_turns += abs(self._cum_ang_pos) / (2.0 * np.pi)
+        self._prev_ang_pos = ang_pos
+        self.completed_turns = abs(self._cum_ang_pos) / (2.0 * np.pi)
 
     def restart(self) -> None:
         """Restarts the orbit action by resetting the accumulated values."""
-        self._prev_ang_pos = 0.0
+        self._prev_ang_pos = None
         self._cum_ang_pos = 0.0
         self.completed_turns = 0.0
 
@@ -301,7 +313,10 @@ class OrbitAlt(WaypointAction):
     current_altitude : float or None
         The current altitude of the vehicle.
     """
-    def __init__(self, altitude: float, radius: float = DEFAULT_RADIUS, direction: int = 1) -> None:
+
+    def __init__(
+        self, altitude: float, radius: float = DEFAULT_RADIUS, direction: int = 1
+    ) -> None:
         """
         Initialize the OrbitAlt action.
 
@@ -314,7 +329,7 @@ class OrbitAlt(WaypointAction):
         direction : int, optional
             The direction of the orbit (1 for clockwise, -1 for counterclockwise; default is 1).
         """
-        super().__init__(altitude, radius)
+        super().__init__(altitude, radius, direction)
         self.altitude = altitude
         self.radius = radius
         self.direction = direction
@@ -347,7 +362,9 @@ class OrbitAlt(WaypointAction):
         """
         if self.current_altitude is None:
             return False
-        return self.current_altitude >= self.altitude
+        return (
+            abs(self.current_altitude - self.altitude) < 1.0
+        )  # altitude tolerance of 1 meter
 
     def has_failed(self) -> bool:
         """
@@ -374,6 +391,7 @@ class GoWaypoint(WaypointAction):
     repeat_count : int
         The number of repeats that have occurred.
     """
+
     def __init__(self, wp_id: int, repeat: int = -1) -> None:
         """
         Initialize the GoWaypoint action.
@@ -385,7 +403,7 @@ class GoWaypoint(WaypointAction):
         repeat : int, optional
             The number of times to repeat the action (-1 for infinite repeats; default is -1).
         """
-        super().__init__(wp_id)
+        super().__init__(wp_id, repeat)
         self.wp_id = wp_id
         self.repeat = repeat
 
@@ -449,6 +467,7 @@ class SetAirspeed(WaypointAction):
     airspeed : float
         The target airspeed to set.
     """
+
     def __init__(self, airspeed: float) -> None:
         """
         Initialize the SetAirspeed action.

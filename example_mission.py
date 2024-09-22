@@ -31,7 +31,7 @@ x_trim, delta_trim = uav.trim(Va=25.0)
 
 autopilot = Autopilot(dt, aerosonde_params, uav.state)
 
-waypoints_file = r"config/waypoints_example.wp"
+waypoints_file = r"config/set_airspeed.wp"
 waypoints_list = load_waypoints_from_txt(waypoints_file)
 mission = MissionControl(dt, autopilot.config)
 mission.initialize(waypoints_list, Va=25.0, h=0.0, chi=0.0)
@@ -48,15 +48,15 @@ while True:
 
     uav.update(autopilot.control_deltas)  # update simulation states
 
-    course_ref, altitude_ref = mission.update(
-        uav.state.ned_position, uav.state.course_angle
-    )
+    flight_cmd = mission.update(uav.state.ned_position, uav.state.course_angle)
     autopilot.status.update_aircraft_state(uav.state)
-    autopilot.control_course_altitude_airspeed(course_ref, altitude_ref, airspeed=25.0)
+    autopilot.control_course_altitude_airspeed(
+        flight_cmd.target_course, flight_cmd.target_altitude, flight_cmd.target_airspeed
+    )
 
     gui.add_data(state=uav.state)
 
-    if k_sim % 100 == 0:  # update interface each 10 steps
+    if k_sim % 1000 == 0:  # update interface each 10 steps
         t_real = time.time() - t0
         cli.clear()
         cli.print_time(t_sim, t_real, dt, k_sim, style="simple")
@@ -64,5 +64,5 @@ while True:
         cli.print_control_deltas(uav.control_deltas, style="simple")
         cli.print_autopilot_status(autopilot.status, style="simple")
         cli.print_mission_status(mission)
-        cli.print_waypoints_table(mission)
+        cli.print_waypoints_table(mission.route_manager)
         gui.update(state=uav.state, pause=0.01)

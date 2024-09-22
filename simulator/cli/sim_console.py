@@ -13,6 +13,9 @@ from simulator.aircraft.aircraft_state import AircraftState
 from simulator.aircraft.control_deltas import ControlDeltas
 from simulator.autopilot.autopilot_status import AutopilotStatus
 from simulator.autopilot.mission_control import MissionControl
+from simulator.autopilot.route_manager import RouteManager
+from simulator.autopilot.waypoints import Waypoint
+from simulator.autopilot.waypoint_actions import OrbitTurns, OrbitTime, OrbitAlt, GoWaypoint, SetAirspeed
 from simulator.utils.readable import seconds_to_dhms, seconds_to_hhmmss
 
 
@@ -148,34 +151,34 @@ class SimConsole:
                 "Not valid style parameter! Valid options are 'simple' or 'table'."
             )
 
-    def print_mission_status(self, mission: MissionControl) -> None:
+    def print_mission_status(self, mc: MissionControl) -> None:
         self.console.print(
             "[bold magenta underline]Mission Status[/bold magenta underline]"
         )
         self.console.print(
-            f"Mission Control Status: {self._format_status(mission.status)}, "
-            f"Elapsed Time: [bold cyan]{seconds_to_dhms(mission.t)}[/bold cyan], "
-            f"Wait Orbit: {mission.is_on_wait_orbit}, "
-            f"Action Running: {mission.is_action_running}"
+            f"Mission Control Status: {self._format_status(mc.status)}, "
+            f"Elapsed Time: [bold cyan]{seconds_to_dhms(mc.t)}[/bold cyan], "
+            f"Wait Orbit: {mc.is_on_wait_orbit}, "
+            f"Action Running: {mc.is_action_running}"
         )
-        wp = mission.target_waypoint
+        wp = mc.target_waypoint
         self.console.print(
             f"Target Waypoint ID: {wp.id}, "
             f"Action Code: [bold cyan]{wp.action_code}[/bold cyan]"
         )
-        am = mission.actions_manager
+        am = mc.actions_manager
         self.console.print(
             f"Action Manager Status: {self._format_status(am.status)}, "
             f"Active Action: [bold cyan]{am.active_action_code.upper()}[/bold cyan], "
             f"{am.active_action_status}"
         )
-        rm = mission.route_manager
+        rm = mc.route_manager
         self.console.print(
             f"Route Manager Status: {self._format_status(rm.status)}, "
-            f"Target WP: {rm.wp_target}, "
-            f"Distance to WP: {rm.get_distance_to_waypoint(mission.pos_ned):.1f} m"
+            f"Target WP Index: {rm.target_index}, "
+            f"Distance to WP: {rm.get_distance_to_waypoint(mc.pos_ned):.1f} m"
         )
-        pf = mission.path_follower
+        pf = mc.path_follower
         self.console.print(
             f"Path Follower Status: {self._format_status(pf.status)}, "
             f"Active Follower: [bold cyan]{pf.active_follower_type.upper()}[/bold cyan], "
@@ -183,42 +186,30 @@ class SimConsole:
         )
         self.console.rule()
 
-    def print_waypoints_table(self, mission: MissionControl) -> None:
+    def print_waypoints_table(self, rm: RouteManager) -> None:
         table = Table()
 
         table.add_column("Status", style="magenta")
-        table.add_column("WP")
+        table.add_column("Index")
         table.add_column("ID")
         table.add_column("PN (m)")
         table.add_column("PE (m)")
         table.add_column("H (m)")
         table.add_column("Action")
         table.add_column("Params")
+        table.add_column("Action Status")
 
-        if mission.route_manager.wp_coords.shape[0] == len(mission.waypoints):
-            _index_offset = 0
-
-        elif mission.route_manager.wp_coords.shape[0] == len(mission.waypoints) + 1:
-            _index_offset = 1
-
-        else:
-            raise Exception(
-                f"Expected {len(self.waypoints)} waypoints in route manager "
-                f"(or {len(self.waypoints) + 1} if aux initial waypoint is used), "
-                f"but got {self.route_manager.wp_coords.shape[0]}!"
-            )
-
-        for i, wp in enumerate(mission.waypoints):
-            if mission.target_waypoint.id > wp.id:
+        for i, wp in enumerate(rm.waypoints):
+            if rm.target_index > i:
                 status = "DONE"
                 color = "cyan"
 
-            elif mission.target_waypoint.id == wp.id:
-                if mission.status == "end":
+            elif rm.target_index == i:
+                if rm.status == "end":
                     status = "DONE"
                     color = "cyan"
 
-                elif mission.status == "fail":
+                elif rm.status == "fail":
                     status = "FAIL"
                     color = "red"
 
@@ -232,13 +223,14 @@ class SimConsole:
 
             table.add_row(
                 f"[bold]{status}[/bold]",
-                f"{i + _index_offset}",
+                f"{i}",
                 f"{wp.id}",
                 f"{wp.pn:.2f}",
                 f"{wp.pe:.2f}",
                 f"{wp.h:.2f}",
                 f"{wp.action_code}",
                 f"{wp.params}",
+                f"{self._action_status(wp)}",
                 style=color,
             )
 
@@ -246,6 +238,28 @@ class SimConsole:
             "[bold magenta underline]Waypoints Table[/bold magenta underline]"
         )
         self.console.print(table)
+
+    def _action_status(self, wp: Waypoint) -> str:
+        if wp.action_code == "ORBIT_TURNS":
+            orbit_turns: OrbitTurns = wp.action
+            return f"Turns: {orbit_turns.completed_turns:.1f}"
+        
+        if wp.action_code == "ORBIT_TIME":
+            orbit_time: OrbitTime = wp.action
+            return f"Time: {orbit_time.elapsed_time:.2f} s"
+        
+        if wp.action_code == "ORBIT_ALT":
+            orbit_alt: OrbitAlt = wp.action
+            return f"Alt: {orbit_alt.current_altitude} m"
+        
+        if wp.action_code == "GO_WAYPOINT":
+            go_wp: GoWaypoint = wp.action
+            return f"Repeat: {go_wp.repeat_count}"
+        
+        if wp.action_code == "SET_AIRSPEED":
+            set_va: SetAirspeed = wp.action
+            return f"Done: {set_va.is_done()}"
+
 
     def _format_status(self, status: str, upper: bool = True) -> str:
         if status.lower() in ["run", "follow"]:

@@ -100,7 +100,7 @@ class PathFollower:
         self.active_follower_info = (
             f"Radius: {self.orbit_follower.orbit_radius:.1f} m, "
             f"Altitude: {self.orbit_follower.orbit_altitude:.1f} m, "
-            f"Direction: {"ccw" if orbit_params.direction else "cw"}"
+            f"Direction: {"CW" if orbit_params.direction > 0 else "CWW"}"
         )
         self.active_follower_status = "initialized"
 

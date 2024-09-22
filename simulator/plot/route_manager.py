@@ -32,7 +32,7 @@ class RouteManagerPlotter(BasePlotter):
         """
         Plot the waypoints on a 2D graph.
         """
-        wps = self.route_manager.wp_coords
+        wps = self.route_manager.waypoints
         if wps is None:
             raise ValueError("Waypoints have not been set.")
 

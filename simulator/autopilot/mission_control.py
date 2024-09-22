@@ -68,9 +68,8 @@ class MissionControl:
         self.config = config
         self.nav_type = nav_type
 
-        self.waypoints: WaypointsList = None
-        self.flight_cmd: FlightCommand = None
-        self.path_cmd: PathNavCommand = None
+        self.flight_cmd = FlightCommand()
+        self.path_cmd = PathNavCommand()
 
         self.path_follower = PathFollower(config)
         self.route_manager = RouteManager(config)
@@ -93,9 +92,8 @@ class MissionControl:
         self.route_manager.reset()
         self.actions_manager.reset()
 
-        self.waypoints: WaypointsList = None
-        self.flight_cmd: FlightCommand = None
-        self.path_cmd: PathNavCommand = None
+        self.flight_cmd.reset()
+        self.path_cmd = PathNavCommand()
 
         self.status = "wait"
         self.is_on_wait_orbit = False
@@ -130,9 +128,9 @@ class MissionControl:
         """
         self.t = 0.0
         self.set_waypoints(wps_list)
-        self.flight_cmd = FlightCommand(
-            target_altitude=h, target_course=chi, target_airspeed=Va
-        )
+        self.flight_cmd.target_altitude=h
+        self.flight_cmd.target_course=chi
+        self.flight_cmd.target_airspeed=Va
         self.path_cmd = PathNavCommand()
         self.status = "init"
         self.path_follower.reset()
@@ -173,16 +171,16 @@ class MissionControl:
         elif self.status == "init":
             self.route_manager.restart(pos_ned)
 
-        self.target_waypoint = self._get_target_waypoint()
+        self.target_waypoint = self.route_manager.get_waypoint()
 
-        self._update_actions_manager(self.target_waypoint, pos_ned, _dt)
+        self._update_actions_manager(pos_ned, _dt)
         if not self.is_action_running:
             self._update_navigation(pos_ned, course)
 
         course_ref, altitude_ref = self.path_follower.update(pos_ned, course)
         self.flight_cmd.target_altitude = altitude_ref
         self.flight_cmd.target_course = course_ref
-        return course_ref, altitude_ref
+        return self.flight_cmd
 
     def enter_wait_orbit(self, pos_ned: np.ndarray) -> None:
         """
@@ -198,31 +196,29 @@ class MissionControl:
         self._enter_orbit_path(pos_ned)
         self.is_on_wait_orbit = True
 
-    def set_waypoints(self, wps_list: WaypointsList) -> None:
+    def set_waypoints(self, wps: WaypointsList) -> None:
         """
         Load waypoints from a waypoint list and set them in the route manager.
 
         Parameters
         ----------
-        wps_list : WaypointsList
+        wps : WaypointsList
             The waypoints list
         """
-        wps = wps_list.get_waypoint_coords()
         self.route_manager.set_waypoints(wps)
-        self.waypoints = wps_list
 
     def _create_path_navigator(self, nav_type: str) -> PathNavigator:
         """Create a line, fillet or dubin path navigator according to the type string provided."""
 
         if nav_type == "lines":
             return LinePathNavigator(self.config, self.route_manager)
-
+        
         elif nav_type == "fillets":
             return FilletPathNavigator(self.config, self.route_manager)
-
+        
         elif nav_type == "dubins":
             return DubinPathNavigator(self.config, self.route_manager)
-
+        
         else:
             raise ValueError(f"Not valid path navigator type: {nav_type}!")
 
@@ -248,18 +244,27 @@ class MissionControl:
             )
 
     def _update_actions_manager(
-        self, wp: Waypoint, pos_ned: np.ndarray, dt: float
+        self, pos_ned: np.ndarray, dt: float
     ) -> None:
-        """Update actions manager and set action running flag according to action status"""
+        """Update actions manager and set action running flag according to action status."""
 
-        self.actions_manager.update(wp, pos_ned, dt)
+        path_cmd = self.actions_manager.update(pos_ned, dt)
 
-        if self.actions_manager.status in ["wait", "done"]:
+        if self.actions_manager.status == "wait":
             self.is_action_running = False
+
+        elif self.actions_manager.status == "done":
+            self.is_action_running = False
+            # set current path for navigation
+            path_cmd = self.path_navigator.navigate_path(pos_ned, 0.0)
+            self._set_path_follower(path_cmd)
 
         elif self.actions_manager.status == "run":
             self.is_action_running = True
             self.status = "exe"
+
+            if path_cmd.is_new_path:
+                self._set_path_follower(path_cmd)
 
         elif self.actions_manager.status == "fail":
             self.enter_wait_orbit(pos_ned)
@@ -307,22 +312,3 @@ class MissionControl:
             raise ValueError(
                 f"Not valid path navigator command path type: {path_cmd.path_type}!"
             )
-
-    def _get_target_waypoint(self) -> Waypoint:
-        if self.waypoints is None:
-            raise Exception("No waypoints available!")
-
-        if self.route_manager.wp_coords.shape[0] == len(self.waypoints):
-            wp = self.waypoints[self.route_manager.wp_target]
-
-        elif self.route_manager.wp_coords.shape[0] == len(self.waypoints) + 1:
-            wp = self.waypoints[self.route_manager.wp_target - 1]
-
-        else:
-            raise Exception(
-                f"Expected {len(self.waypoints)} waypoints in route manager "
-                f"(or {len(self.waypoints) + 1} if aux initial waypoint is used), "
-                f"but got {self.route_manager.wp_coords.shape[0]}!"
-            )
-
-        return wp
