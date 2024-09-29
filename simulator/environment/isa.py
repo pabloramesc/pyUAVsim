@@ -7,209 +7,219 @@
 
 import numpy as np
 
-# International Standard Atmosphere 1976 (ISA)
-from simulator.common.constants import (
-    AIR_SPECIFIC_HEAT,
-    DRY_AIR_GAS_CONSTANT,
-    FT2M,
-    ISA_MAX_ALTITUDE,
-    ISA_MIN_ALTITUDE,
-    KELVIN0CELSIUS,
-    MESOSPHERE_BASE_ALTITUDE1,
-    MESOSPHERE_BASE_ALTITUDE2,
-    MESOSPHERE_BASE_TEMPERATURE1,
-    MESOSPHERE_BASE_TEMPERATURE2,
-    MESOSPHERE_LAPSE_RATE1,
-    MESOSPHERE_LAPSE_RATE2,
-    MSL_STANDARD_PRESSURE,
-    MSL_STANDARD_TEMPERTURE,
-    EARTH_GRAVITY_CONSTANT,
-    STRATOPAUSE_BASE_ALTITUDE,
-    STRATOPAUSE_CONSTANT_TEMPERATURE,
-    STRATOSPHERE_BASE_ALTITUDE1,
-    STRATOSPHERE_BASE_ALTITUDE2,
-    STRATOSPHERE_BASE_TEMPERATURE1,
-    STRATOSPHERE_BASE_TEMPERATURE2,
-    STRATOSPHERE_LAPSE_RATE1,
-    STRATOSPHERE_LAPSE_RATE2,
-    TROPOPAUSE_BASE_ALTITUDE,
-    TROPOPAUSE_CONSTANT_TEMPERATURE,
-    TROPOSPHERE_BASE_ALTITUDE,
-    TROPOSPHERE_LAPSE_RATE,
-)
+from simulator.environment.constants import EARTH_GRAVITY_CONSTANT, FT2M, KELVIN0CELSIUS
+from simulator.environment.isa_constants import *
 
 
-def isa_pressure(alt: float = 0.0) -> float:
+def _check_altitude(alt: float):
+    """
+    Check if the altitude is within the supported ISA range.
+
+    Parameters
+    ----------
+    alt : float
+        Altitude in meters
+    """
+    if not (ISA_MIN_ALTITUDE <= alt <= ISA_MAX_ALTITUDE):
+        raise ValueError(
+            f"Altitude {alt} not supported. "
+            f"ISA model supports altitudes between {ISA_MIN_ALTITUDE} and {ISA_MAX_ALTITUDE} meters."
+        )
+
+
+def isa_temperature(alt: float, celsius: bool = False) -> float:
+    """
+    Compute ISA temperature at a given altitude.
+
+    Parameters
+    ----------
+    alt : float
+        Altitude above MSL (mean sea level) in meters
+    celsius : bool, optional
+        Return temperature in Celsius, by default False (returns in Kelvin)
+
+    Returns
+    -------
+    float
+        Temperature in K (or °C if `celsius` is True)
+
+    Raises
+    ------
+    ValueError
+        If altitude is outside the supported range (-6 to 86 km)
+    """
+    _check_altitude(alt)
+
+    # Troposphere
+    if ISA_MIN_ALTITUDE <= alt <= TROPOPAUSE_BASE_ALTITUDE:
+        t0 = MSL_STANDARD_TEMPERTURE
+        lr = TROPOSPHERE_LAPSE_RATE
+
+    # Tropopause
+    elif TROPOPAUSE_BASE_ALTITUDE < alt <= STRATOSPHERE1_BASE_ALTITUDE:
+        t0 = TROPOPAUSE_CONSTANT_TEMPERATURE
+        lr = 0.0
+
+    # Stratosphere region 1
+    elif STRATOSPHERE1_BASE_ALTITUDE < alt <= STRATOSPHERE2_BASE_ALTITUDE:
+        t0 = STRATOSPHERE1_BASE_TEMPERATURE
+        lr = STRATOSPHERE1_LAPSE_RATE
+
+    # Stratosphere region 2
+    elif STRATOSPHERE2_BASE_ALTITUDE < alt <= STRATOPAUSE_BASE_ALTITUDE:
+        t0 = STRATOSPHERE2_BASE_TEMPERATURE
+        lr = STRATOSPHERE2_LAPSE_RATE
+
+    # Stratopause
+    elif STRATOPAUSE_BASE_ALTITUDE < alt <= MESOSPHERE1_BASE_ALTITUDE:
+        t0 = STRATOPAUSE_CONSTANT_TEMPERATURE
+        lr = 0.0
+
+    # Mesosphere region 1
+    elif MESOSPHERE1_BASE_ALTITUDE < alt <= MESOSPHERE2_BASE_ALTITUDE:
+        t0 = MESOSPHERE1_BASE_TEMPERATURE
+        lr = MESOSPHERE1_LAPSE_RATE
+
+    # Mesosphere region 2
+    else:
+        t0 = MESOSPHERE2_BASE_TEMPERATURE
+        lr = MESOSPHERE2_LAPSE_RATE
+
+    t_K = t0 + lr * alt
+    return t_K - KELVIN0CELSIUS if celsius else t_K
+
+
+def isa_pressure(alt: float) -> float:
     """
     Compute ISA (International Standard Atmosphere 1976) pressure at a given altitude.
 
     Parameters
     ----------
     alt : float, optional
-        altitude above MSL (mean sea level) in meters, by default 0.0
+        Altitude above MSL (mean sea level) in meters
 
     Returns
     -------
     float
-        pressure in Pa
+        Pressure in Pa
 
     Raises
     ------
     ValueError
-        if altitude is not supported *
-
-    *supported altitudes are between `ISA_MIN_ALTITUDE` and `ISA_MAX_ALTITUDE`
+        If altitude is outside the supported range (-6 to 86 km)
     """
-    # troposphere
+    _check_altitude(alt)
+    g0_R = EARTH_GRAVITY_CONSTANT / AIR_GAS_CONSTANT
+
+    # Troposphere
     if ISA_MIN_ALTITUDE <= alt <= TROPOPAUSE_BASE_ALTITUDE:
-        pressure = MSL_STANDARD_PRESSURE * (
-            1.0
-            - TROPOSPHERE_LAPSE_RATE
-            / MSL_STANDARD_TEMPERTURE
-            * (alt - TROPOSPHERE_BASE_ALTITUDE)
-        ) ** (EARTH_GRAVITY_CONSTANT / (DRY_AIR_GAS_CONSTANT * TROPOSPHERE_LAPSE_RATE))
-    # tropopause
-    elif TROPOPAUSE_BASE_ALTITUDE < alt <= STRATOSPHERE_BASE_ALTITUDE1:
-        tropopause_base_pressure = isa_pressure(TROPOPAUSE_BASE_ALTITUDE)
-        pressure = tropopause_base_pressure * np.exp(
-            -EARTH_GRAVITY_CONSTANT
-            / (DRY_AIR_GAS_CONSTANT * TROPOPAUSE_CONSTANT_TEMPERATURE)
-            * (alt - TROPOPAUSE_BASE_ALTITUDE)
-        )
-    # stratosphere region 1
-    elif STRATOSPHERE_BASE_ALTITUDE1 < alt <= STRATOSPHERE_BASE_ALTITUDE2:
-        stratosphere_base_pressure1 = isa_pressure(STRATOSPHERE_BASE_ALTITUDE1)
-        pressure = stratosphere_base_pressure1 * (
-            1.0
-            - STRATOSPHERE_LAPSE_RATE1
-            / STRATOSPHERE_BASE_TEMPERATURE1
-            * (alt - STRATOSPHERE_BASE_ALTITUDE1)
-        ) ** (
-            EARTH_GRAVITY_CONSTANT / (DRY_AIR_GAS_CONSTANT * STRATOSPHERE_LAPSE_RATE1)
-        )
-    # stratosphere region 2
-    elif STRATOSPHERE_BASE_ALTITUDE2 < alt <= STRATOPAUSE_BASE_ALTITUDE:
-        stratosphere_base_pressure2 = isa_pressure(STRATOSPHERE_BASE_ALTITUDE2)
-        pressure = stratosphere_base_pressure2 * (
-            1.0
-            - STRATOSPHERE_LAPSE_RATE2
-            / STRATOSPHERE_BASE_TEMPERATURE2
-            * (alt - STRATOSPHERE_BASE_ALTITUDE2)
-        ) ** (
-            EARTH_GRAVITY_CONSTANT / (DRY_AIR_GAS_CONSTANT * STRATOSPHERE_LAPSE_RATE2)
-        )
-    # stratopause
-    elif STRATOPAUSE_BASE_ALTITUDE < alt <= MESOSPHERE_BASE_ALTITUDE1:
-        stratopause_base_pressure = isa_pressure(STRATOPAUSE_BASE_ALTITUDE)
-        pressure = stratopause_base_pressure * np.exp(
-            -EARTH_GRAVITY_CONSTANT
-            / (DRY_AIR_GAS_CONSTANT * STRATOPAUSE_CONSTANT_TEMPERATURE)
-            * (alt - STRATOPAUSE_BASE_ALTITUDE)
-        )
-    # mesosphere region 1
-    elif MESOSPHERE_BASE_ALTITUDE1 < alt <= MESOSPHERE_BASE_ALTITUDE2:
-        mesosphere_base_pressure1 = isa_pressure(MESOSPHERE_BASE_ALTITUDE1)
-        pressure = mesosphere_base_pressure1 * (
-            1.0
-            - MESOSPHERE_LAPSE_RATE1
-            / MESOSPHERE_BASE_TEMPERATURE1
-            * (alt - MESOSPHERE_BASE_ALTITUDE1)
-        ) ** (EARTH_GRAVITY_CONSTANT / (DRY_AIR_GAS_CONSTANT * MESOSPHERE_LAPSE_RATE2))
-    # mesosphere region 2
-    elif MESOSPHERE_BASE_ALTITUDE2 < alt <= ISA_MAX_ALTITUDE:
-        mesosphere_base_pressure2 = isa_pressure(MESOSPHERE_BASE_ALTITUDE2)
-        pressure = mesosphere_base_pressure2 * (
-            1.0
-            - MESOSPHERE_LAPSE_RATE2
-            / MESOSPHERE_BASE_TEMPERATURE2
-            * (alt - MESOSPHERE_BASE_ALTITUDE2)
-        ) ** (EARTH_GRAVITY_CONSTANT / (DRY_AIR_GAS_CONSTANT * MESOSPHERE_LAPSE_RATE2))
-    # unsuported altitude!
+        z = alt - TROPOSPHERE_BASE_ALTITUDE
+        p0 = MSL_STANDARD_PRESSURE
+        t0 = MSL_STANDARD_TEMPERTURE
+        lr = TROPOSPHERE_LAPSE_RATE
+        p = p0 * (1.0 + lr * z / t0) ** (-g0_R / lr)
+
+    # Tropopause
+    elif TROPOPAUSE_BASE_ALTITUDE < alt <= STRATOSPHERE1_BASE_ALTITUDE:
+        z = alt - TROPOPAUSE_BASE_ALTITUDE
+        p0 = isa_pressure(TROPOPAUSE_BASE_ALTITUDE)
+        t0 = TROPOPAUSE_CONSTANT_TEMPERATURE
+        p = p0 * np.exp(-g0_R / t0 * z)
+
+    # Stratosphere region 1
+    elif STRATOSPHERE1_BASE_ALTITUDE < alt <= STRATOSPHERE2_BASE_ALTITUDE:
+        z = alt - STRATOSPHERE1_BASE_ALTITUDE
+        p0 = isa_pressure(STRATOSPHERE1_BASE_ALTITUDE)
+        t0 = STRATOSPHERE1_BASE_TEMPERATURE
+        lr = STRATOSPHERE1_LAPSE_RATE
+        p = p0 * (1.0 + lr * z / t0) ** (-g0_R / lr)
+
+    # Stratosphere region 2
+    elif STRATOSPHERE2_BASE_ALTITUDE < alt <= STRATOPAUSE_BASE_ALTITUDE:
+        z = alt - STRATOSPHERE2_BASE_ALTITUDE
+        p0 = isa_pressure(STRATOSPHERE2_BASE_ALTITUDE)
+        t0 = STRATOSPHERE2_BASE_TEMPERATURE
+        lr = STRATOSPHERE2_LAPSE_RATE
+        p = p0 * (1.0 + lr * z / t0) ** (-g0_R / lr)
+
+    # Stratopause
+    elif STRATOPAUSE_BASE_ALTITUDE < alt <= MESOSPHERE1_BASE_ALTITUDE:
+        z = alt - STRATOPAUSE_BASE_ALTITUDE
+        p0 = isa_pressure(STRATOPAUSE_BASE_ALTITUDE)
+        t0 = STRATOPAUSE_CONSTANT_TEMPERATURE
+        p = p0 * np.exp(-g0_R / t0 * z)
+
+    # Mesosphere region 1
+    elif MESOSPHERE1_BASE_ALTITUDE < alt <= MESOSPHERE2_BASE_ALTITUDE:
+        z = alt - MESOSPHERE1_BASE_ALTITUDE
+        p0 = isa_pressure(MESOSPHERE1_BASE_ALTITUDE)
+        t0 = MESOSPHERE1_BASE_TEMPERATURE
+        lr = MESOSPHERE1_LAPSE_RATE
+        p = p0 * (1.0 + lr * z / t0) ** (-g0_R / lr)
+
+    # Mesosphere region 2
     else:
-        raise ValueError(
-            "ISA model is limited for altitudes between {} and {} meters above MSL (mean sea level)".format(
-                ISA_MIN_ALTITUDE, ISA_MAX_ALTITUDE
-            )
-        )
+        z = alt - MESOSPHERE2_BASE_ALTITUDE
+        p0 = isa_pressure(MESOSPHERE2_BASE_ALTITUDE)
+        t0 = MESOSPHERE2_BASE_TEMPERATURE
+        lr = MESOSPHERE2_LAPSE_RATE
+        p = p0 * (1.0 + lr * z / t0) ** (-g0_R / lr)
 
-    return pressure
+    return p
 
 
-def isa_temperature(alt: float = 0.0) -> float:
+def isa_density(alt: float) -> float:
     """
-    Compute ISA (International Standard Atmosphere 1976) temperature at a given altitude.
+    Compute ISA (International Standard Atmosphere 1976) density at a given altitude.
 
     Parameters
     ----------
     alt : float, optional
-        altitude above MSL (mean sea level) in meters, by default 0.0
+        Altitude above MSL (mean sea level) in meters
 
     Returns
     -------
     float
-        temperature in °C
+        Density in kg/m^3
 
     Raises
     ------
     ValueError
-        if altitude is not supported *
-
-    *supported altitudes are between `ISA_MIN_ALTITUDE` and `ISA_MAX_ALTITUDE`
+        If altitude is outside the supported range (-6 to 86 km)
     """
-    # troposphere
-    if ISA_MIN_ALTITUDE <= alt <= TROPOPAUSE_BASE_ALTITUDE:
-        temperature = MSL_STANDARD_TEMPERTURE - TROPOSPHERE_LAPSE_RATE * alt
-    # tropopause
-    elif TROPOPAUSE_BASE_ALTITUDE < alt <= STRATOSPHERE_BASE_ALTITUDE1:
-        temperature = TROPOPAUSE_CONSTANT_TEMPERATURE
-    # stratosphere region 1
-    elif STRATOSPHERE_BASE_ALTITUDE1 < alt <= STRATOSPHERE_BASE_ALTITUDE2:
-        temperature = STRATOSPHERE_BASE_TEMPERATURE1 - STRATOSPHERE_LAPSE_RATE1 * alt
-    # stratosphere region 2
-    elif STRATOSPHERE_BASE_ALTITUDE2 < alt <= STRATOPAUSE_BASE_ALTITUDE:
-        temperature = STRATOSPHERE_BASE_TEMPERATURE2 - STRATOSPHERE_LAPSE_RATE2 * alt
-    # stratopause
-    elif STRATOPAUSE_BASE_ALTITUDE < alt <= MESOSPHERE_BASE_ALTITUDE1:
-        temperature = STRATOPAUSE_CONSTANT_TEMPERATURE
-    # mesosphere region 1
-    elif MESOSPHERE_BASE_ALTITUDE1 < alt <= MESOSPHERE_BASE_ALTITUDE2:
-        temperature = MESOSPHERE_BASE_TEMPERATURE1 - MESOSPHERE_LAPSE_RATE1 * alt
-    # mesosphere region 2
-    elif MESOSPHERE_BASE_ALTITUDE2 < alt <= ISA_MAX_ALTITUDE:
-        temperature = MESOSPHERE_BASE_TEMPERATURE2 - MESOSPHERE_LAPSE_RATE2 * alt
-    # unsuported altitude!
-    else:
-        raise ValueError(
-            "ISA model is limited for altitudes between {} and {} meters above MSL (mean sea level)".format(
-                ISA_MIN_ALTITUDE, ISA_MAX_ALTITUDE
-            )
-        )
-    return temperature
+    _check_altitude(alt)
+    return isa_pressure(alt) / (AIR_GAS_CONSTANT * isa_temperature(alt))
 
 
-def isa_density(alt: float = 0.0) -> float:
-    return isa_pressure(alt) / (DRY_AIR_GAS_CONSTANT * isa_temperature(alt))
+def isa_soundspeed(alt: float) -> float:
+    """
+    Compute ISA (International Standard Atmosphere 1976) speed of sound at a given altitude.
 
+    Parameters
+    ----------
+    alt : float, optional
+        Altitude above MSL (mean sea level) in meters
 
-def isa_soundspeed(alt: float = 0.0) -> float:
-    return np.sqrt(AIR_SPECIFIC_HEAT * DRY_AIR_GAS_CONSTANT * isa_temperature(alt))
+    Returns
+    -------
+    float
+        Speed of sound in m/s
+
+    Raises
+    ------
+    ValueError
+        If altitude is outside the supported range (-6 to 86 km)
+    """
+    _check_altitude(alt)
+    return np.sqrt(AIR_SPECIFIC_HEAT * AIR_GAS_CONSTANT * isa_temperature(alt))
 
 
 if __name__ == "__main__":
-
-    print("International Standard Atmosphere (ISA) Table")
-
-    print(
-        "==========================================================================================================================="
-    )
-    print(
-        "| altitude (ft) | altitude (m) | temperature (°C) | temperature (K) | pressure (Pa) | density (kg/m^3) |"
-        " soundspeed (m/s) |"
-    )
-    print(
-        "---------------------------------------------------------------------------------------------------------------------------"
-    )
-    for h_ft in np.arange(-2000.0, 60000.0 + 1000.0, 1000.0):
+    print("International Standard Atmosphere (ISA) 1976 Table")
+    print("+--------+---------+--------+---------+--------+--------------+---------+")
+    print("| h (ft) |  h (m)  | T (°C) |  T (K)  | P (Pa) | rho (kg/m^3) | a (m/s) |")
+    print("+--------+---------+--------+---------+--------+--------------+---------+")
+    for h_ft in np.arange(-2e3, 60e3 + 1e3, 1e3):
         h_m = h_ft * FT2M
         t_K = isa_temperature(h_m)
         t_C = t_K - KELVIN0CELSIUS
@@ -217,9 +227,7 @@ if __name__ == "__main__":
         rho = isa_density(h_m)
         a = isa_soundspeed(h_m)
         print(
-            "|       {:5.0f}   |    {:7.1f}   |        {:7.2f}   |       {:7.2f}   |   {:9.2f}   |         {:6.4f}   | "
-            "         {:5.1f}   |".format(h_ft, h_m, t_C, t_K, p, rho, a)
+            f"|  {h_ft:5.0f} | {h_m:7.1f} | {t_C:6.2f} | {t_K:7.2f} | {np.round(p):6.0f} "
+            f"|       {rho:6.4f} |   {a:5.1f} |"
         )
-    print(
-        "==========================================================================================================================="
-    )
+    print("+--------+---------+--------+---------+--------+--------------+---------+")

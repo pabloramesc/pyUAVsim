@@ -22,30 +22,30 @@ class FlightCommand:
 
     Attributes
     ----------
-    target_roll : float
+    roll : float
         The target roll angle for the vehicle.
-    target_pitch : float
+    pitch : float
         The target pitch angle for the vehicle.
-    target_course : float
+    course : float
         The target course angle for the vehicle.
-    target_altitude : float
+    altitude : float
         The target altitude for the vehicle.
-    target_airspeed : float
+    airspeed : float
         The target airspeed for the vehicle.
     """
 
-    target_roll: float = None
-    target_pitch: float = None
-    target_course: float = None
-    target_altitude: float = None
-    target_airspeed: float = None
+    roll: float = None
+    pitch: float = None
+    course: float = None
+    altitude: float = None
+    airspeed: float = None
 
     def reset(self) -> None:
-        self.target_roll = None
-        self.target_pitch = None
-        self.target_course = None
-        self.target_altitude = None
-        self.target_airspeed = None
+        self.roll = None
+        self.pitch = None
+        self.course = None
+        self.altitude = None
+        self.airspeed = None
 
 
 class FlightControl:

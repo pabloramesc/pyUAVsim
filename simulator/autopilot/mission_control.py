@@ -191,9 +191,9 @@ class MissionControl:
 
     def _set_initial_flight_cmd(self, Va: float, h: float, chi: float) -> None:
         """Set initial flight command parameters."""
-        self.flight_cmd.target_altitude = h
-        self.flight_cmd.target_course = chi
-        self.flight_cmd.target_airspeed = Va
+        self.flight_cmd.altitude = h
+        self.flight_cmd.course = chi
+        self.flight_cmd.airspeed = Va
 
     def _validate_status(self) -> None:
         """Ensure mission status is valid."""
@@ -229,8 +229,8 @@ class MissionControl:
 
     def _update_flight_command(self, course_ref: float, altitude_ref: float) -> None:
         """Update flight command with new course and altitude references."""
-        self.flight_cmd.target_altitude = altitude_ref
-        self.flight_cmd.target_course = course_ref
+        self.flight_cmd.altitude = altitude_ref
+        self.flight_cmd.course = course_ref
 
     def _create_path_navigator(self, nav_type: str) -> PathNavigator:
         """Create a line, fillet or dubin path navigator according to the type string provided."""

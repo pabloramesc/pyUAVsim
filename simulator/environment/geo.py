@@ -7,15 +7,8 @@
 
 import numpy as np
 
-from simulator.common.constants import (
-    DEG2RAD,
-    RAD2DEG,
-    DEFAULT_HOME_COORDS,
-    GEO_DEG2M,
-    GEO_M2DEG,
-    WGS84_EQUATORIAL_RADIUS,
-    WGS84_EXCENTRICITY2,
-)
+from simulator.environment.constants import DEG2RAD, RAD2DEG
+from simulator.environment.geo_constants import *
 
 
 def ned2geo(
@@ -24,7 +17,7 @@ def ned2geo(
     """
     Convert local NED coordinates to geodetic coordinates (latitude, longitude, altitude).
 
-    NOTE: DONT USE NEXT TO THE POLES. CALCULATION ASUMES LOCAL PLANE!
+    *IMPORTANT: Don't use this next to the poles. Calculation asumes local plane!*
 
     Parameters
     ----------
@@ -58,7 +51,7 @@ def geo2ned(
     """
     Convert geodetic coordinates (latitude, longitude, altitude) to local NED coordinates.
 
-    NOTE: DONT USE NEXT TO THE POLES. CALCULATION ASUMES LOCAL PLANE!
+    *IMPORTANT: Don't use this next to the poles. Calculation asumes local plane!*
 
     Parameters
     ----------

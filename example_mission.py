@@ -51,12 +51,12 @@ while True:
     flight_cmd = mission.update(uav.state.ned_position, uav.state.course_angle)
     autopilot.status.update_aircraft_state(uav.state)
     autopilot.control_course_altitude_airspeed(
-        flight_cmd.target_course, flight_cmd.target_altitude, flight_cmd.target_airspeed
+        flight_cmd.course, flight_cmd.altitude, flight_cmd.airspeed
     )
 
     gui.add_data(state=uav.state)
 
-    if k_sim % 10 == 0:  # update interface each 10 steps
+    if k_sim % 100 == 0:  # update interface each 10 steps
         t_real = time.time() - t0
         cli.clear()
         cli.print_time(t_sim, t_real, dt, k_sim, style="simple")
