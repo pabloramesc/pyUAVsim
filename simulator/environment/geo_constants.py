@@ -18,14 +18,14 @@ GEO_DEG2M = GEO_DEG2NM * NM2M  # geographic distance in degrees to meters
 GEO_M2DEG = 1.0 / GEO_DEG2M
 
 ### WORLD GEODETIC SYSTEM 1984 (WGS84)
-WGS84_EXCENTRICITY2 = 0.00669438
+WGS84_ECCENTRICITY2 = 6.69437999014e-3
 WGS84_EQUATORIAL_RADIUS = 6378137.0
 WGS84_POLAR_RADIUS = 6356752.3
 DEFAULT_HOME_COORDS = (
     40.4168,
     -3.7038,
     0.0,
-)  # lat and long of Madrid in deg and altitude of 0 meters
+)  # lat and long of Madrid in deg, and altitude of 0 meters
 
 ### WORLD MAGNETIC MODEL 2020 (WMM)
 DEFAULT_HOME_WMM_NED = (

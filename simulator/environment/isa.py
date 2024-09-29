@@ -14,11 +14,6 @@ from simulator.environment.isa_constants import *
 def _check_altitude(alt: float):
     """
     Check if the altitude is within the supported ISA range.
-
-    Parameters
-    ----------
-    alt : float
-        Altitude in meters
     """
     if not (ISA_MIN_ALTITUDE <= alt <= ISA_MAX_ALTITUDE):
         raise ValueError(
@@ -86,7 +81,7 @@ def isa_temperature(alt: float, celsius: bool = False) -> float:
         lr = MESOSPHERE2_LAPSE_RATE
 
     t_K = t0 + lr * alt
-    return t_K - KELVIN0CELSIUS if celsius else t_K
+    return (t_K - KELVIN0CELSIUS) if celsius else t_K
 
 
 def isa_pressure(alt: float) -> float:

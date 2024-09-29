@@ -79,71 +79,85 @@ def geo2ned(
     return points_ned
 
 
-def geo_to_wgs84(lat: float, long: float, alt: float = 0.0) -> np.ndarray:
+def geo_to_wgs84(lat: float, long: float, h: float = 0.0) -> np.ndarray:
     """
-    Convert geodetic coordinates (lat, long, alt) to WGS84 geocentric coordinates (X, Y, Z).
+    Convert geodetic coordinates (lat, long, h) to WGS84 geocentric coordinates (X, Y, Z).
 
     Parameters
     ----------
     lat : float
-        latitude in deg (negative values for South latitudes)
-
+        Latitude in deg (negative values for southern latitudes).
     long : float
-        longitude in deg (negative values for West latitudes)
-
-    alt : float, optional
-        altitude above MSL (mean sea level) in meters, by default 0.0
+        Longitude in deg (negative values for western latitudes).
+    h : float, optional
+        Height above WGS84 ellipsoid surface in meters, by default 0.0.
 
     Returns
     -------
-    numpy.ndarray
-        3 size array with WGS84 geocentric coordinates
+    np.ndarray
+        A 3-elements array with WGS84 geocentric coordinates (X, Y, Z) in meters.
     """
-    lat_rad = lat * DEG2RAD
-    long_rad = long * DEG2RAD
+    a = WGS84_EQUATORIAL_RADIUS
+    e2 = WGS84_ECCENTRICITY2
+
+    lat_rad = np.deg2rad(lat)
+    long_rad = np.deg2rad(long)
+
+    # Precompute sine and cosine of latitude for efficiency
     sin_lat = np.sin(lat_rad)
     cos_lat = np.cos(lat_rad)
-    n = WGS84_EQUATORIAL_RADIUS / np.sqrt(1.0 - WGS84_EXCENTRICITY2 * sin_lat**2)
-    x = (n + alt) * cos_lat * np.cos(long_rad)
-    y = (n + alt) * cos_lat * np.sin(long_rad)
-    z = (n * (1.0 - WGS84_EXCENTRICITY2) + alt) * sin_lat
+
+    N = a / np.sqrt(1 - e2 * sin_lat**2)
+    x = (N + h) * cos_lat * np.cos(long_rad)
+    y = (N + h) * cos_lat * np.sin(long_rad)
+    z = (N * (1 - e2) + h) * sin_lat
+
     return np.array([x, y, z])
 
 
-def wgs84_to_geo(coords: np.ndarray, tol: float = 1e-9, max_iter=1000) -> tuple:
+def wgs84_to_geo(coords: np.ndarray, tol: float = 1e-3, max_iter=1000) -> tuple:
     """
-    Convert WGS84 geocentric coordinates (X, Y, Z) to geodetic coordinates (lat, long, alt).
+    Convert WGS84 geocentric coordinates (X, Y, Z) to geodetic coordinates (lat, long, h).
 
-    Note: computation is done by iteration.
+    *Note: Computation is done by iteration!*
 
     Parameters
     ----------
     coords : np.ndarray
-        3 size array with WGS84 geocentric coordinates
-
+        A 3-element array with WGS84 geocentric coordinates (X, Y, Z) in meters.
     tol : float, optional
-        altitude tolerance in meters for iteration, by default 1e-9
+        Altitude tolerance in meters for iteration, by default 1e-3.
+    max_iter : int, optional
+        Maximum number of iterations for altitude convergence (default is 1000).
 
     Returns
     -------
     tuple
-        3 elements tuple with geodetic coordinates (lat, long, alt) in (deg, deg, meters)
+        A 3-element tuple with geodetic coordinates (lat, long, h),
+        where latitude and longitude are expressed in degrees and
+        height is expressed in meters.
     """
-    xy_root = np.sqrt(coords[0] ** 2 + coords[1] ** 2)  # precompute sqrt(x**2 + y**2)
-    lat_rad = np.arctan2(coords[2], xy_root)  # initial latitude
-    long_rad = np.arctan2(coords[1], coords[0])  # longitude is direct
-    alt = 0.0  # initial altitude
-    alt_prev = tol * 1000.0
+    a = WGS84_EQUATORIAL_RADIUS
+    e2 = WGS84_ECCENTRICITY2
+    e2_1 = 1.0 - e2
+
+    x, y, z = coords
+    p = np.sqrt(x**2 + y**2)  # Distance from Z axis
+    lat_rad = np.arctan2(z, p)  # Initial latitude
+    long_rad = np.arctan2(y, x)  # Longitude calculation is direct
+
+    h = 0.0  # Initial altitude guess
+    h_prev = 1e3  # Initialize previous altitude to a large value
     for _ in range(max_iter):
-        if np.abs(alt - alt_prev) > tol:
+        if np.abs(h - h_prev) < tol:
             break
+        h_prev = h
         sin_lat = np.sin(lat_rad)
-        e2_1 = 1.0 - WGS84_EXCENTRICITY2
-        n = WGS84_EQUATORIAL_RADIUS / np.sqrt(1.0 - WGS84_EXCENTRICITY2 * sin_lat**2)
-        alt_prev = alt
-        alt = coords[2] / sin_lat - n * e2_1
-        lat_rad = np.arctan2(coords[2] * (n + alt), (xy_root * (n * e2_1 + alt)))
-    return (lat_rad * RAD2DEG, long_rad * RAD2DEG, alt)
+        N = a / np.sqrt(1 - e2 * sin_lat**2)
+        h = z / sin_lat - N * e2_1
+        lat_rad = np.arctan2(z * (N + h), (p * (N * e2_1 + h)))
+
+    return (np.rad2deg(lat_rad), np.rad2deg(long_rad), h)
 
 
 def rot_matrix_enu(lat: float, long: float):
