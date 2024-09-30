@@ -13,15 +13,14 @@ from simulator.aircraft.aircraft_state import AircraftState
 from simulator.aircraft.airframe_parameters import AirframeParameters
 from simulator.aircraft.control_deltas import ControlDeltas
 from simulator.aircraft.propulsion_model import PropulsionModel
-from simulator.common.constants import EARTH_GRAVITY_VECTOR
+from simulator.environment.constants import EARTH_GRAVITY_VECTOR
 from simulator.math.numeric_integration import rk4
 from simulator.math.rotation import (
+    euler2quat,
     euler_kinematics,
-    rot_matrix_zyx,
     quaternion_kinematics,
     rot_matrix_quat,
-    quat2euler,
-    euler2quat,
+    rot_matrix_zyx,
 )
 
 
@@ -137,23 +136,23 @@ class AircraftDynamics:
 
     def kinematics_dynamics(self, x: np.ndarray, u: np.ndarray) -> np.ndarray:
         """
-        Integrate the kinematics and dynamics equations to calculate the new state.
+        Integrate the kinematic and dynamic equations to calculate the new state.
 
         Parameters
         ----------
         x : np.ndarray
             Aircraft's state vector.
             The structure of this array depends on the orientation representation selected by `use_quat`:
-            If euler angles are used, the array contains 12 elements: [pn, pe, pd, u, v, w, roll, pitch, yaw, p, q, r]
-            If quaternions are used, the array contains 13 elements: [pn, pe, pd, u, v, w, q0, q1, q2, q3, p, q, r]
+            If euler angles are used, the array contains 12 elements: [pn, pe, pd, u, v, w, roll, pitch, yaw, p, q, r].
+            If quaternions are used, the array contains 13 elements: [pn, pe, pd, u, v, w, q0, q1, q2, q3, p, q, r].
             By default None
-        u : np.ndarray
-            6-size array with external forces and moments in body frame [fx, fy, fz, l, m, n]
+        u : np.ndarray.
+            6-size array with external forces and moments in body frame [fx, fy, fz, l, m, n].
 
         Returns
         -------
         np.ndarray
-            12-size array with updated state after integration: [pn, pe, pd, u, v, w, roll, pitch, yaw, p, q, r]
+            12-size array with updated state after integration: [pn, pe, pd, u, v, w, roll, pitch, yaw, p, q, r].
 
         Notes
         -----

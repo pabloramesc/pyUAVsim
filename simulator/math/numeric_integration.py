@@ -11,10 +11,10 @@ def euler(f: callable, t: float, y: np.ndarray, dt: float) -> np.ndarray:
     """
     Performs a single step of the Euler method.
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     f : callable
-        The function that defines the ODE (dy/dt = f(t, y)).
+        The function that defines the ODE: dy/dt = f(t, y).
     t : float
         Current time.
     y : float or np.ndarray
@@ -22,8 +22,8 @@ def euler(f: callable, t: float, y: np.ndarray, dt: float) -> np.ndarray:
     dt : float
         Time step.
 
-    Returns:
-    --------
+    Returns
+    -------
     float or np.ndarray
         Incremental change (dy) after time step dt.
     """
@@ -34,10 +34,10 @@ def rk4(f: callable, t: float, y: np.ndarray, dt: float) -> np.ndarray:
     """
     Performs a single step of the 4th order Runge-Kutta (RK4) method.
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     f : callable
-        The function that defines the ODE (dy/dt = f(t, y)).
+        The function that defines the ODE: dy/dt = f(t, y).
     t : float
         Current time.
     y : float or np.ndarray
@@ -45,8 +45,8 @@ def rk4(f: callable, t: float, y: np.ndarray, dt: float) -> np.ndarray:
     dt : float
         Time step.
 
-    Returns:
-    --------
+    Returns
+    -------
     float or np.ndarray
         Incremental change (dy) after time step dt.
     """
@@ -62,10 +62,10 @@ def crank_nicolson(f: callable, t: float, y: np.ndarray, dt: float) -> np.ndarra
     """
     Performs a single step of the Crank-Nicolson method.
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     f : callable
-        The function that defines the ODE (dy/dt = f(t, y)).
+        The function that defines the ODE: dy/dt = f(t, y).
     t : float
         Current time.
     y : float or np.ndarray
@@ -73,8 +73,8 @@ def crank_nicolson(f: callable, t: float, y: np.ndarray, dt: float) -> np.ndarra
     dt : float
         Time step.
 
-    Returns:
-    --------
+    Returns
+    -------
     float or np.ndarray
         Incremental change (dy) after time step dt.
     """

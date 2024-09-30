@@ -24,6 +24,7 @@ class AerodynamicModel:
             Instance of AirframeParameters containing the aircraft's properties
         """
         self.params = params
+        self.rho = params.rho
 
     def calculate_forces_moments(
         self, state: AircraftState, deltas: ControlDeltas
@@ -43,6 +44,7 @@ class AerodynamicModel:
         ndarray
             External forces and moments array in body frame: [fx, fy, fx, l, m, n]
         """
+        self.rho = state.rho
 
         # aerodynamic forces (lift, drag and lateral force) in body frame
         F_lift = self.lift_force(
@@ -128,7 +130,7 @@ class AerodynamicModel:
         CL_vs_sigma_e = self.params.CL_delta_e * deltas.delta_e
         F_lift = (
             0.5
-            * self.params.rho
+            * self.rho
             * state.airspeed**2
             * self.params.S
             * (CL_vs_alpha + CL_vs_q + CL_vs_sigma_e)
@@ -191,7 +193,7 @@ class AerodynamicModel:
         CD_vs_sigma_e = self.params.CD_delta_e * deltas.delta_e
         F_drag = (
             0.5
-            * self.params.rho
+            * self.rho
             * state.airspeed**2
             * self.params.S
             * (CD_vs_alpha + CD_vs_q + CD_vs_sigma_e)
@@ -219,7 +221,7 @@ class AerodynamicModel:
         Cm_vs_sigma_e = self.params.Cm_delta_e * deltas.delta_e
         m = (
             0.5
-            * self.params.rho
+            * self.rho
             * state.airspeed**2
             * self.params.S
             * self.params.c
@@ -250,7 +252,7 @@ class AerodynamicModel:
         # CY_vs_delta_r = self.params.CY_delta_r * deltas.delta_r
         fy = (
             0.5
-            * self.params.rho
+            * self.rho
             * state.airspeed**2
             * self.params.S
             * (CY_vs_beta + CY_vs_p + CY_vs_r + CY_vs_delta_a)
@@ -280,7 +282,7 @@ class AerodynamicModel:
         Cl_vs_delta_r = self.params.Cl_delta_r * deltas.delta_r
         fy = (
             0.5
-            * self.params.rho
+            * self.rho
             * state.airspeed**2
             * self.params.S
             * self.params.b
@@ -310,7 +312,7 @@ class AerodynamicModel:
         Cn_vs_delta_r = self.params.Cn_delta_r * deltas.delta_r
         fy = (
             0.5
-            * self.params.rho
+            * self.rho
             * state.airspeed**2
             * self.params.S
             * self.params.b

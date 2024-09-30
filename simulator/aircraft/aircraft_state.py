@@ -15,7 +15,7 @@ from simulator.math.rotation import (
     euler2quat,
     quat2euler,
 )
-from simulator.aircraft.control_deltas import ControlDeltas
+from simulator.environment.isa import isa_density
 
 
 class AircraftState:
@@ -75,6 +75,8 @@ class AircraftState:
             self._check_state_array(x0)
             self._x = np.copy(x0)
 
+        self.rho = isa_density(0.0)
+
         self._check_wind_array(wind0)
         self._wind = np.copy(wind0)
 
@@ -82,7 +84,6 @@ class AircraftState:
             self._R_vb = rot_matrix_quat(self.quaternions)
         else:
             self._R_vb = rot_matrix_zyx(self.attitude_angles)  # vehicle to body frame
-
         self._R_wb = rot_matrix_wind(self.alpha, self.beta)  # wind to body frame
         self._R_sb = rot_matrix_wind(self.alpha, 0.0)  # stability to body frame
 
@@ -98,14 +99,14 @@ class AircraftState:
         x : np.ndarray
             Aircraft's state vector.
             The structure of this array depends on the orientation representation selected by `use_quat`:
-            If euler angles are used, the array contains 12 elements: [pn, pe, pd, u, v, w, roll, pitch, yaw, p, q, r]
-            If quaternions are used, the array contains 13 elements: [pn, pe, pd, u, v, w, q0, q1, q2, q3, p, q, r]
-            By default None
+            If euler angles are used, the array contains 12 elements: [pn, pe, pd, u, v, w, roll, pitch, yaw, p, q, r].
+            If quaternions are used, the array contains 13 elements: [pn, pe, pd, u, v, w, q0, q1, q2, q3, p, q, r].
+            By default None.
         x_dot : np.ndarray, optional
             Aircraft's state derivative. The size corresponds to `x` state vector depending on `use_quat` value.
-            By defaut None
+            By defaut None.
         wind : np.ndarray, optional
-            3-size array with wind velocity in NED frame: [wn, we, wd], by defaut None
+            3-size array with wind velocity in NED frame: [wn, we, wd], by defaut None.
 
         Notes
         -----
@@ -132,6 +133,8 @@ class AircraftState:
             self._check_state_array(x_dot)
             self._x_dot = np.copy(x_dot)
 
+        self.rho = isa_density(self.altitude)
+
         if wind is not None:
             self._check_wind_array(wind)
             self._wind = np.copy(wind)
@@ -140,7 +143,6 @@ class AircraftState:
             self._R_vb = rot_matrix_quat(self.quaternions)
         else:
             self._R_vb = rot_matrix_zyx(self.attitude_angles)  # vehicle to body frame
-
         self._R_wb = rot_matrix_wind(self.alpha, self.beta)  # wind to body frame
         self._R_sb = rot_matrix_wind(self.alpha, 0.0)  # stability to body frame
 
@@ -157,8 +159,8 @@ class AircraftState:
     def x_dot(self) -> np.ndarray:
         """Aircraft's state time derivative (dx/dt).
         The structure of this array depends on the orientation representation selected by `use_quat`:
-        - If euler angles are used, the array contains 12 elements: [pn, pe, pd, u, v, w, roll, pitch, yaw, p, q, r]
-        - If quaternions are used, the array contains 13 elements: [pn, pe, pd, u, v, w, q0, q1, q2, q3, p, q, r]
+        - If euler angles are used, the array contains 12 elements: d(pn, pe, pd, u, v, w, roll, pitch, yaw, p, q, r)/dt
+        - If quaternions are used, the array contains 13 elements: d(pn, pe, pd, u, v, w, q0, q1, q2, q3, p, q, r)/dt
         """
         return self._x_dot
 
@@ -281,7 +283,7 @@ class AircraftState:
     def r(self) -> float:
         """z-axis rate (radians/s)"""
         return self.angular_rates[2]
-    
+
     @property
     def roll_rate(self) -> float:
         """Roll rate (radians/s)"""
