@@ -6,7 +6,6 @@
 """
 
 import matplotlib.pyplot as plt
-import numpy as np
 
 from simulator.math.transfer_function import TransferFunction
 

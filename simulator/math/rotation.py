@@ -16,7 +16,8 @@ def rot_matrix_axis(axis: np.ndarray = np.zeros(3), t: float = 0.0) -> np.ndarra
     Parameters
     ----------
     axis : np.ndarray, optional
-        3-size array with rotation axis components (ux, uy, uz), by default np.zeros(3)
+        3-size array with rotation axis components (ux, uy, uz),
+        by defaultnp.zeros(3)
     t : float, optional
         rotation angle in rad, by default 0.0
 
@@ -51,12 +52,14 @@ def rot_matrix_axis(axis: np.ndarray = np.zeros(3), t: float = 0.0) -> np.ndarra
 def rot_matrix_zyx(euler: np.ndarray = np.zeros(3)) -> np.ndarray:
     """
     Compute transformation matrix from vehicle frame to body frame (R^b_v)
-    with the aircraft attitude expressed as euler angles using the Z-Y-X rotation sequence.
+    with the aircraft attitude expressed as euler angles using the Z-Y-X
+    rotation sequence.
 
     Parameters
     ----------
     euler : np.ndarray, optional
-        3-size array with euler angles [roll, pitch, yaw] in rad, by default np.zeros(3)
+        3-size array with euler angles [roll, pitch, yaw] in rad,
+        by default np.zeros(3)
 
     Returns
     -------
@@ -93,7 +96,8 @@ def rot_matrix_quat(quat: np.ndarray = np.array([1, 0, 0, 0])) -> np.ndarray:
     Parameters
     ----------
     quat : np.ndarray, optional
-        4-size array with aircraft's orientation quaternions [q0, q1, q2, q3], by default np.array([1, 0, 0, 0])
+        4-size array with aircraft's orientation quaternions [q0, q1, q2, q3],
+        by default np.array([1, 0, 0, 0])
 
     Returns
     -------
@@ -163,7 +167,8 @@ def rotate(
     origin : np.ndarray, optional
         3-element array representing the origin, by default np.zeros(3)
     point : np.ndarray, optional
-        3-element array representing the point to be rotated, by default np.zeros(3)
+        3-element array representing the point to be rotated,
+        by default np.zeros(3)
 
     Returns
     -------
@@ -202,16 +207,19 @@ def rotate_points(
 
 
 def multi_rotation(
-    angles: np.ndarray = np.zeros((100, 3)), points: np.ndarray = np.zeros((100, 3))
+    angles: np.ndarray = np.zeros((100, 3)),
+    points: np.ndarray = np.zeros((100, 3)),
 ) -> np.ndarray:
     """Rotate multiple points using corresponding Euler angles in ZYX sequence.
 
     Parameters
     ----------
     angles : np.ndarray, optional
-        N-by-3 size array of N Euler angles (roll, pitch, yaw) in radians, by default np.zeros((100, 3))
+        N-by-3 size array of N Euler angles (roll, pitch, yaw) in radians,
+        by default np.zeros((100, 3))
     points : np.ndarray, optional
-        N-by-3 size array of N points to be rotated, by default np.zeros((100, 3))
+        N-by-3 size array of N points to be rotated,
+        by default np.zeros((100, 3))
 
     Returns
     -------
@@ -240,7 +248,8 @@ def ned2xyz(ned: np.ndarray = np.zeros(3)) -> np.ndarray:
     Parameters
     ----------
     ned_coords : np.ndarray, optional
-        Coordinates in the NED frame. This can be a 1D array of shape (3,) or a 2D array of shape (N, 3).
+        Coordinates in the NED frame. This can be a 1D array of shape (3,) or
+        a 2D array of shape (N, 3).
         Default is np.zeros(3).
 
     Returns
@@ -265,14 +274,14 @@ def euler2quat(att: np.ndarray) -> np.ndarray:
     Parameters
     ----------
     att : np.ndarray
-        Array of Euler angles (roll, pitch, yaw) in radians. Input can be a 1D array of shape (3,)
-        or a 2D array of shape (N, 3).
+        Array of Euler angles (roll, pitch, yaw) in radians.
+        Input can be a 1D array of shape (3,) or a 2D array of shape (N, 3).
 
     Returns
     -------
     np.ndarray
-        Quaternion(s) as a 1D array of shape (4,) for a single set of Euler angles, or a 2D array
-        of shape (N, 4) for multiple sets.
+        Quaternion(s) as a 1D array of shape (4,) for a single set of
+        Euler angles, or a 2D array of shape (N, 4) for multiple sets.
     """
     att = np.atleast_2d(att)  # Ensure 2D for consistent processing
 
@@ -302,17 +311,19 @@ def quat2euler(q: np.ndarray) -> np.ndarray:
     Parameters
     ----------
     q : np.ndarray
-        Input quaternion(s) as a 1D array of shape (4,) or a 2D array of shape (N, 4).
+        Input quaternion(s) as a 1D array of shape (4,) or a 2D array
+        of shape (N, 4).
 
     Returns
     -------
     np.ndarray
-        Euler angles (roll, pitch, yaw) in radians. Output shape is (3,) for a single
-        quaternion or (N, 3) for multiple.
+        Euler angles (roll, pitch, yaw) in radians. Output shape is (3,)
+        for a single quaternion or (N, 3) for multiple.
 
     Notes
     -----
-    - Angles are computed using the ZYX sequence: yaw (z-axis), pitch (y-axis), roll (x-axis).
+    Angles are computed using the ZYX sequence:
+    yaw (z-axis), pitch (y-axis), roll (x-axis).
     """
     q = np.atleast_2d(q)  # Ensure q is at least 2D (N, 4)
 
@@ -352,8 +363,8 @@ def euler_kinematics(euler: np.ndarray) -> np.ndarray:
     -----
     Formula: `euler_dot = R_euler @ omega` where
     - `euler_dot` is the time derivative of Euler angles [roll, pitch, yaw].
-    - `R_euler` is the transformation matrix that maps angular rates [p, q, r] to
-      the derivatives of Euler angles.
+    - `R_euler` is the transformation matrix that maps angular rates [p, q, r]
+    to the derivatives of Euler angles.
     - `omega` is a 3-size array with angular rates [p, q, r] in rad/s.
 
     The transformation matrix `R_euler` is given by:
@@ -400,7 +411,8 @@ def quaternion_kinematics(omega: np.ndarray) -> np.ndarray:
     -----
     Formula: `q_dot = 1/2 * Omega @ q` where
     - `q_dot` is the time derivative of the quaternion [q0, q1, q2, q3].
-    - `Omega` is a 4x4 skew-symmetric matrix constructed from the angular rates [p, q, r].
+    - `Omega` is a 4x4 skew-symmetric matrix constructed from the angular rates
+    [p, q, r].
     - `q` is the current quaternion [q0, q1, q2, q3].
 
     The transformation matrix `Omega` is given by:
@@ -412,8 +424,8 @@ def quaternion_kinematics(omega: np.ndarray) -> np.ndarray:
     ```
     where `p`, `q`, and `r` are the angular rates.
 
-    This matrix is used to transform the quaternion vector into its time derivative,
-    considering the current angular rates.
+    This matrix is used to transform the quaternion vector into its time
+    derivative, considering the current angular rates.
     """
     wx = omega[0]
     wy = omega[1]

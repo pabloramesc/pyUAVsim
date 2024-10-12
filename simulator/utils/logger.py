@@ -24,23 +24,27 @@ class DataLogger:
     def __init__(
         self, nvars: int = 1, labels: list[str] = None, buff_size: int = 100
     ) -> None:
-        """Initialize the DataLogger with the specified number of variables, labels, and buffer size.
+        """Initialize the DataLogger with the specified number of variables,
+        labels, and buffer size.
 
         Parameters
         ----------
         nvars : int, optional
             The number of variables to log. Default is 1.
         labels : list of str, optional
-            A list of labels for each variable. If not provided, default labels will be generated
-            in the form ['var1', 'var2', ..., 'varN'] where N is `nvars`.
+            A list of labels for each variable. If not provided, default labels
+            will be generated in the form ['var1', 'var2', ..., 'varN'] where N
+            is `nvars`.
         buff_size : int, optional
-            The initial size of the buffer. This determines the number of data entries the logger
-            can store before needing to dynamically expand the buffer. Default is 100.
+            The initial size of the buffer. This determines the number of data
+            entries the loggercan store before needing to dynamically expand
+            the buffer. Default is 100.
 
         Raises
         ------
         ValueError
-            If `nvars` is not a positive integer or `buff_size` is not a positive integer.
+            If `nvars` is not a positive integer or `buff_size` is not a
+            positive integer.
 
         """
         if not isinstance(nvars, int) or nvars <= 0:
@@ -66,7 +70,8 @@ class DataLogger:
         t : float
             The timestamp for the new data entry.
         values : np.ndarray
-            A 1D array containing the new data values for each variable. Must match nvars in length.
+            A 1D array containing the new data values for each variable. Must
+            match nvars in length.
 
         Raises
         ------
@@ -98,7 +103,8 @@ class DataLogger:
         Returns
         -------
         np.ndarray
-            A 2D array where the first column is the time data and subsequent columns are the variable data.
+            A 2D array where the first column is the time data and subsequent
+            columns are the variable data.
         """
         log_array = np.zeros((self.count, self.nvars + 1))
         log_array[:, 0] = self.time[: self.count]
@@ -112,7 +118,8 @@ class DataLogger:
         Returns
         -------
         dict of str to np.ndarray
-            A dictionary where keys are 'time' and the variable labels, and values are the corresponding data arrays.
+            A dictionary where keys are 'time' and the variable labels, and
+            values are the corresponding data arrays.
         """
         log_dict = {"time": self.time[: self.count]}
         for i in range(self.nvars):

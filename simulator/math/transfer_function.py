@@ -9,8 +9,8 @@ from typing import Tuple
 
 import numpy as np
 
+from simulator.math.lti_systems import normalize_tf, tf2ccf
 from simulator.math.numeric_integration import rk4
-from simulator.math.control_theory import normalize_tf, tf2ccf
 
 
 class TransferFunction:
@@ -20,23 +20,38 @@ class TransferFunction:
     Attributes
     ----------
     num : np.ndarray
-        N-size array representing the numerator coefficients of the transfer function.
+        1D array representing the numerator coefficients of the transfer
+        function.
     den : np.ndarray
-        N-size array representing the denominator coefficients of the transfer function.
+        1D array representing the denominator coefficients of the transfer
+        function.
     order : int
-        The order of the transfer function, which is the degree of the denominator.
+        The order of the transfer function, defined as the degree of the
+        denominator polynomial.
+    A : np.ndarray
+        State matrix in controllable canonical form (n-by-n), where n is
+        the order of the system.
+    B : np.ndarray
+        Input matrix in controllable canonical form (n-by-1).
+    C : np.ndarray
+        Output matrix in controllable canonical form (1-by-n).
+    D : np.ndarray
+        Feedthrough matrix in controllable canonical form (1-by-1).
     """
 
     def __init__(self, num: np.ndarray, den: np.ndarray):
         """
-        Initialize the Transfer Function with numerator and denominator coefficients.
+        Initialize the Transfer Function with numerator and denominator
+        coefficients.
 
         Parameters
         ----------
         num : np.ndarray
-            N-by-1 array representing the numerator coefficients of the transfer function.
+            1D array representing the numerator coefficients of the transfer
+            function.
         den : np.ndarray
-            N-by-1 array representing the denominator coefficients of the transfer function.
+            1D array representing the denominator coefficients of the transfer
+            function.
 
         Raises
         ------
@@ -51,120 +66,147 @@ class TransferFunction:
         self.den = np.array(_den)
         self.order = len(self.den) - 1  # Order of the system
 
+        # Calculate the State Space Model (SS) using the Controllable Canonical Form (CCF)
+        self.A, self.B, self.C, self.D = tf2ccf(self.num, self.den)
+
+    def state_equation(self, x: np.ndarray, u: np.ndarray) -> np.ndarray:
+        """
+        Compute the state derivative dx = Ax + Bu.
+
+        Parameters
+        ----------
+        x : np.ndarray
+            1D array representing the state vector with shape (n,), where n is
+            the order of the system.
+        u : np.ndarray
+            1D array representing the control input with shape (1,).
+
+        Returns
+        -------
+        np.ndarray
+            1D array representing the state derivative with shape (n,).
+        """
+        x = self._reshape_state(x)
+        u = self._reshape_input(u)
+        return self.A @ x + self.B @ u
+
+    def output_equation(self, x: np.ndarray, u: np.ndarray) -> np.ndarray:
+        """
+        Compute the output y = Cx + Du.
+
+        Parameters
+        ----------
+        x : np.ndarray
+            1D array representing the state vector with shape (n,), where n is
+            the order of the system.
+        u : np.ndarray
+            1D array representing the control input with shape (1,).
+
+        Returns
+        -------
+        np.ndarray
+            1D array representing the output with shape (1,).
+        """
+        x = self._reshape_state(x)
+        u = self._reshape_input(u)
+        return self.C @ x + self.D @ u
+
     def simulate(
         self, u: np.ndarray, x0: np.ndarray = None, t: np.ndarray = None
     ) -> Tuple[np.ndarray, np.ndarray]:
         """
-        Simulate the transfer function system with a control input.
+        Simulate the system's response to a given control input.
 
         Parameters
         ----------
         u : np.ndarray
-            Control input array for the simulation. The number of samples must match the time array length.
+            1D array representing the control input over time with shape (n,),
+            where n is the number of samples.
         x0 : np.ndarray, optional
-            Initial state of the system. The shape should match the number of states (order).
-            If None, the system starts from the zero state.
+            1D array representing the initial state of the system with shape
+            (n,). Defaults to a zero vector.
         t : np.ndarray, optional
-            Time array for simulation. If None, a default time array is generated based on the number of samples in u.
+            1D array representing the time array. If None, a default time array
+            from 0 to 1 seconds is generated, with the same length as `u`.
 
         Returns
         -------
         t : np.ndarray
-            Time array used in simulation.
+            1D array representing the time array used in the simulation.
         y : np.ndarray
-            Output of the system over the time array.
-
-        Raises
-        ------
-        ValueError
-            If the shape of `x0` does not match the number of states,
-            if the lengths of `u` and `t` do not match,
-            or if `t` is provided when `u` is None.
+            1D array representing the output of the system over time.
         """
         if x0 is None:
-            x0 = np.zeros(self.order)  # Start from zero state if x0 is not provided
+            x0 = np.zeros((self.order, 1))
 
-        if x0.shape[0] != self.order:
-            raise ValueError(
-                f"x0 shape must match the number of states (order). "
-                f"Expected {self.order}, but got {x0.shape[0]}."
-            )
+        self._check_state(x0)
 
         if t is None:
-            n = u.shape[0]  # Use the length of u for the number of samples
-            t = np.linspace(0.0, 1.0, n)  # Generate time array based on n
-
-        if u.shape[0] != t.shape[0]:
+            t = np.linspace(0.0, 1.0, len(u))
+        elif len(u) != len(t):
             raise ValueError(
-                f"Length of control input 'u' must match the length of time array 't'. "
-                f"Expected {u.shape[0]} but got {t.shape[0]}."
+                "Length of control input 'u' must match the length of time array 't'."
             )
 
-        n = t.shape[0]
-        u = np.array([u])
-
-        # Simulate using CCF
-        A, B, C, D = tf2ccf(self.num, self.den)
-        y = np.zeros(n)  # Output initialization
-        x = np.zeros((self.order, n))  # State initialization
-        x[:, 0] = x0  # Set initial state
+        n = len(t)
+        y = np.zeros(n)
+        x = np.zeros((self.order, n))
+        x[:, 0] = x0
+        u = np.reshape(u, (1, n))
 
         for k in range(1, n):
             xk = x[:, k - 1]
             uk = u[:, k]
             dt = t[k] - t[k - 1]
-            dy = lambda t, y: A @ y + B @ uk
-            x[:, k] = xk + rk4(dy, t[k], xk, dt)  # Update state using RK4
-            y[k] = C @ x[:, k] + D @ uk  # Compute output
+            dx = lambda t, x: self.state_equation(x, uk)
+            x[:, k] = xk + rk4(dx, t[k], xk, dt)  # Update state using RK4
+            y[k] = self.output_equation(xk, uk)
 
         return t, y
 
     def step(
-        self, x0: np.ndarray = None, t: np.ndarray = None, n: int = None
+        self, x0: np.ndarray = None, t: np.ndarray = None, n: int = 100
     ) -> Tuple[np.ndarray, np.ndarray]:
         """
-        Simulate the step response for the transfer function system.
+        Simulate the step response of the system.
 
         Parameters
         ----------
         x0 : np.ndarray, optional
-            Initial state of the system. The shape should match the number of states (order).
-            If None, the system starts from the zero state.
+            1D array representing the initial state of the system with shape
+            (n,). Defaults to a zero vector.
         t : np.ndarray, optional
-            Time array for simulation. If provided, `n` is set to the length of `t`.
-            - If `t` is None and `n` is provided, a time array is generated from 0 to 1 seconds with `n` samples.
-            - If neither is provided, defaults to `n=100` and generates `t` using `np.linspace(0, 1, 100)`.
+            1D array representing the time array. If None, a time array from 0
+            to 1 seconds is generated.
         n : int, optional
-            Number of samples for simulation. If `t` is provided, `n` value is ignored.
+            Number of samples for the simulation if `t` is not provided. Default
+            is 100.
 
         Returns
         -------
         t : np.ndarray
-            Time array used in simulation.
+            1D array representing the time array used in the simulation.
         y : np.ndarray
-            Output of the system over the time array.
-
-        Raises
-        ------
-        ValueError
-            If the shape of `x0` does not match the number of states.
+            1D array representing the output of the system over time.
         """
         if x0 is None:
-            x0 = np.zeros((self.order,))  # Start from zero state if x0 is not provided
+            x0 = np.zeros((self.order,))
 
-        if x0.shape[0] != self.order:
+        self._check_state(x0)
+
+        if t is None:
+            t = np.linspace(0, 1, n)
+
+        return self.simulate(np.ones(len(t)), x0, t)
+
+    def _reshape_state(self, x: np.ndarray) -> np.ndarray:
+        return np.reshape(x, (self.order,))
+
+    def _reshape_input(self, u: np.ndarray) -> np.ndarray:
+        return np.reshape(u, (1,))
+
+    def _check_state(self, x: np.ndarray) -> None:
+        if x.shape != (self.order,):
             raise ValueError(
-                f"x0 shape must match the number of states (order). "
-                f"Expected {self.order}, got {x0.shape[0]}."
+                f"State must be a 1D array of size {self.order}. Got shape {x.shape}."
             )
-
-        if t is not None:
-            n = len(t)  # Use length of t
-        elif n is not None:
-            t = np.linspace(0, 1, n)  # Generate time array based on n
-        else:
-            n = 100  # Default samples
-            t = np.linspace(0, 1, n)  # Default time array
-
-        u = np.ones(n)
-        return self.simulate(u, x0, t)
