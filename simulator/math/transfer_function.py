@@ -9,7 +9,7 @@ from typing import Tuple
 
 import numpy as np
 
-from simulator.math.lti_systems import normalize_tf, tf2ccf
+from simulator.math.lti_systems import normalize_tf, tf2ccf, tf2zpk
 from simulator.math.numeric_integration import rk4
 
 
@@ -61,13 +61,14 @@ class TransferFunction:
         if len(num) == 0 or len(den) == 0:
             raise ValueError("Numerator and Denominator cannot be empty.")
 
-        _num, _den = normalize_tf(num, den)
-        self.num = np.array(_num)
-        self.den = np.array(_den)
+        self.num, self.den = normalize_tf(num, den)
         self.order = len(self.den) - 1  # Order of the system
 
         # Calculate the State Space Model (SS) using the Controllable Canonical Form (CCF)
         self.A, self.B, self.C, self.D = tf2ccf(self.num, self.den)
+
+        # Calculate the Zeros-Poles-Gain representation
+        self.zeros, self.poles, self.gain = tf2zpk(self.num, self.den)
 
     def state_equation(self, x: np.ndarray, u: np.ndarray) -> np.ndarray:
         """
@@ -179,8 +180,8 @@ class TransferFunction:
             1D array representing the time array. If None, a time array from 0
             to 1 seconds is generated.
         n : int, optional
-            Number of samples for the simulation if `t` is not provided. Default
-            is 100.
+            Number of samples for the simulation if `t` is not provided.
+            Default is 100.
 
         Returns
         -------
@@ -197,7 +198,82 @@ class TransferFunction:
         if t is None:
             t = np.linspace(0, 1, n)
 
-        return self.simulate(np.ones(len(t)), x0, t)
+        u = np.ones(len(t))
+        return self.simulate(u, x0, t)
+    
+    def impulse(
+        self, x0: np.ndarray = None, t: np.ndarray = None, n: int = 100
+    ) -> Tuple[np.ndarray, np.ndarray]:
+        """
+        Simulate the impulse response of the system.
+
+        Parameters
+        ----------
+        x0 : np.ndarray, optional
+            1D array representing the initial state of the system with shape
+            (n,). Defaults to a zero vector.
+        t : np.ndarray, optional
+            1D array representing the time array. If None, a time array from 0
+            to 1 seconds is generated.
+        n : int, optional
+            Number of samples for the simulation if `t` is not provided.
+            Default is 100.
+
+        Returns
+        -------
+        t : np.ndarray
+            1D array representing the time array used in the simulation.
+        y : np.ndarray
+            1D array representing the output of the system over time.
+        """
+        if x0 is None:
+            x0 = np.zeros((self.order,))
+
+        self._check_state(x0)
+
+        if t is None:
+            t = np.linspace(0, 1, n)
+
+        u = np.zeros(len(t))
+        u[0] = 1  # Impulse at t=0
+
+        return self.simulate(u, x0, t)
+    
+    def bode(self, w: np.ndarray = None):
+        """
+        Calculate Bode plot data for the transfer function.
+
+        Parameters
+        ----------
+        w : np.ndarray, optional
+            1D array of angular frequencies (rad/s) for the Bode plot. If None,
+            a default frequency range is generated from 0.1 to 100 rad/s.
+
+        Returns
+        -------
+        w : np.ndarray
+            Frequency array used for the Bode plot.
+        mag : np.ndarray
+            Magnitude of the transfer function in dB.
+        phase : np.ndarray
+            Phase of the transfer function in degrees.
+        """
+        if w is None:
+            w = np.logspace(-1, 2, 100)
+
+        mag = np.zeros(len(w))
+        phase = np.zeros(len(w))
+
+        for i, freq in enumerate(w):
+            s = 1j * freq  # Substitute s = jw
+            # Calculate transfer function value
+            H = np.polyval(self.num, s) / np.polyval(self.den, s)
+
+            # Calculate magnitude and phase
+            mag[i] = 20 * np.log10(np.abs(H))  # Magnitude in dB
+            phase[i] = np.angle(H, deg=True)  # Phase in degrees
+
+        return w, mag, phase
 
     def _reshape_state(self, x: np.ndarray) -> np.ndarray:
         return np.reshape(x, (self.order,))
