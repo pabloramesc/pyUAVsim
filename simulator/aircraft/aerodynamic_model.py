@@ -249,13 +249,13 @@ class AerodynamicModel:
         CY_vs_p = self.params.CY_p * (0.5 * self.params.b / state.airspeed) * state.p
         CY_vs_r = self.params.CY_r * (0.5 * self.params.b / state.airspeed) * state.r
         CY_vs_delta_a = self.params.CY_delta_a * deltas.delta_a
-        # CY_vs_delta_r = self.params.CY_delta_r * deltas.delta_r
+        CY_vs_delta_r = self.params.CY_delta_r * deltas.delta_r
         fy = (
             0.5
             * self.rho
             * state.airspeed**2
             * self.params.S
-            * (CY_vs_beta + CY_vs_p + CY_vs_r + CY_vs_delta_a)
+            * (CY_vs_beta + CY_vs_p + CY_vs_r + CY_vs_delta_a + CY_vs_delta_r)
         )  # fy = 1/2 rho Va**2 S CY(beta, p, r, delta_a, delta_r)
         return fy
 

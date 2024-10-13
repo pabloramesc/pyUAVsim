@@ -77,7 +77,7 @@ Uses the estimated state along with mission parameters or joystick/controller in
 - [x] Mission parametes (waypoints) support
 - [ ] Add TECS and LQR control
 - [ ] Add PX4 attitude controller
-- [ ] Add control gain atotuning method
+- [ ] Add control gains auto-tuning method
 - [ ] Implement Genetic Algorithm optimization
 - [ ] Real-time external joystick/controller and autopilot modes (manual, FBW, auto...) support
 - [ ] Unity 3D visualiztion framework 

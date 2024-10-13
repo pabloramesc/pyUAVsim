@@ -11,7 +11,7 @@ import numpy as np
 
 from simulator.autopilot.autopilot_config import AutopilotConfig
 from simulator.autopilot.pid_controller import PIDController
-from simulator.common.constants import EARTH_GRAVITY_CONSTANT as g
+from simulator.environment.constants import EARTH_GRAVITY_CONSTANT as g
 from simulator.math.angles import diff_angle_pi
 
 

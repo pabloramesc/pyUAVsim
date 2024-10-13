@@ -13,7 +13,7 @@ from simulator.aircraft.aircraft_state import AircraftState
 from simulator.aircraft.airframe_parameters import AirframeParameters
 from simulator.aircraft.control_deltas import ControlDeltas
 from simulator.aircraft.propulsion_model import PropulsionModel
-from simulator.common.constants import EARTH_GRAVITY_CONSTANT as g
+from simulator.environment.constants import EARTH_GRAVITY_CONSTANT as g
 from simulator.math.numeric_differentiation import jacobian
 
 

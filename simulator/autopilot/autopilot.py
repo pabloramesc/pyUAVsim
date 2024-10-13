@@ -16,7 +16,6 @@ from simulator.aircraft.control_deltas import ControlDeltas
 from simulator.autopilot.autopilot_config import AutopilotConfig
 from simulator.autopilot.autopilot_status import AutopilotStatus
 from simulator.autopilot.flight_control import FlightControl
-from simulator.common.constants import EARTH_GRAVITY_CONSTANT as g
 
 AUTOPILOT_MODES = ["manual", "fbw", "cruise", "auto"]
 

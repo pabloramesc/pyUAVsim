@@ -6,6 +6,7 @@
 """
 
 import numpy as np
+from numpy.typing import ArrayLike
 from matplotlib import pyplot as plt
 
 from simulator.math.transfer_function import TransferFunction
@@ -13,7 +14,7 @@ from simulator.math.transfer_function import TransferFunction
 
 def root_locus(
     tf: TransferFunction,
-    k: np.ndarray = None,
+    k: ArrayLike = None,
     figsize: tuple = None,
     xlim: tuple = None,
     ylim: tuple = None,
@@ -34,8 +35,8 @@ def root_locus(
     ----------
     tf : TransferFunction
         The transfer function object.
-    k : np.ndarray, optional
-        1D array of gain values for which to calculate the root locus.
+    k : array_like, optional
+        Initial gain values for which to calculate the root locus.
         If None, a default range from 0 to 10 is generated.
     figsize : tuple, optional
         Size of the figure (width, height).
@@ -71,7 +72,7 @@ def root_locus(
     ylim = ylim or (imag_center - 1 * imag_range, imag_center + 1 * imag_range)
 
     if k is None:
-        k = np.array([0.0, 1.0, 1e6])
+        k = [0.0, 1.0, 1e6]
 
     # Calculate poles for initial k values
     poles = []
