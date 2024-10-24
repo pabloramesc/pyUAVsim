@@ -62,17 +62,22 @@ def root_locus(
         The shape of the array is (K, N), where K is the number of gain values
         generated and N is the order of the transfer function.
     """
+    # Calculate real and imag values range for poles and zeros
     all_points = np.concatenate((tf.poles, tf.zeros, np.zeros(1)))
     max_center_dist = np.max(np.abs(all_points))
-    real_center = np.mean(np.real(all_points))
-    imag_center = np.mean(np.imag(all_points))
+    real_mean = np.mean(np.real(all_points))
+    imag_mean = np.mean(np.imag(all_points))
     real_range = np.ptp(np.real(all_points))
+    real_range = real_range if real_range > 0.0 else 1.0
     imag_range = np.ptp(np.imag(all_points))
-    xlim = xlim or (real_center - 2 * real_range, real_center + 1 * real_range)
-    ylim = ylim or (imag_center - 1 * imag_range, imag_center + 1 * imag_range)
+    imag_range = imag_range if imag_range > 0.0 else real_range
+
+    # Calculate default axis limits
+    xlim = xlim or (real_mean - 2 * real_range, real_mean + 1 * real_range)
+    ylim = ylim or (imag_mean - 1 * imag_range, imag_mean + 1 * imag_range)
 
     if k is None:
-        k = [0.0, 1.0, 1e6]
+        k = [0.0, 1.0, 1e12]
 
     # Calculate poles for initial k values
     poles = []
@@ -86,29 +91,39 @@ def root_locus(
 
     # Refinement process
     refined_k = list(k)
-    max_refinements = 1000
+    max_refinements = 100
     max_iterations = max_refinements * 100
     refine_threshold = 0.01 * max_center_dist
-    refine_count = 1
+    refine_index = 1 # position to refine
     for _ in range(max_iterations):
-        gain1, gain2 = refined_k[refine_count - 1], refined_k[refine_count]
-        roots1, roots2 = poles[refine_count - 1], poles[refine_count]
+        gain1, gain2 = refined_k[refine_index-1], refined_k[refine_index]
+        roots1, roots2 = poles[refine_index-1], poles[refine_index]
 
         # Check max distance between corresponding roots
         max_dist = np.max(np.abs(roots1 - roots2))
 
+        # If distance between roots is bigger the threshold, insert new gain in the middle
         if max_dist > refine_threshold:
             new_gain = (gain1 + gain2) / 2
             char_poly = np.polyadd(tf.den, new_gain * tf.num)
             new_roots = np.roots(char_poly)
 
-            refined_k.insert(refine_count, new_gain)
-            poles.insert(refine_count, new_roots)
+            refined_k.insert(refine_index, new_gain)
+            poles.insert(refine_index, new_roots)
 
         else:
-            refine_count += 1
-            if refine_count >= max_refinements:
-                break
+            refine_index += 1
+
+        # If all roots are outside bounds, skip iteration and remove the last root
+        # Note: keep at least one root out bounds to plot lines correctly
+        roots1_in_bounds = np.any(_check_roots_in_bounds(poles[-2], xlim, ylim))
+        roots2_in_bounds = np.any(_check_roots_in_bounds(poles[-1], xlim, ylim))
+        if not roots1_in_bounds and not roots2_in_bounds:
+            refined_k.pop(-1)
+            poles.pop(-1)
+
+        if refine_index >= len(refined_k):
+            break
 
     poles = np.array(poles)
     refined_k = np.array(refined_k)
@@ -118,8 +133,8 @@ def root_locus(
         plt.figure(figsize=figsize)
 
         # Plot the root locus
-        for refine_count in range(tf.order):
-            plt.plot(poles[:, refine_count].real, poles[:, refine_count].imag)
+        for refine_index in range(tf.order):
+            plt.plot(poles[:, refine_index].real, poles[:, refine_index].imag)
 
         # Plot the poles and zeros
         if len(tf.poles) > 0:
@@ -149,7 +164,7 @@ def root_locus(
         plt.ylabel("Imaginary")
         plt.legend()
         plt.grid()
-        plt.axis("equal")
+        # plt.axis("equal")
         plt.xlim(xlim)
         plt.ylim(ylim)
 
@@ -158,3 +173,12 @@ def root_locus(
             plt.show()
 
     return poles, refined_k
+
+
+def _check_roots_in_bounds(roots: ArrayLike, xlim: tuple, ylim: tuple) -> list:
+    """
+    Check if each root is within the specified x and y limits. Return a list.
+    """
+    real_in_bounds = (np.real(roots) >= xlim[0]) & (np.real(roots) <= xlim[1])
+    imag_in_bounds = (np.imag(roots) >= ylim[0]) & (np.imag(roots) <= ylim[1])
+    return (real_in_bounds & imag_in_bounds)

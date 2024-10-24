@@ -6,6 +6,7 @@
 """
 
 import numpy as np
+from matplotlib import pyplot as plt
 
 from simulator.math.root_locus import root_locus
 from simulator.math.transfer_function import TransferFunction
@@ -30,6 +31,6 @@ den = [1, 3, 5, 1]
 tf = TransferFunction(num, den)
 
 # Plot root locus with poles and zeros
-poles, refined_k = root_locus(tf)
+poles, gains = root_locus(tf)
 
-print(f"{len(refined_k)} gains calculated")
+print(f"{len(gains)} gains calculated\n")

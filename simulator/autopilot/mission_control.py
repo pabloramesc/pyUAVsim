@@ -145,7 +145,7 @@ class MissionControl:
         self.pos_ned, self.course = pos_ned, course
 
         self._validate_status()
-        self._update_route_manager_if_needed(pos_ned)
+        self._restart_route_manager_if_needed(pos_ned)
         self._update_waypoint_target()
         self._manage_actions_and_navigation(pos_ned, course, _dt)
 
@@ -199,10 +199,10 @@ class MissionControl:
         """Ensure mission status is valid."""
         if self.status not in MISSION_CONTROL_STATUS:
             raise ValueError(f"Invalid mission control status: {self.status}!")
-        if self.status == "wait":
+        elif self.status == "wait":
             raise Exception("Mission control must be initialized before update!")
 
-    def _update_route_manager_if_needed(self, pos_ned: np.ndarray) -> None:
+    def _restart_route_manager_if_needed(self, pos_ned: np.ndarray) -> None:
         """Restart route manager if in initialization phase."""
         if self.status == "init":
             self.route_manager.restart(pos_ned)
@@ -219,9 +219,8 @@ class MissionControl:
         if not self.is_action_running:
             self._update_navigation(pos_ned, course)
 
-    def _enter_orbit_path(self, pos_ned: np.ndarray) -> None:
+    def _enter_orbit_path(self, orbit_center: np.ndarray) -> None:
         """Configure the path follower to enter an orbit mode."""
-        orbit_center = pos_ned
         orbit_radius = self.config.wait_orbit_radius
         params = OrbitPathParams(orbit_center, orbit_radius)
         self.path_follower.follow_orbit(params)
