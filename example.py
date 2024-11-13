@@ -51,10 +51,10 @@ while True:
     if k_sim % 100 == 0:  # update interface each 10 steps
         t_real = time.time() - t0
         cli.clear()
-        cli.print_time(t_sim, t_real, dt, k_sim, style="simple")
-        cli.print_aircraft_state(uav.state, style="simple")
-        cli.print_control_deltas(uav.control_deltas, style="simple")
-        cli.print_autopilot_status(autopilot.status, style="simple")
+        cli.print_time(t_sim, t_real, dt, k_sim)
+        cli.print_aircraft_state(uav.state)
+        cli.print_control_deltas(uav.control_deltas)
+        cli.print_autopilot_status(autopilot.status)
         cli.print_mission_status(mission)
         cli.print_waypoints_table(mission.route_manager)
         gui.update(state=uav.state, pause=0.01)

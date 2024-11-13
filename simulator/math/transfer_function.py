@@ -113,8 +113,11 @@ class TransferFunction:
         return self.C @ x + self.D @ u
 
     def simulate(
-        self, u: np.ndarray, x0: np.ndarray = None, t: np.ndarray = None
-    ) -> Tuple[np.ndarray, np.ndarray]:
+        self,
+        u: np.ndarray,
+        t: np.ndarray,
+        x0: np.ndarray = None,
+    ) -> np.ndarray:
         """
         Simulate the system's response to a given control input.
 
@@ -123,47 +126,79 @@ class TransferFunction:
         u : np.ndarray
             1D array representing the control input over time with shape (n,),
             where n is the number of samples.
+        t : np.ndarray
+            1D array representing the time array with the same shape as `u`.
         x0 : np.ndarray, optional
             1D array representing the initial state of the system with shape
             (n,). Defaults to a zero vector.
-        t : np.ndarray, optional
-            1D array representing the time array. If None, a default time array
-            from 0 to 1 seconds is generated, with the same length as `u`.
 
         Returns
         -------
-        t : np.ndarray
-            1D array representing the time array used in the simulation.
         y : np.ndarray
             1D array representing the output of the system over time.
         """
+
+        u = np.atleast_1d(u)
+        t = np.atleast_1d(t)
+
+        if t.size != u.size:
+            raise ValueError(
+                "Length of time array 't' must match the length of control input 'u'."
+            )
+
         if x0 is None:
-            x0 = np.zeros((self.order, 1))
+            x0 = np.zeros(self.order)
 
         self._check_state(x0)
 
-        if t is None:
-            t = np.linspace(0.0, 1.0, len(u))
-        elif len(u) != len(t):
-            raise ValueError(
-                "Length of control input 'u' must match the length of time array 't'."
-            )
-
-        n = len(t)
-        y = np.zeros(n)
-        x = np.zeros((self.order, n))
+        y = np.zeros(u.size)
+        x = np.zeros((self.order, u.size))
         x[:, 0] = x0
-        u = np.reshape(u, (1, n))
 
-        for k in range(1, n):
-            xk = x[:, k - 1]
-            uk = u[:, k]
+        for k in range(1, u.size):
             dt = t[k] - t[k - 1]
-            dx = lambda t, x: self.state_equation(x, uk)
-            x[:, k] = xk + rk4(dx, t[k], xk, dt)  # Update state using RK4
-            y[k] = self.output_equation(xk, uk)
+            _t0 = t[k - 1]
+            _x0 = x[:, k - 1]
+            _, x[:, k], y[k] = self.sim_step(u[k], dt, _t0, _x0)
 
-        return t, y
+        return y
+
+    def sim_step(
+        self, u: float, dt: float, t0: float = 0.0, x0: np.ndarray = None
+    ) -> tuple[float, np.ndarray, np.ndarray]:
+        """
+        Perform a single simulation step to update the system's state and output 
+        for a given control input.
+
+        Parameters
+        ----------
+        u : float
+            Control input applied during this step.
+        dt : float
+            Time increment for this step.
+        t0 : float, optional
+            Initial time at the beginning of the step, default is 0.0.
+        x0 : np.ndarray, optional
+            State vector at the start of the step with shape (n,),
+            where n is the order of the system. Defaults to a zero vector.
+
+        Returns
+        -------
+        t : float
+            Updated time after the step.
+        x : np.ndarray
+            Updated state vector after the step with shape (n,), where n is the 
+            order of the system.
+        y : np.ndarray
+            Output of the system after the step with shape (1,).
+        """
+        if x0 is None:
+            x0 = np.zeros(self.order)
+        dx = lambda t, x: self.state_equation(x, u)
+        t = t0 + dt
+        x = x0 + rk4(dx, t0, x0, dt)  # Update state using RK4
+        y = self.output_equation(x, u)
+        return t, x, y
 
     def step(
         self, x0: np.ndarray = None, t: np.ndarray = None, n: int = 100
@@ -199,8 +234,9 @@ class TransferFunction:
             t = np.linspace(0, 1, n)
 
         u = np.ones(len(t))
-        return self.simulate(u, x0, t)
-    
+        y = self.simulate(u, t, x0)
+        return t, y
+
     def impulse(
         self, x0: np.ndarray = None, t: np.ndarray = None, n: int = 100
     ) -> Tuple[np.ndarray, np.ndarray]:
@@ -236,9 +272,9 @@ class TransferFunction:
 
         u = np.zeros(len(t))
         u[0] = 1  # Impulse at t=0
+        y = self.simulate(u, t, x0)
+        return t, y
 
-        return self.simulate(u, x0, t)
-    
     def bode(self, w: np.ndarray = None):
         """
         Calculate Bode plot data for the transfer function.

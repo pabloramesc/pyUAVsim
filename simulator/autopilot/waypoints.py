@@ -152,7 +152,8 @@ class WaypointsList:
     Attributes
     ----------
     waypoints : Dict[int, Waypoint]
-        Dictionary of waypoints, where the key is the waypoint ID and the value is the Waypoint object.
+        Dictionary of waypoints, where the key is the waypoint ID
+        and the value is the Waypoint object.
     """
 
     def __init__(self) -> None:
@@ -255,8 +256,8 @@ class WaypointsList:
             )
 
         # zip discards extra params if there are more than expected type
-        # also discards expected types ir there are more than provided params*
-        # *provided params have been already checked to be the minimum required
+        # also discards expected types ir there are more than provided params
+        # provided params have been already checked to be the minimum required
         for i, (param, expected_type) in enumerate(zip(params, expected_types)):
             if not isinstance(param, expected_type):
                 raise ValueError(

@@ -228,7 +228,7 @@ class SimConsole:
                 f"{wp.pn:.2f}",
                 f"{wp.pe:.2f}",
                 f"{wp.h:.2f}",
-                f"{wp.action_code}",
+                f"{wp.action_code.replace("_", " ")}",
                 f"{wp.params}",
                 f"{self._action_status(wp)}",
                 style=color,

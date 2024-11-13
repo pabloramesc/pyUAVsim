@@ -366,4 +366,4 @@ def zpk2tf(
     """
     num = gain * np.poly(zeros)
     den = np.poly(poles)
-    return num, den
+    return np.atleast_1d(num), np.atleast_1d(den)
