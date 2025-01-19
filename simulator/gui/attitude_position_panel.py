@@ -9,8 +9,8 @@ from typing import Any, override
 
 from simulator.aircraft import AircraftState
 from simulator.gui.attitude_view import AttitudeView
-from simulator.gui.panel_base import Panel
 from simulator.gui.position_plot import PositionPlot
+from simulator.gui.panel_base import Panel
 
 
 class AttitudePositionPanel(Panel):

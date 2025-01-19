@@ -73,9 +73,9 @@ def generate_dryden_gusts(
     noise_w = np.random.normal(0.0, 1.0, t.size)
 
     # Simulate the gust response, which will have feedback and dynamics
-    u_wg = Hu.simulate(noise_u, t)[1]
-    v_wg = Hv.simulate(noise_v, t)[1]
-    w_wg = Hw.simulate(noise_w, t)[1]
+    u_wg = Hu.simulate(noise_u, t)
+    v_wg = Hv.simulate(noise_v, t)
+    w_wg = Hw.simulate(noise_w, t)
 
     # Combine the gusts into a single array
     return np.column_stack([u_wg, v_wg, w_wg])

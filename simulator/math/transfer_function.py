@@ -156,10 +156,11 @@ class TransferFunction:
         x[:, 0] = x0
 
         for k in range(1, u.size):
+            _u = u[k-1]  # take previous input (impulse response only works like that)
             dt = t[k] - t[k - 1]
             _t0 = t[k - 1]
             _x0 = x[:, k - 1]
-            _, x[:, k], y[k] = self.sim_step(u[k], dt, _t0, _x0)
+            _, x[:, k], y[k] = self.sim_step(_u, dt, _t0, _x0)
 
         return y
 
@@ -269,9 +270,10 @@ class TransferFunction:
 
         if t is None:
             t = np.linspace(0, 1, n)
+        dt = np.diff(t)
 
         u = np.zeros(len(t))
-        u[0] = 1  # Impulse at t=0
+        u[0] = 1 / dt[0]  # Impulse at t=0
         y = self.simulate(u, t, x0)
         return t, y
 
