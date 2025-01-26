@@ -68,8 +68,8 @@ class PanelComponent(ABC):
         """
         Renders the figure using the standard redraw method.
         """
-        self.ax.figure.canvas.draw()
-        self.ax.figure.canvas.flush_events()
+        # self.ax.figure.canvas.draw()
+        # self.ax.figure.canvas.flush_events()
 
     def _render_blit(self) -> None:
         """

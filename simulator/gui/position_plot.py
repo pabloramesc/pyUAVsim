@@ -53,7 +53,7 @@ class PositionPlot(Plot):
             
         self.setup_blit([self.line])
 
-    def update_plot(self):
+    def update_plot(self, render: bool = True) -> None:
         """
         Updates the plot with the latest position data from the logger.
 
@@ -73,4 +73,5 @@ class PositionPlot(Plot):
         if self.is_3d:
             self.ax.set_zlim(np.min(-pos["pd"]), np.max(-pos["pd"]))
             
-        self.render()
+        if render:   
+            self.render()

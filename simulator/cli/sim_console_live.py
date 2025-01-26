@@ -17,7 +17,7 @@ from rich.text import Text
 from rich.highlighter import ReprHighlighter
 from rich.theme import Theme
 
-from simulator.simulation_data import *
+from simulator.utils.simulation_data import *
 from simulator.utils.readable import seconds_to_dhms
 from simulator.autopilot.waypoints import Waypoint
 from simulator.autopilot.waypoint_actions import (
@@ -223,7 +223,7 @@ class SimConsoleLive:
         )
 
     def generate_footer1(self, data: SimulationData) -> Panel:
-        mc = data.mission_status
+        mc = data.mission_control
         wp = mc.target_waypoint
         am = mc.actions_manager
         rm = mc.route_manager
@@ -256,7 +256,7 @@ class SimConsoleLive:
         )
 
     def generate_footer2(self, data: SimulationData) -> Panel:
-        rm = data.route_manager
+        rm = data.mission_control.route_manager
 
         table = Table()
 

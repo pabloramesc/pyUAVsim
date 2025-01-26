@@ -48,8 +48,8 @@ while True:
 
     gui.add_data(state=uav.state)
 
-    if k_sim % 100 == 0:  # update interface each 100 steps
-        t_real = time.time() - t0
+    t_real = time.time() - t0
+    if t_sim > t_real:
         cli.clear()
         cli.print_time(t_sim, t_real, dt, k_sim)
         cli.print_aircraft_state(uav.state)
