@@ -27,20 +27,20 @@ def seconds_to_dhms(t: float) -> str:
     
     days = t // 86400.0
     if days > 0:
-        txt += f"{days:.0f}d "
+        txt += f"{days:.0f} d "
     t -= days * 86400.0
 
     hours = t // 3600.0
     if hours > 0 or days > 0:
-        txt += f"{hours:.0f}h "
+        txt += f"{hours:.0f} h "
     t -= hours * 3600.0
         
     mins = t // 60.0
     if mins > 0 or hours > 0 or days > 0:
-        txt += f"{mins:.0f}m "
+        txt += f"{mins:.0f} min "
     t -= mins * 60.0
 
-    txt += f"{t:.2f}s"
+    txt += f"{t:.2f} s"
     
     return txt
 

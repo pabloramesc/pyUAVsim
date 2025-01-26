@@ -19,7 +19,7 @@ from simulator.autopilot.waypoint_actions import OrbitTurns, OrbitTime, OrbitAlt
 from simulator.utils.readable import seconds_to_dhms, seconds_to_hhmmss
 
 
-class SimConsole:
+class SimConsoleOld:
     """
     A class to handle the display of simulation data using the Rich library.
 
