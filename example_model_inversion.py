@@ -16,7 +16,7 @@ aerosonde_params = load_airframe_parameters_from_yaml(params_file)
 
 dt = 0.01
 uav = AircraftDynamics(dt, aerosonde_params, use_quat=True)
-x_trim, delta_trim = uav.trim(Va=25.0, R_orb=500, gamma=np.deg2rad(10.0))
+x_trim, delta_trim = uav.trim(Va=25.0, R_orb=300.0, gamma=np.deg2rad(10.0))
 
 sensors = SensorSystem(uav.state)
 sensors.initialize(t=0.0)
@@ -102,6 +102,23 @@ plt.xlabel("Time (s)")
 plt.legend()
 plt.tight_layout()
 
-
+# Plot true vs estimated airspeed and altitude
+true_Va = np.linalg.norm(uav_states[:, 3:6], axis=1)
+estimated_Va = estimated_states[:, 6]
+true_h = -uav_states[:, 2]
+estimated_h = estimated_states[:, 7]
+plt.figure(figsize=(12, 6))
+plt.subplot(2, 1, 1)
+plt.plot(time, true_Va, label="True Airspeed")
+plt.plot(time, estimated_Va, label="Estimated Airspeed", linestyle="--")
+plt.ylabel("Airspeed (m/s)")
+plt.legend()
+plt.subplot(2, 1, 2)
+plt.plot(time, true_h, label="True Altitude")
+plt.plot(time, estimated_h, label="Estimated Altitude", linestyle="--")
+plt.ylabel("Altitude (m)")
+plt.xlabel("Time (s)")
+plt.legend()
+plt.tight_layout()
 
 plt.show()

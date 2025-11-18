@@ -8,10 +8,10 @@ from .alpha_filter import AlphaFilter
 
 class ModelInversionFilter(EstimationFilter):
     def __init__(self) -> None:
-        self.accel_lpf = AlphaFilter(alpha=0.7)
-        self.gyro_lpf = AlphaFilter(alpha=0.98)
-        self.baro_lpf = AlphaFilter(alpha=0.9)
-        self.airspeed_lpf = AlphaFilter(alpha=0.7)
+        self.accel_lpf = AlphaFilter(alpha=0.95)
+        self.gyro_lpf = AlphaFilter(alpha=0.99)
+        self.baro_lpf = AlphaFilter(alpha=0.90)
+        self.airspeed_lpf = AlphaFilter(alpha=0.90)
         self.compass_lpf = AlphaFilter(alpha=0.0)
         self.gps_lpf = AlphaFilter(alpha=0.1)
 
@@ -22,18 +22,18 @@ class ModelInversionFilter(EstimationFilter):
         # Estimate altitude and airspeed from barometer and airspeed sensor
         g = 9.81  # m/s^2
         rho = 1.225  # kg/m^3
-        h_baro = self.baro_lpf.update(readings.baro) / (
+        h_baro = (101325 - self.baro_lpf.update(readings.baro) * 1e3) / (
             rho * g
-        )  # Convert pressure to altitude
+        )  # Convert pressure (in kPa) to altitude
         Va = np.sqrt(
-            2 / rho * self.airspeed_lpf.update(readings.airspeed)
-        )  # Convert dynamic pressure to airspeed
+            2 / rho * self.airspeed_lpf.update(readings.airspeed) * 1e3
+        )  # Convert dynamic pressure (in kPa) to airspeed
 
         # Estimate roll and pitch from accelerometer
         acc = self.accel_lpf.update(readings.accel)
         acc_norm = np.linalg.norm(acc) + 1e-6  # Prevent division by zero
         ax, ay, az = acc / acc_norm # Normalize acceleration
-        roll = np.arctan2(ay, az)
+        roll = np.arctan2(-ay, -az)
         pitch = np.asin(ax)
         
         # Estimate yaw from compass
