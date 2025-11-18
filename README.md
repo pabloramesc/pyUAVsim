@@ -6,7 +6,7 @@ For more information visit https://github.com/randybeard/mavsim_public
 ## Overview
 The Python UAV Simulator provides a comprehensive environment for simulating the behavior of unmanned aerial vehicles (UAVs). It allows users to explore aircraft dynamics, sensor readings, autopilot behavior, and actuator responses in a controlled simulation framework.
 
-![](pics/screenshot_01.png)
+![](pics/screenshot_03.png)
 
 ## Getting Started
 
@@ -70,7 +70,7 @@ Uses the estimated state along with mission parameters or joystick/controller in
 - [x] Trim calculation
 - [x] Quaternions support
 - [ ] Wind and atmospheric models integration
-- [ ] Realistic sensor data simulation including IMU, GPS, and barometer.
+- [x] Realistic sensor data simulation including IMU, GPS, and barometer.
 - [ ] Actuators simulation (servos and DC motor) with realistic transfer functions
 - [ ] Estimation filters for airtcraft's state estimation
 - [x] Implement all autopilot layers: flight control, path following, path navigator and route manager.

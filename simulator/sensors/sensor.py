@@ -1,8 +1,8 @@
 """
- Copyright (c) 2022 Pablo Ramirez Escudero
- 
- This software is released under the MIT License.
- https://opensource.org/licenses/MIT
+Copyright (c) 2022 Pablo Ramirez Escudero
+
+This software is released under the MIT License.
+https://opensource.org/licenses/MIT
 """
 
 from abc import ABC, abstractmethod
@@ -14,7 +14,7 @@ from simulator.aircraft import AircraftState
 
 
 @dataclass
-class SensorParams:
+class SensorParams(ABC):
     """
     General sensor configuration handler
 
@@ -35,7 +35,7 @@ class Sensor(ABC):
 
     _count = 0
 
-    def __init__(self, params: SensorParams, state: AircraftState) -> None:
+    def __init__(self, params: SensorParams, state: AircraftState, name: str | None = None) -> None:
         """General sensor class initialization.
 
         Parameters
@@ -53,11 +53,13 @@ class Sensor(ABC):
 
         Sensor._count += 1
         self.id = Sensor._count
+        
+        self.name = name if name is not None else f"{type(self).__name__}_{self.id}"
 
         self.last_update_time = 0.0
-        self.ideal_value: np.ndarray = None  # ideal measurement
-        self.noisy_value: np.ndarray = None  # real measurement (ideal + noise)
-        self.prev_noisy_value: np.ndarray = (
+        self.ideal_value: np.ndarray | None = None  # ideal measurement
+        self.noisy_value: np.ndarray | None = None  # real measurement (ideal + noise)
+        self.prev_noisy_value: np.ndarray | None = (
             None  # previous reading to simulate reading delay
         )
 
@@ -150,7 +152,14 @@ class Sensor(ABC):
         np.ndarray
             The reading of the sensor considering reading delay
         """
+        # if reading delay is completed
         if t >= self.last_update_time + self.reading_delay:
-            return self.noisy_value  # if reading delay is completed
+            if self.noisy_value is None:
+                raise ValueError("Sensor noisy_value is not initialized.")
+            return self.noisy_value
+        
+        # if not enough time has passed
         else:
-            return self.prev_noisy_value  # if not enough time has passed
+            if self.prev_noisy_value is None:
+                raise ValueError("Sensor prev_noisy_value is not initialized.")
+            return self.prev_noisy_value

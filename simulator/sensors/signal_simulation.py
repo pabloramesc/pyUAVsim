@@ -62,7 +62,7 @@ def saturate(val: np.ndarray, min_val: float, max_val: float):
     return sat_val
 
 
-def digitalize(val: np.ndarray, full_scale: float, bits: int) -> np.ndarray:
+def digitalize(val: np.ndarray | float, full_scale: float, bits: int) -> np.ndarray:
     """
     Digitalize data to simulate quantization of and ADC (Analog-to-Digital-Converter).
 
@@ -87,7 +87,7 @@ def digitalize(val: np.ndarray, full_scale: float, bits: int) -> np.ndarray:
     # bin_indices = np.digitize(val, transfer_function, right=True)
     # return transfer_function[bin_indices]
     resolution = 2 * full_scale / 2**bits
-    bin_index: np.ndarray = (val + full_scale) / resolution
+    bin_index = (val + full_scale) / resolution
     if isinstance(bin_index, float):
         bin_index = int(bin_index)
     if isinstance(bin_index, np.ndarray):

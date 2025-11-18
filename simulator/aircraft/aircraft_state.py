@@ -1,8 +1,8 @@
 """
- Copyright (c) 2024 Pablo Ramirez Escudero
- 
- This software is released under the MIT License.
- https://opensource.org/licenses/MIT
+Copyright (c) 2024 Pablo Ramirez Escudero
+
+This software is released under the MIT License.
+https://opensource.org/licenses/MIT
 """
 
 import numpy as np
@@ -21,7 +21,7 @@ from simulator.environment.isa import isa_density
 class AircraftState:
     def __init__(
         self,
-        x0: np.ndarray = None,
+        x0: np.ndarray | None = None,
         wind0: np.ndarray = np.zeros(3),
         use_quat: bool = False,
     ) -> None:
@@ -88,7 +88,10 @@ class AircraftState:
         self._R_sb = rot_matrix_wind(self.alpha, 0.0)  # stability to body frame
 
     def update(
-        self, x: np.ndarray, x_dot: np.ndarray = None, wind: np.ndarray = None
+        self,
+        x: np.ndarray,
+        x_dot: np.ndarray | None = None,
+        wind: np.ndarray | None = None,
     ) -> None:
         """
         Update the aircraft's state `x`,
@@ -317,7 +320,7 @@ class AircraftState:
     @property
     def airspeed(self) -> float:
         """Airspeed value (m/s)"""
-        return np.linalg.norm(self.body_airspeed) + 1e-12
+        return np.linalg.norm(self.body_airspeed).item() + 1e-12
 
     @property
     def alpha(self) -> float:
@@ -332,10 +335,10 @@ class AircraftState:
     @property
     def groundspeed(self) -> float:
         """Groundspeed value in m/s"""
-        return np.linalg.norm(self.body_velocity)
+        return np.linalg.norm(self.body_velocity).item()
 
     @property
-    def ned_velocity(self) -> float:
+    def ned_velocity(self) -> np.ndarray:
         """3-size array with NED frame velocity [vn, ve, vd] in m/s"""
         return self.R_vb.T @ self.body_velocity
 

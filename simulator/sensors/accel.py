@@ -1,13 +1,13 @@
 """
- Copyright (c) 2024 Pablo Ramirez Escudero
- 
- This software is released under the MIT License.
- https://opensource.org/licenses/MIT
+Copyright (c) 2024 Pablo Ramirez Escudero
+
+This software is released under the MIT License.
+https://opensource.org/licenses/MIT
 """
 
 import numpy as np
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from simulator.aircraft.aircraft_state import AircraftState
 from simulator.sensors.sensor import Sensor, SensorParams
@@ -35,16 +35,18 @@ class AccelParams(SensorParams):
         3 size array with accelerometer's constant bias for each axis in g, by default np.zeros(3)
     """
 
+    sample_rate: float = 100.0  # Hz
+    reading_delay: float = 0.0  # seconds
     full_scale: float = 16.0
     resolution: int = 16
-    noise_density: float = 0.0
-    offset: np.ndarray = np.zeros(3)
+    noise_density: float = 250.0e-6  # 250 ug/sqrt(Hz)
+    offset: np.ndarray = field(default_factory=lambda: np.zeros(3))
 
 
 class Accel(Sensor):
 
-    def __init__(self, params: AccelParams, state: AircraftState) -> None:
-        super().__init__(params, state)
+    def __init__(self, params: AccelParams, state: AircraftState, name: str = "acc") -> None:
+        super().__init__(params, state, name=name)
 
         self.params = params
 
@@ -57,7 +59,13 @@ class Accel(Sensor):
         return acc
 
     def get_noisy_value(self, t: float) -> np.ndarray:
-        reading = self.ideal_value + get_white_noise()
+        if self.ideal_value is None:
+            raise ValueError("Ideal value has not been computed yet.")
+        reading = (
+            self.ideal_value
+            + get_white_noise(Nd=self.params.noise_density, fs=self.sample_rate, nlen=3)
+            + self.params.offset
+        )
         reading = saturate(reading, -self.params.full_scale, +self.params.full_scale)
         reading = digitalize(reading, self.params.full_scale, self.params.resolution)
         return reading
