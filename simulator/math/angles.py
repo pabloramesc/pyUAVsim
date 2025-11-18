@@ -1,160 +1,109 @@
 """
- Copyright (c) 2022 Pablo Ramirez Escudero
- 
- This software is released under the MIT License.
- https://opensource.org/licenses/MIT
+Utility functions for angle manipulations in radians.
+
+These functions handle both single float values and NumPy arrays.
 """
 
 import numpy as np
+from numpy.typing import NDArray
+from typing import Union, overload
+
+FloatOrArray = Union[float, NDArray[np.floating]]
 
 
-def clip_angle_pi(angle: float) -> float:
+@overload
+def wrap_angle_pi(angle: float) -> float: ...
+@overload
+def wrap_angle_pi(angle: NDArray[np.floating]) -> NDArray[np.floating]: ...
+
+
+def wrap_angle_pi(angle: FloatOrArray) -> FloatOrArray:
     """
-    Modify angle value to fit inside the range (-PI, PI].
+    Wrap angle(s) to the range [-pi, pi).
 
-    Parameters
-    ----------
-    angle : float
-        Angle in radians.
+    Args:
+        angle (float or array): Angle(s) in radians.
 
-    Returns
-    -------
-    float
-        Angle in radians clipped to the range (-PI, PI].
+    Returns:
+        Wrapped angle(s) in radians [-pi, pi).
     """
-    angle %= 2 * np.pi
-    if angle > +np.pi:
-        return angle % -np.pi
-    return angle
+    a = np.atleast_1d(angle).astype(np.float64)
+    a = (a + np.pi) % (2 * np.pi) - np.pi
+    return a if isinstance(angle, np.ndarray) else a.item()
 
 
-def clip_angle_2pi(angle: float) -> float:
+@overload
+def wrap_angle_2pi(angle: float) -> float: ...
+@overload
+def wrap_angle_2pi(angle: NDArray[np.floating]) -> NDArray[np.floating]: ...
+
+
+def wrap_angle_2pi(angle: FloatOrArray) -> FloatOrArray:
     """
-    Modify angle value to fit inside the range (0, 2*PI].
+    Wrap angle(s) to the range (0, 2*pi].
 
-    Parameters
-    ----------
-    angle : float
-        Angle in radians.
+    Args:
+        angle (float or array): Angle(s) in radians.
 
-    Returns
-    -------
-    float
-        Angle in radians clipped to the range (0, 2*PI].
+    Returns:
+        Wrapped angle(s) in radians (0, 2*pi].
     """
-    angle %= 2 * np.pi
-    if angle == 0.0:
-        return 2 * np.pi
-    return angle
+    a = np.atleast_1d(angle).astype(np.float64)
+    a = a % (2 * np.pi)
+    a[a == 0.0] = 2 * np.pi
+    return a if isinstance(angle, np.ndarray) else a.item()
 
 
-def clip_angle_180(angle: float) -> float:
+@overload
+def diff_angle_pi(angle1: float, angle2: float) -> float: ...
+@overload
+def diff_angle_pi(
+    angle1: NDArray[np.floating], angle2: NDArray[np.floating]
+) -> NDArray[np.floating]: ...
+
+
+def diff_angle_pi(angle1: FloatOrArray, angle2: FloatOrArray) -> FloatOrArray:
     """
-    Modify angle value to fit inside the range (-180, 180].
+    Calculate the difference between two angles (or arrays of angles)
+    ensuring the result is in the range [-pi, pi).
 
-    Parameters
-    ----------
-    angle : float
-        Angle in degrees.
+    Args:
+        angle1 (float or array): First angle(s) in radians.
+        angle2 (float or array): Second angle(s) in radians.
 
-    Returns
-    -------
-    float
-        Angle in degrees clipped to the range (-180, 180].
+    Returns:
+        The difference between angle1 and angle2 in radians [-pi, pi).
     """
-    angle %= 360
-    if angle > +180.0:
-        return angle % -180.0
-    return angle
+    diff = np.asarray(angle1) - np.asarray(angle2)
+    wrapped = (diff + np.pi) % (2 * np.pi) - np.pi
+    return (
+        wrapped
+        if isinstance(angle1, np.ndarray) or isinstance(angle2, np.ndarray)
+        else wrapped.item()
+    )
 
 
-def clip_angle_360(angle: float) -> float:
+@overload
+def wrap_angle(angle1: float, angle2: float) -> float: ...
+@overload
+def wrap_angle(
+    angle1: NDArray[np.floating], angle2: NDArray[np.floating]
+) -> NDArray[np.floating]: ...
+
+
+def wrap_angle(angle1: FloatOrArray, angle2: FloatOrArray) -> FloatOrArray:
     """
-    Modify angle value to fit inside the range (0, 360].
+    Wrap angle1 so that difference between angle1 and angle2
+    is in the range [-pi, pi].
 
-    Parameters
-    ----------
-    angle : float
-        Angle in degrees.
+    Args:
+        angle1 (float or array): Angle(s) in radians to be wrapped.
+        angle2 (float or array): Reference angle(s) in radians.
 
-    Returns
-    -------
-    float
-        Angle in degrees clipped to the range (0, 360].
+    Returns:
+        Wrapped angle1 in radians so that difference with angle2 is in [-pi, pi].
     """
-    angle %= 360
-    if angle == 0.0:
-        return 360.0
-    return angle
-
-
-def diff_angle_pi(angle1: float, angle2: float) -> float:
-    """
-    Compute the difference between two angles in radians,
-    returning a result in the range (-PI, PI].
-
-    Parameters
-    ----------
-    angle1 : float
-        First angle in radians.
-    angle2 : float
-        Second angle in radians.
-
-    Returns
-    -------
-    float
-        Difference between the two angles in radians.
-    """
-    while angle1 - angle2 > +np.pi:
-        angle1 -= 2 * np.pi
-    while angle1 - angle2 < -np.pi:
-        angle1 += 2 * np.pi
-    return angle1 - angle2
-
-
-def diff_angle_180(angle1: float, angle2: float) -> float:
-    """
-    Compute the difference between two angles in degrees,
-    returning a result in the range (-180, 180].
-
-    Parameters
-    ----------
-    angle1 : float
-        First angle in degrees.
-    angle2 : float
-        Second angle in degrees.
-
-    Returns
-    -------
-    float
-        Difference between the two angles in degrees.
-    """
-    while angle1 - angle2 > +180.0:
-        angle1 = angle1 - 360.0
-    while angle1 - angle2 < -180.0:
-        angle1 = angle1 + 360.0
-    return angle1 - angle2
-
-
-def wrap_angle(angle1: float, angle2: float):
-    """
-    Wrap the angle1 so its difference with angle2
-    is in the range (-pi, pi].
-
-    Parameters
-    ----------
-    angle1 : float
-        First angle in radians.
-    angle2 : float
-        Second angle in radians.
-
-    Returns
-    -------
-    float
-        The wrapped first angle in radians.
-    """
-    while angle1 - angle2 > +np.pi:
-        angle1 -= 2 * np.pi
-    while angle1 - angle2 < -np.pi:
-        angle1 += 2 * np.pi
-    return angle1
+    a1 = np.asarray(angle1)
+    a2 = np.asarray(angle2)
+    wrapped = (a1 - a2 + np.pi) % (2 * np.pi) - np.pi + a2
+    return wrapped if isinstance(angle1, np.ndarray) else wrapped.item()

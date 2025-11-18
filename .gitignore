@@ -6,3 +6,10 @@ htmlcov/
 
 logs/
 *.log
+
+*.egg-info/
+
+.env/
+env/
+.venv/
+venv/

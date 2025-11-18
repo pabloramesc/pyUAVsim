@@ -55,7 +55,12 @@ class Accel(Sensor):
         self.prev_noisy_value = np.zeros(3)
 
     def get_ideal_value(self, t: float) -> np.ndarray:
-        acc = self.state.body_acceleration
+        R_vb = self.state.R_vb
+        g = np.array([0.0, 0.0, 9.81])  # Gravity vector in inertial frame (m/s^2)
+        v_dot = self.state.body_acceleration
+        omega = self.state.angular_rates
+        v = self.state.body_velocity
+        acc = v_dot + np.cross(omega, v) - R_vb.T @ g        
         return acc
 
     def get_noisy_value(self, t: float) -> np.ndarray:

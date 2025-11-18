@@ -7,7 +7,7 @@
 
 import numpy as np
 
-from simulator.math.angles import clip_angle_pi
+from simulator.math.angles import wrap_angle_pi
 
 
 class ControlDeltas:

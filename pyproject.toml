@@ -1,0 +1,28 @@
+[project]
+name = "pyUAVsim"
+version = "0.1.0"
+description = "A Python-based UAV simulator"
+authors = [{ name = "Pablo Ramirez Escudero" }]
+readme = "README.md"
+requires-python = ">=3.12"
+license = "MIT"
+license-files = ["LICENSE"]
+urls = {"Homepage" = "https://github.com/pabloramesc/pyUAVsim"}
+
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = [
+	"simulator*",
+	"tests*",
+	"config*"
+]
+exclude = [
+	"docs*",
+	"pics*",
+	"examples*",
+	"drafts*"
+]

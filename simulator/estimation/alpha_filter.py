@@ -11,7 +11,7 @@ class AlphaFilter:
         Args:
             alpha (float): Smoothing factor between 0 and 1.
         """
-        if not (0.0 < alpha < 1.0):
+        if not (0.0 <= alpha <= 1.0):
             raise ValueError("Alpha must be between 0 and 1.")
         self.alpha = float(alpha)
         self.value: np.ndarray | None = None
