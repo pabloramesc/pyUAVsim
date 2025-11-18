@@ -4,7 +4,7 @@ import numpy as np
 
 from simulator.aircraft.aircraft_state import AircraftState
 from simulator.sensors.sensor import Sensor, SensorParams
-from simulator.math.angles import clip_angle_2pi
+from simulator.math.angles import wrap_angle_2pi
 
 
 @dataclass
@@ -63,7 +63,7 @@ class GPS(Sensor):
         pn, pe, pd = self.position_ideal
         vn, ve, vd = self.velocity_ideal
         Vg = np.sqrt(vn**2 + ve**2)
-        heading = clip_angle_2pi(np.arctan2(ve, vn))
+        heading = wrap_angle_2pi(np.arctan2(ve, vn))
         return np.array([pn, pe, -pd, Vg, np.rad2deg(heading)])
 
     def get_noisy_value(self, t: float) -> np.ndarray:
@@ -101,6 +101,6 @@ class GPS(Sensor):
                 position_noisy[1],
                 -position_noisy[2],
                 Vg_noisy,
-                np.rad2deg(clip_angle_2pi(heading_noisy)),
+                np.rad2deg(wrap_angle_2pi(heading_noisy)),
             ]
         )

@@ -16,7 +16,7 @@ aerosonde_params = load_airframe_parameters_from_yaml(params_file)
 
 dt = 0.01
 uav = AircraftDynamics(dt, aerosonde_params, use_quat=True)
-x_trim, delta_trim = uav.trim(Va=25.0, R_orb=100.0, gamma=np.deg2rad(10.0))
+x_trim, delta_trim = uav.trim(Va=25.0, R_orb=500, gamma=np.deg2rad(10.0))
 
 sensors = SensorSystem(uav.state)
 sensors.initialize(t=0.0)
@@ -49,29 +49,59 @@ from simulator.math.rotation import quat2euler
 time = np.arange(0, sim_steps * dt, dt)
 
 # Plot true vs estimated roll, pitch, yaw
-true_euler = np.array([quat2euler(uav_states[k, 6:10]) for k in range(sim_steps)])
-estimated_euler = estimated_states[:, 0:3]
+true_euler = np.rad2deg(quat2euler(uav_states[:, 6:10]))
+estimated_euler = np.rad2deg(estimated_states[:, 0:3])
 plt.figure(figsize=(12, 8))
 plt.subplot(3, 1, 1)
-plt.plot(time, np.rad2deg(true_euler[:, 0]), label="True Roll")
+plt.plot(time, true_euler[:, 0], label="True Roll")
 plt.plot(
-    time, np.rad2deg(estimated_euler[:, 0]), label="Estimated Roll", linestyle="--"
+    time, estimated_euler[:, 0], label="Estimated Roll", linestyle="--"
 )
 plt.ylabel("Roll (deg)")
 plt.legend()
 plt.subplot(3, 1, 2)
-plt.plot(time, np.rad2deg(true_euler[:, 1]), label="True Pitch")
+plt.plot(time, true_euler[:, 1], label="True Pitch")
 plt.plot(
-    time, np.rad2deg(estimated_euler[:, 1]), label="Estimated Pitch", linestyle="--"
+    time, estimated_euler[:, 1], label="Estimated Pitch", linestyle="--"
 )
 plt.ylabel("Pitch (deg)")
 plt.legend()
 plt.subplot(3, 1, 3)
-plt.plot(time, np.rad2deg(true_euler[:, 2]) % 360, label="True Yaw")
-plt.plot(time, np.rad2deg(estimated_euler[:, 2]), label="Estimated Yaw", linestyle="--")
+plt.plot(time, true_euler[:, 2] % 360, label="True Yaw")
+plt.plot(time, estimated_euler[:, 2], label="Estimated Yaw", linestyle="--")
 plt.ylabel("Yaw (deg)")
 plt.xlabel("Time (s)")
 plt.legend()
 plt.tight_layout()
+
+# Plot true vs estimated angular rates p, q, r
+true_rates = np.rad2deg(uav_states[:, 10:13])
+estimated_rates = np.rad2deg(estimated_states[:, 3:6])
+plt.figure(figsize=(12, 8))
+plt.subplot(3, 1, 1)
+plt.plot(time, true_rates[:, 0], label="True p")
+plt.plot(
+    time, estimated_rates[:, 0], label="Estimated p", linestyle="--"
+)
+plt.ylabel("p (deg/s)")
+plt.legend()
+plt.subplot(3, 1, 2)
+plt.plot(time, true_rates[:, 1], label="True q")
+plt.plot(
+    time, estimated_rates[:, 1], label="Estimated q", linestyle="--"
+)
+plt.ylabel("q (deg/s)")
+plt.legend()
+plt.subplot(3, 1, 3)
+plt.plot(time, true_rates[:, 2], label="True r")
+plt.plot(
+    time, estimated_rates[:, 2], label="Estimated r", linestyle="--"
+)
+plt.ylabel("r (deg/s)")
+plt.xlabel("Time (s)")
+plt.legend()
+plt.tight_layout()
+
+
 
 plt.show()

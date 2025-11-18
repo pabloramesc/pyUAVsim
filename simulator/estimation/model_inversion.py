@@ -8,8 +8,8 @@ from .alpha_filter import AlphaFilter
 
 class ModelInversionFilter(EstimationFilter):
     def __init__(self) -> None:
-        self.accel_lpf = AlphaFilter(alpha=0.0)
-        self.gyro_lpf = AlphaFilter(alpha=0.7)
+        self.accel_lpf = AlphaFilter(alpha=0.7)
+        self.gyro_lpf = AlphaFilter(alpha=0.98)
         self.baro_lpf = AlphaFilter(alpha=0.9)
         self.airspeed_lpf = AlphaFilter(alpha=0.7)
         self.compass_lpf = AlphaFilter(alpha=0.0)
@@ -17,7 +17,7 @@ class ModelInversionFilter(EstimationFilter):
 
     def update(self, readings: SensorReadings) -> EstimatedState:
         # Estimate angular rates from gyroscope
-        p, q, r = self.gyro_lpf.update(readings.gyro)
+        p, q, r = np.deg2rad(self.gyro_lpf.update(readings.gyro))
 
         # Estimate altitude and airspeed from barometer and airspeed sensor
         g = 9.81  # m/s^2
@@ -31,8 +31,9 @@ class ModelInversionFilter(EstimationFilter):
 
         # Estimate roll and pitch from accelerometer
         acc = self.accel_lpf.update(readings.accel)
-        ax, ay, az = acc / np.linalg.norm(acc) # Normalize acceleration
-        roll = np.arctan2(-ay, -az)
+        acc_norm = np.linalg.norm(acc) + 1e-6  # Prevent division by zero
+        ax, ay, az = acc / acc_norm # Normalize acceleration
+        roll = np.arctan2(ay, az)
         pitch = np.asin(ax)
         
         # Estimate yaw from compass

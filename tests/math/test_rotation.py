@@ -128,7 +128,3 @@ def test_quaternion_kinematics():
     actual = 0.5 * Omega @ quat
     expected = 0.5 * np.array([0.0, 0.1, 0.2, 0.3])
     np.testing.assert_array_almost_equal(actual, expected)
-
-
-if __name__ == "__main__":
-    pytest.main()

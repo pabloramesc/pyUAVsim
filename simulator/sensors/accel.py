@@ -60,7 +60,7 @@ class Accel(Sensor):
         v_dot = self.state.body_acceleration
         omega = self.state.angular_rates
         v = self.state.body_velocity
-        acc = v_dot + np.cross(omega, v) - R_vb.T @ g        
+        acc = v_dot + np.cross(omega, v) + R_vb.T @ g        
         return acc
 
     def get_noisy_value(self, t: float) -> np.ndarray:

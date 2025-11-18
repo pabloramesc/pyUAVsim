@@ -50,7 +50,7 @@ class Gyro(Sensor):
 
     def get_ideal_value(self, t: float) -> np.ndarray:
         gyr = self.state.angular_rates
-        return gyr
+        return np.rad2deg(gyr)
 
     def get_noisy_value(self, t: float) -> np.ndarray:
         if self.ideal_value is None:

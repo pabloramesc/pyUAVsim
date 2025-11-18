@@ -1,8 +1,8 @@
 """
- Copyright (c) 2024 Pablo Ramirez Escudero
- 
- This software is released under the MIT License.
- https://opensource.org/licenses/MIT
+Copyright (c) 2024 Pablo Ramirez Escudero
+
+This software is released under the MIT License.
+https://opensource.org/licenses/MIT
 """
 
 import numpy as np
@@ -84,7 +84,3 @@ def test_null_update():
         out = pid.update(error=0.0, dt=1.0)
         outputs.append(out)
     np.testing.assert_array_almost_equal(np.array(outputs), np.zeros(10))
-
-
-if __name__ == "__main__":
-    pytest.main()
