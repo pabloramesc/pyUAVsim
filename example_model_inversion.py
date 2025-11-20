@@ -16,12 +16,12 @@ aerosonde_params = load_airframe_parameters_from_yaml(params_file)
 
 dt = 0.01
 uav = AircraftDynamics(dt, aerosonde_params, use_quat=True)
-x_trim, delta_trim = uav.trim(Va=25.0, R_orb=300.0, gamma=np.deg2rad(10.0))
+x_trim, delta_trim = uav.trim(Va=25.0, R_orb=100.0, gamma=np.deg2rad(10.0))
 
 sensors = SensorSystem(uav.state)
 sensors.initialize(t=0.0)
 
-filter = ModelInversionFilter()
+filter = ModelInversionFilter(dt)
 
 # Create arrays to store simulation data
 sim_steps = int(100 / dt)
@@ -54,16 +54,12 @@ estimated_euler = np.rad2deg(estimated_states[:, 0:3])
 plt.figure(figsize=(12, 8))
 plt.subplot(3, 1, 1)
 plt.plot(time, true_euler[:, 0], label="True Roll")
-plt.plot(
-    time, estimated_euler[:, 0], label="Estimated Roll", linestyle="--"
-)
+plt.plot(time, estimated_euler[:, 0], label="Estimated Roll", linestyle="--")
 plt.ylabel("Roll (deg)")
 plt.legend()
 plt.subplot(3, 1, 2)
 plt.plot(time, true_euler[:, 1], label="True Pitch")
-plt.plot(
-    time, estimated_euler[:, 1], label="Estimated Pitch", linestyle="--"
-)
+plt.plot(time, estimated_euler[:, 1], label="Estimated Pitch", linestyle="--")
 plt.ylabel("Pitch (deg)")
 plt.legend()
 plt.subplot(3, 1, 3)
@@ -80,23 +76,17 @@ estimated_rates = np.rad2deg(estimated_states[:, 3:6])
 plt.figure(figsize=(12, 8))
 plt.subplot(3, 1, 1)
 plt.plot(time, true_rates[:, 0], label="True p")
-plt.plot(
-    time, estimated_rates[:, 0], label="Estimated p", linestyle="--"
-)
+plt.plot(time, estimated_rates[:, 0], label="Estimated p", linestyle="--")
 plt.ylabel("p (deg/s)")
 plt.legend()
 plt.subplot(3, 1, 2)
 plt.plot(time, true_rates[:, 1], label="True q")
-plt.plot(
-    time, estimated_rates[:, 1], label="Estimated q", linestyle="--"
-)
+plt.plot(time, estimated_rates[:, 1], label="Estimated q", linestyle="--")
 plt.ylabel("q (deg/s)")
 plt.legend()
 plt.subplot(3, 1, 3)
 plt.plot(time, true_rates[:, 2], label="True r")
-plt.plot(
-    time, estimated_rates[:, 2], label="Estimated r", linestyle="--"
-)
+plt.plot(time, estimated_rates[:, 2], label="Estimated r", linestyle="--")
 plt.ylabel("r (deg/s)")
 plt.xlabel("Time (s)")
 plt.legend()
@@ -121,4 +111,57 @@ plt.xlabel("Time (s)")
 plt.legend()
 plt.tight_layout()
 
+# Plot true vs estimated position (pn, pe, pd)
+true_pn = uav_states[:, 0]
+true_pe = uav_states[:, 1]
+true_pd = uav_states[:, 2]
+estimated_pn = estimated_states[:, 8]
+estimated_pe = estimated_states[:, 9]
+estimated_pd = estimated_states[:, 10]
+plt.figure(figsize=(12, 8))
+plt.subplot(3, 1, 1)
+plt.plot(time, true_pn, label="True pn")
+plt.plot(time, estimated_pn, label="Estimated pn", linestyle="--")
+plt.ylabel("pn (m)")
+plt.legend()
+plt.subplot(3, 1, 2)
+plt.plot(time, true_pe, label="True pe")
+plt.plot(time, estimated_pe, label="Estimated pe", linestyle="--")
+plt.ylabel("pe (m)")
+plt.legend()
+plt.subplot(3, 1, 3)
+plt.plot(time, true_pd, label="True pd")
+plt.plot(time, estimated_pd, label="Estimated pd", linestyle="--")
+plt.ylabel("pd (m)")
+plt.xlabel("Time (s)")
+plt.legend()
+plt.tight_layout()
+
+# Plot true vs estimated ground speed and course
+from simulator.math.rotation import multi_rotation
+ned_velocities = multi_rotation(angles=np.deg2rad(true_euler), values=uav_states[:, 3:6], reverse=True)
+true_Vg = np.linalg.norm(ned_velocities, axis=1)
+true_course = np.arctan2(ned_velocities[:, 1], ned_velocities[:, 0])
+estimated_Vg = estimated_states[:, 11]
+estimated_course = estimated_states[:, 12]
+plt.figure(figsize=(12, 6))
+plt.subplot(2, 1, 1)
+plt.plot(time, true_Vg, label="True Ground Speed")
+plt.plot(time, estimated_Vg, label="Estimated Ground Speed", linestyle="--")
+plt.ylabel("Ground Speed (m/s)")
+plt.legend()
+plt.subplot(2, 1, 2)
+plt.plot(time, np.rad2deg(true_course) % 360, label="True Course")
+plt.plot(
+    time,
+    np.rad2deg(estimated_course) % 360,
+    label="Estimated Course",
+    linestyle="--",
+)
+plt.ylabel("Course (deg)")
+plt.xlabel("Time (s)")
+plt.legend()
+plt.tight_layout()
+
+# Show all plots
 plt.show()

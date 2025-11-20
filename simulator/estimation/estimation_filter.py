@@ -22,8 +22,8 @@ class EstimatedState:
     pe: FloatLike
     pd: FloatLike
     Vg: FloatLike
-    heading: FloatLike
-    
+    course: FloatLike
+
     def as_array(self) -> NDArray[np.floating]:
         return np.array(
             [
@@ -39,13 +39,16 @@ class EstimatedState:
                 self.pe,
                 self.pd,
                 self.Vg,
-                self.heading,
+                self.course,
             ],
             dtype=float,
         )
 
 
 class EstimationFilter(ABC):
+    def __init__(self, dt: float) -> None:
+        self.dt = dt
+
     @abstractmethod
     def update(self, readings: SensorReadings) -> EstimatedState:
         pass

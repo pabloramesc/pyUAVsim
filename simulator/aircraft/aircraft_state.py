@@ -412,13 +412,13 @@ class AircraftState:
             )
         else:
             state_str += (
-                f"- Roll Angle (roll)    : {self.roll:.3f} rad\n"
-                f"- Pitch Angle (pitch)  : {self.pitch:.3f} rad\n"
-                f"- Yaw Angle (yaw)      : {self.yaw:.3f} rad\n"
+            f"- Roll Angle (roll)    : {np.rad2deg(self.roll):.3f} deg\n"
+            f"- Pitch Angle (pitch)  : {np.rad2deg(self.pitch):.3f} deg\n"
+            f"- Yaw Angle (yaw)      : {np.rad2deg(self.yaw):.3f} deg\n"
             )
         state_str += (
-            f"- Roll Rate (p)        : {self.p:.3f} rad/s\n"
-            f"- Pitch Rate (q)       : {self.q:.3f} rad/s\n"
-            f"- Yaw Rate (r)         : {self.r:.3f} rad/s"
+            f"- Roll Rate (p)        : {np.rad2deg(self.p):.3f} deg/s\n"
+            f"- Pitch Rate (q)       : {np.rad2deg(self.q):.3f} deg/s\n"
+            f"- Yaw Rate (r)         : {np.rad2deg(self.r):.3f} deg/s"
         )
         return state_str

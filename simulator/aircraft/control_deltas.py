@@ -12,7 +12,7 @@ from simulator.math.angles import wrap_angle_pi
 
 class ControlDeltas:
 
-    def __init__(self, delta0: np.ndarray = None, max_angle: float = np.pi / 2) -> None:
+    def __init__(self, delta0: np.ndarray | None = None, max_angle: float = np.pi / 2) -> None:
         """
         Initialize de ControlDeltas class.
 
@@ -101,8 +101,8 @@ class ControlDeltas:
         """
         return (
             f"Control Deltas:\n"
-            f"- Aileron (delta_a)    : {self.delta_a:.2f} rad\n"
-            f"- Elevator (delta_e)   : {self.delta_e:.2f} rad\n"
-            f"- Rudder (delta_r)     : {self.delta_r:.2f} rad\n"
-            f"- Throttle (delta_t)   : {self.delta_t:.2f} (0.0 to 1.0)"
+            f"- Aileron (delta_a)    : {np.degrees(self.delta_a):.2f} deg\n"
+            f"- Elevator (delta_e)   : {np.degrees(self.delta_e):.2f} deg\n"
+            f"- Rudder (delta_r)     : {np.degrees(self.delta_r):.2f} deg\n"
+            f"- Throttle (delta_t)   : {self.delta_t * 100:.1f}% (0% to 100%)"
         )

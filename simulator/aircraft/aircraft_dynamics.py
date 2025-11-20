@@ -1,8 +1,8 @@
 """
- Copyright (c) 2024 Pablo Ramirez Escudero
- 
- This software is released under the MIT License.
- https://opensource.org/licenses/MIT
+Copyright (c) 2024 Pablo Ramirez Escudero
+
+This software is released under the MIT License.
+https://opensource.org/licenses/MIT
 """
 
 import numpy as np
@@ -31,8 +31,8 @@ class AircraftDynamics:
         params: AirframeParameters,
         use_quat: bool = False,
         wind0: np.ndarray = np.zeros(3),
-        x0: np.ndarray = None,
-        delta0: np.ndarray = None,
+        x0: np.ndarray | None = None,
+        delta0: np.ndarray | None = None,
     ) -> None:
         """
         Initialize the AircraftDynamics class.
@@ -77,7 +77,7 @@ class AircraftDynamics:
     def set_control_deltas(self, delta: np.ndarray) -> None:
         self.control_deltas.update(delta)
 
-    def update(self, deltas: ControlDeltas = None) -> AircraftState:
+    def update(self, deltas: ControlDeltas | None = None) -> AircraftState:
         """
         Update aircraft's state simulating the flight dynamics.
         Firstly, forces and moments are calculated using gravity, aerodynamics and propulsion models.
@@ -104,6 +104,7 @@ class AircraftDynamics:
         self.t += self.dt
         self.u = u
         self.state.update(x, x_dot)
+        return self.state
 
     def forces_moments(self, state: AircraftState, deltas: ControlDeltas) -> np.ndarray:
         """
@@ -368,49 +369,55 @@ class AircraftDynamics:
         """
         if verbose:
             print("Calculating trim states and deltas...")
+            print(f"Trim conditions: Va={Va} m/s, gamma={gamma} rad, R_orb={R_orb} m")
 
         # force euler angles before trim calculation
-        _use_quat = self.use_quat  # store previous value to restore it later
+        prev_use_quat = self.use_quat  # store previous value to restore it later
         self.use_quat = False
 
         # desired derivative state for the trim conditions
         x_dot_trim = np.zeros(12)
-        x_dot_trim[0] = +Va * np.cos(gamma)  # horizontal speed
-        x_dot_trim[2] = -Va * np.sin(gamma)  # climb rate
-        x_dot_trim[8] = Va / R_orb * np.cos(gamma)  # turn rate
+        x_dot_trim[0] = +Va * np.cos(gamma)  # horizontal speed: d(pn)/dt
+        x_dot_trim[1] = 0.0  # zero side speed: d(pe)/dt
+        x_dot_trim[2] = -Va * np.sin(gamma)  # climb rate: d(pd)/dt
+        x_dot_trim[8] = Va / R_orb * np.cos(gamma)  # turn rate: d(yaw)/dt
 
         # cuadratic error between desired x_dot_trim and dynamics function
-        def objective(v: np.ndarray) -> float:
-            state = AircraftState(v[0:12], use_quat=False)
-            deltas = ControlDeltas(v[12:16])
+        def objective(y: np.ndarray) -> float:
+            state = AircraftState(y[0:12], use_quat=False)
+            deltas = ControlDeltas(y[12:16])
             u = self.forces_moments(state, deltas)
             x_dot = self.state_derivatives(state.x, u)
-            err = np.linalg.norm(x_dot_trim - x_dot)
-            return err**2
+            err = sum((x_dot_trim - x_dot) ** 2)
+            return err
 
         # initial guesses for x_trim and delta_trim
+        g = 9.80665  # gravity acceleration (m/s^2)
         x0_trim = np.zeros(12)
-        x0_trim[3] = x_dot_trim[0]  # u = d(pn)/dt
-        x0_trim[5] = x_dot_trim[2]  # w = d(pd)/dt
+        x0_trim[3] = Va  # initial body velocity u (alpha = 0, beta = 0)
+        x0_trim[6] = np.arctan2(Va**2, g * R_orb)  # initial roll angle
+        x0_trim[7] = gamma  # initial pitch angle
         delta0_trim = np.zeros(4)
         delta0_trim[3] = 0.5
 
         # equality constrains
-        def cons_eq_x(v: np.ndarray) -> np.ndarray:
+        def cons_eq_x(y: np.ndarray) -> np.ndarray:
+            u, v, w = y[3:6]
+            vel_mag = np.sqrt(u**2 + v**2 + w**2)
             return np.array(
                 [
-                    np.linalg.norm(v[3:6])
-                    - Va,  # velocity magnitude equals to airspeed
-                    v[4] - 0.0,  # zero side velocity
+                    vel_mag - Va,  # velocity magnitude equals to airspeed
+                    v - 0.0,  # zero side velocity
                 ]
             )
 
         # inequality constrains
-        def cons_ineq_u(v: np.ndarray) -> np.ndarray:
+        def cons_ineq_u(y: np.ndarray) -> np.ndarray:
+            delta_t = y[15]
             return np.array(
                 [
-                    v[15] - 0.0,  # delta_t > 0.0
-                    1.0 - v[15],  # delta_t < 1.0
+                    delta_t - 0.0,  # delta_t > 0.0
+                    1.0 - delta_t,  # delta_t < 1.0
                 ]
             )
 
@@ -438,7 +445,7 @@ class AircraftDynamics:
                 print("Trim calculation failed!")
 
         # restore previous use_quat value
-        self.use_quat = _use_quat
+        self.use_quat = prev_use_quat
 
         # compute trimmed states
         alpha = state_trim.alpha

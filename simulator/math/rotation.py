@@ -1,8 +1,8 @@
 """
- Copyright (c) 2024 Pablo Ramirez Escudero
- 
- This software is released under the MIT License.
- https://opensource.org/licenses/MIT
+Copyright (c) 2024 Pablo Ramirez Escudero
+
+This software is released under the MIT License.
+https://opensource.org/licenses/MIT
 """
 
 import numpy as np
@@ -207,38 +207,45 @@ def rotate_points(
 
 
 def multi_rotation(
+    values: np.ndarray = np.zeros((100, 3)),
     angles: np.ndarray = np.zeros((100, 3)),
-    points: np.ndarray = np.zeros((100, 3)),
+    reverse: bool = False,
 ) -> np.ndarray:
-    """Rotate multiple points using corresponding Euler angles in ZYX sequence.
+    """
+    Rotate 3D vectors using Euler angles (ZYX sequence).
 
     Parameters
     ----------
+    values : np.ndarray
+        N-by-3 array of vectors or points to rotate.
     angles : np.ndarray, optional
-        N-by-3 size array of N Euler angles (roll, pitch, yaw) in radians,
+        N-by-3 array of Euler angles (roll, pitch, yaw) in radians,
         by default np.zeros((100, 3))
-    points : np.ndarray, optional
-        N-by-3 size array of N points to be rotated,
-        by default np.zeros((100, 3))
+    reverse : bool, optional
+        If True, apply the inverse rotation (R^T), by default False.
 
     Returns
     -------
     np.ndarray
-        N-by-3 size array of N rotated points.
+        N-by-3 size array of N rotated values.
 
     Raises
     ------
     ValueError
          If angles and points do not have the same shape.
     """
-    if angles.shape != points.shape:
-        raise ValueError("angles and points must have same shape")
-    N = angles.shape[0]
-    rot_points = np.zeros((N, 3))
-    for k in range(N):
-        R = rot_matrix_zyx(angles[k, :])
-        rot_points[k, :] = np.dot(R.T, points[k, :])
-    return rot_points
+    angles = np.atleast_2d(angles)
+    values = np.atleast_2d(values)
+    if angles.shape != values.shape:
+        raise ValueError("Values and angles must have same shape")
+
+    R_all = np.array([rot_matrix_zyx(a) for a in angles])
+
+    if reverse:
+        R_all = R_all.transpose(0, 2, 1)  # Transpose each rotation matrix
+
+    rotated = np.einsum("ijk,ik->ij", R_all, values)
+    return rotated
 
 
 def ned2xyz(ned: np.ndarray = np.zeros(3)) -> np.ndarray:
