@@ -72,7 +72,7 @@ Uses the estimated state along with mission parameters or joystick/controller in
 - [ ] Wind and atmospheric models integration
 - [x] Realistic sensor data simulation including IMU, GPS, and barometer.
 - [ ] Actuators simulation (servos and DC motor) with realistic transfer functions
-- [ ] Estimation filters for airtcraft's state estimation
+- [x] Estimation filters for airtcraft's state estimation
 - [x] Implement all autopilot layers: flight control, path following, path navigator and route manager.
 - [x] Mission parametes (waypoints) support
 - [ ] Add TECS and LQR control
