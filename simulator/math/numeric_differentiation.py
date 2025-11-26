@@ -32,7 +32,7 @@ def jacobian(func: callable, x0: np.ndarray, eps: float = 1e-6) -> np.ndarray:
     Jac = np.zeros((m, n))
     for i in range(n):
         x_eps = np.copy(x0)
-        x_eps[i] += eps  # increment the ith state
+        x_eps[i] += eps  # increment the i-th state
         f_eps = func(x_eps)
         Jac[:, i] = (f_eps - f0) / eps
     return Jac
