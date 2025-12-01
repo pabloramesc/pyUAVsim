@@ -7,15 +7,15 @@ https://opensource.org/licenses/MIT
 
 import numpy as np
 
+from simulator.environment.isa import isa_density
+from simulator.math.kinematics import euler_kinematics
 from simulator.math.rotation import (
-    rot_matrix_zyx,
-    rot_matrix_wind,
-    rot_matrix_quat,
-    euler_kinematics,
     euler2quat,
     quat2euler,
+    rot_matrix_quat,
+    rot_matrix_wind,
+    rot_matrix_zyx,
 )
-from simulator.environment.isa import isa_density
 
 
 class AircraftState:
@@ -412,9 +412,9 @@ class AircraftState:
             )
         else:
             state_str += (
-            f"- Roll Angle (roll)    : {np.rad2deg(self.roll):.3f} deg\n"
-            f"- Pitch Angle (pitch)  : {np.rad2deg(self.pitch):.3f} deg\n"
-            f"- Yaw Angle (yaw)      : {np.rad2deg(self.yaw):.3f} deg\n"
+                f"- Roll Angle (roll)    : {np.rad2deg(self.roll):.3f} deg\n"
+                f"- Pitch Angle (pitch)  : {np.rad2deg(self.pitch):.3f} deg\n"
+                f"- Yaw Angle (yaw)      : {np.rad2deg(self.yaw):.3f} deg\n"
             )
         state_str += (
             f"- Roll Rate (p)        : {np.rad2deg(self.p):.3f} deg/s\n"

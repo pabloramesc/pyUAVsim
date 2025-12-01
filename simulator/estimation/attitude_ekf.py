@@ -8,6 +8,7 @@ class AttitudeEKF:
     """
     x = [roll, pitch]
     u = [p, q, r, Va]
+    z = [ax, ay, az]
     f(x, u) -> d(roll, pitch)/dt
     h(x, u) -> [accel_x, accel_y, accel_z]
     F_jacobian = ∂f/∂x
@@ -82,4 +83,4 @@ class AttitudeEKF:
         return self.ekf.predict(u)
 
     def update(self, z):
-        return self.ekf.update(z)
+        return self.ekf.update(z, u)

@@ -80,13 +80,13 @@ class ExtendedKalmanFilter:
 
         The nonlinear prediction is:
 
-            x_pred = x_prev + f(x_prev, u_k) Δt
+            x_pred = x + f(x, u) Δt
 
         The covariance is updated using the Jacobian of f:
 
             F = ∂f/∂x evaluated at (x, u)
             F_d = I + F Δt + 0.5 F^2 Δt^2
-            P_k = F_d P_{k-1} F_d^T + Q Δt^2
+            P_pred = F_d P F_d^T + Q Δt^2
 
         Args:
             u (np.ndarray): Control input vector (m × 1).
@@ -114,15 +114,12 @@ class ExtendedKalmanFilter:
 
         The nonlinear measurement update is:
 
-            y = z - h(x_k, u_k)          (innovation)
-            H = ∂h/∂x at x_k             (Jacobian)
-            S = H P H^T + R              (innovation covariance)
-            K = P H^T S^{-1}             (Kalman gain)
-            x_k = x_k + K y              (state correction)
-
-        Covariance is updated using the numerically stable Joseph form:
-
-            P = (I - K H) P (I - K H)^T + K R K^T
+            y = z - h(x, u)                                 (innovation)
+            H = ∂h/∂x at x_k                                (Jacobian of h)
+            S = H P H^T + R                                 (innovation covariance)
+            K = P H^T S^{-1}                                (Kalman gain)
+            x_corr = x_pred + K y                           (state correction)
+            P_corr = (I - K H) P_pred (I - K H)^T + K R K^T (covariance update)
 
         Args:
             z (np.ndarray): Measurement vector (p × 1).

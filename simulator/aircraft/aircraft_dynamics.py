@@ -14,14 +14,9 @@ from simulator.aircraft.airframe_parameters import AirframeParameters
 from simulator.aircraft.control_deltas import ControlDeltas
 from simulator.aircraft.propulsion_model import PropulsionModel
 from simulator.environment.constants import EARTH_GRAVITY_VECTOR
+from simulator.math.kinematics import euler_kinematics, quaternion_kinematics
 from simulator.math.numeric_integration import rk4
-from simulator.math.rotation import (
-    euler2quat,
-    euler_kinematics,
-    quaternion_kinematics,
-    rot_matrix_quat,
-    rot_matrix_zyx,
-)
+from simulator.math.rotation import euler2quat, rot_matrix_quat, rot_matrix_zyx
 
 
 class AircraftDynamics:
@@ -123,7 +118,7 @@ class AircraftDynamics:
             Total external forces and moments array in body frame: [fx, fy, fx, l, m, n]
         """
         # gravity force in body frame
-        fg = state.R_vb @ EARTH_GRAVITY_VECTOR
+        fg = state.R_vb @ (EARTH_GRAVITY_VECTOR * self.params.m)
         ug = np.concatenate([fg, np.zeros(3)])  # gravity doesn't generate any moment
 
         # aerodynamic forces and moments
