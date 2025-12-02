@@ -35,8 +35,16 @@ class BaroParams(SensorParams):
 
 class Baro(Sensor):
 
-    def __init__(self, params: BaroParams, state: AircraftState, name: str = "baro") -> None:
-        super().__init__(params, state, name=name)
+    def __init__(
+        self, params: BaroParams, state: AircraftState, name: str = "baro"
+    ) -> None:
+        super().__init__(
+            params,
+            state,
+            name=name,
+            reading_names=["abs_pressure"],
+            reading_units=["kPa"],
+        )
 
         self.params = params
 

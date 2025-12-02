@@ -31,11 +31,29 @@ class SensorParams(ABC):
     reading_delay: float
 
 
+@dataclass(frozen=True)
+class SensorReading:
+    time: float
+    data: np.ndarray
+    is_new: bool = True
+    sensor_name: str | None = None
+    sensor_id: int | None = None
+    reading_names: list[str] | None = None
+    reading_units: list[str] | None = None
+
+
 class Sensor(ABC):
 
     _count = 0
 
-    def __init__(self, params: SensorParams, state: AircraftState, name: str | None = None) -> None:
+    def __init__(
+        self,
+        params: SensorParams,
+        state: AircraftState,
+        name: str | None = None,
+        reading_names: list[str] | None = None,
+        reading_units: list[str] | None = None,
+    ) -> None:
         """General sensor class initialization.
 
         Parameters
@@ -44,6 +62,12 @@ class Sensor(ABC):
             Parameters of the sensor
         state : AircraftState
             Aircraft's state class instance
+        name : str, optional
+            Name of the sensor, by default None
+        reading_names : list[str], optional
+            Names of each reading provided by the sensor, by default None
+        reading_units : list[str], optional
+            Units of each reading provided by the sensor, by default None
         """
         self.sample_rate = params.sample_rate
         self.sample_period = 1.0 / params.sample_rate
@@ -53,8 +77,10 @@ class Sensor(ABC):
 
         Sensor._count += 1
         self.id = Sensor._count
-        
+
         self.name = name if name is not None else f"{type(self).__name__}_{self.id}"
+        self.reading_names = reading_names
+        self.reading_units = reading_units
 
         self.last_update_time = 0.0
         self.ideal_value: np.ndarray | None = None  # ideal measurement
@@ -136,7 +162,7 @@ class Sensor(ABC):
         The `noisy_value` is the real measurement with noise and digitalization.
         """
 
-    def read(self, t: float) -> np.ndarray:
+    def read(self, t: float) -> SensorReading:
         """
         Get the current reading of the sensor.
         If reading delay has passed since last update, returns the last reading (`noisy_value`).
@@ -149,17 +175,53 @@ class Sensor(ABC):
 
         Returns
         -------
-        np.ndarray
-            The reading of the sensor considering reading delay
+        SensorReading
+            Current sensor reading with timestamp and metadata
         """
         # if reading delay is completed
         if t >= self.last_update_time + self.reading_delay:
             if self.noisy_value is None:
                 raise ValueError("Sensor noisy_value is not initialized.")
-            return self.noisy_value
-        
+            data_value = self.noisy_value
+            data_time = self.last_update_time
+            is_new = True
+
         # if not enough time has passed
         else:
             if self.prev_noisy_value is None:
                 raise ValueError("Sensor prev_noisy_value is not initialized.")
-            return self.prev_noisy_value
+            data_value = self.prev_noisy_value
+            data_time = self.last_update_time - self.sample_period
+            is_new = False
+
+        return SensorReading(
+            time=data_time,
+            data=data_value,
+            is_new=is_new,
+            sensor_name=self.name,
+            sensor_id=self.id,
+            reading_names=self.reading_names,
+            reading_units=self.reading_units,
+        )
+
+    def get_data_time(self, t: float) -> float:
+        """
+        Returns the simulation timestamp of the data currently available
+        to be read, accounting for the reading delay.
+
+        Parameters
+        ----------
+        t : float
+            Current simulation time in seconds
+
+        Returns
+        -------
+        float
+            Timestamp of the data currently available to be read
+        """
+        # If the delay has passed, we are seeing the latest update
+        if t >= self.last_update_time + self.reading_delay:
+            return self.last_update_time
+
+        # Otherwise, we are still seeing the previous buffered value
+        return self.last_update_time - self.sample_period

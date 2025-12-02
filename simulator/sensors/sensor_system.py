@@ -1,33 +1,38 @@
+from dataclasses import dataclass
+from typing import Optional
+
+import numpy as np
+
 from ..aircraft.aircraft_state import AircraftState
 from .accel import Accel, AccelParams
-from .gyro import Gyro, GyroParams
-from .baro import Baro, BaroParams
 from .airspeed import Airspeed, AirspeedParams
+from .baro import Baro, BaroParams
 from .compass import Compass, CompassParams
 from .gps import GPS, GPSParams
-from typing import Optional
-from dataclasses import dataclass
-import numpy as np
+from .gyro import Gyro, GyroParams
+from .sensor import Sensor, SensorReading
 
 
 @dataclass
 class SensorReadings:
-    accel: np.ndarray
-    gyro: np.ndarray
-    baro: float
-    airspeed: float
-    compass: float
-    gps: np.ndarray
-    
+    accel: SensorReading
+    gyro: SensorReading
+    baro: SensorReading
+    airspeed: SensorReading
+    compass: SensorReading
+    gps: SensorReading
+
     def as_array(self) -> np.ndarray:
-        return np.hstack((
-            self.accel,
-            self.gyro,
-            np.array([self.baro]),
-            np.array([self.airspeed]),
-            np.array([self.compass]),
-            self.gps
-        ))
+        return np.hstack(
+            [
+                self.accel.data,
+                self.gyro.data,
+                self.baro.data,
+                self.airspeed.data,
+                self.compass.data,
+                self.gps.data,
+            ]
+        )
 
 
 class SensorSystem:
@@ -61,7 +66,7 @@ class SensorSystem:
         gps_params = gps_params or GPSParams()
         self.gps = GPS(gps_params, state)
 
-        self.sensors = [
+        self.sensors: list[Sensor] = [
             self.acc,
             self.gyr,
             self.baro,
@@ -82,8 +87,8 @@ class SensorSystem:
         return SensorReadings(
             accel=self.acc.read(t),
             gyro=self.gyr.read(t),
-            baro=self.baro.read(t).item(),
-            airspeed=self.airspeed.read(t).item(),
-            compass=self.compass.read(t).item(),
+            baro=self.baro.read(t),
+            airspeed=self.airspeed.read(t),
+            compass=self.compass.read(t),
             gps=self.gps.read(t),
         )

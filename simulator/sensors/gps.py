@@ -45,7 +45,13 @@ class GPS(Sensor):
     def __init__(
         self, params: GPSParams, state: AircraftState, name: str = "gps"
     ) -> None:
-        super().__init__(params, state, name=name)
+        super().__init__(
+            params,
+            state,
+            name=name,
+            reading_names=["pn", "pe", "pd", "Vg", "chi"],
+            reading_units=["m", "m", "m", "m/s", "deg"],
+        )
 
         self.params = params
 

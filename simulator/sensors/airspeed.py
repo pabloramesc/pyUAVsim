@@ -35,8 +35,16 @@ class AirspeedParams(SensorParams):
 
 class Airspeed(Sensor):
 
-    def __init__(self, params: AirspeedParams, state: AircraftState, name: str = "asp") -> None:
-        super().__init__(params, state, name=name)
+    def __init__(
+        self, params: AirspeedParams, state: AircraftState, name: str = "asp"
+    ) -> None:
+        super().__init__(
+            params,
+            state,
+            name=name,
+            reading_names=["diff_pressure"],
+            reading_units=["kPa"],
+        )
 
         self.params = params
 

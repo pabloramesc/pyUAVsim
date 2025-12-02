@@ -13,6 +13,7 @@ from simulator.aircraft.aircraft_state import AircraftState
 from simulator.sensors.sensor import Sensor, SensorParams
 from simulator.sensors.noise_models import get_white_noise
 from simulator.sensors.signal_simulation import saturate, digitalize
+from simulator.environment.constants import EARTH_GRAVITY_CONSTANT as g
 
 
 @dataclass
@@ -45,8 +46,16 @@ class AccelParams(SensorParams):
 
 class Accel(Sensor):
 
-    def __init__(self, params: AccelParams, state: AircraftState, name: str = "acc") -> None:
-        super().__init__(params, state, name=name)
+    def __init__(
+        self, params: AccelParams, state: AircraftState, name: str = "acc"
+    ) -> None:
+        super().__init__(
+            params,
+            state,
+            name=name,
+            reading_names=["acc_x", "acc_y", "acc_z"],
+            reading_units=["g", "g", "g"],
+        )
 
         self.params = params
 
@@ -56,12 +65,11 @@ class Accel(Sensor):
 
     def get_ideal_value(self, t: float) -> np.ndarray:
         R_vb = self.state.R_vb
-        g = np.array([0.0, 0.0, 9.81])  # Gravity vector in inertial frame (m/s^2)
         v_dot = self.state.body_acceleration
         omega = self.state.angular_rates
         v = self.state.body_velocity
-        acc = v_dot + np.cross(omega, v) - R_vb @ g        
-        return acc
+        acc = v_dot + np.cross(omega, v) - R_vb @ np.array([0.0, 0.0, g])
+        return acc / g
 
     def get_noisy_value(self, t: float) -> np.ndarray:
         if self.ideal_value is None:

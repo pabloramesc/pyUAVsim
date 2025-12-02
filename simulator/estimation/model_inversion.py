@@ -4,6 +4,7 @@ from ..sensors.sensor_system import SensorReadings
 from .alpha_filter import AlphaFilter
 from ..math.angles import wrap_angle_2pi
 
+
 class ModelInversionFilter(EstimationFilter):
     def __init__(self, dt: float) -> None:
         """
@@ -26,19 +27,21 @@ class ModelInversionFilter(EstimationFilter):
         """Update the estimated state based on new sensor readings."""
 
         # --- Gyroscope: estimate body angular rates ---
-        p, q, r = self._estimate_angular_rates(readings.gyro)
+        p, q, r = self._estimate_angular_rates(readings.gyro.data)
 
         # --- Barometer & Airspeed: estimate altitude and airspeed ---
-        h_baro, Va = self._estimate_altitude_airspeed(readings.baro, readings.airspeed)
+        h_baro, Va = self._estimate_altitude_airspeed(
+            readings.baro.data.item(), readings.airspeed.data.item()
+        )
 
         # --- Accelerometer: estimate roll and pitch ---
-        roll, pitch = self._estimate_attitude_from_accel(readings.accel)
+        roll, pitch = self._estimate_attitude_from_accel(readings.accel.data)
 
         # --- Compass: estimate yaw/heading ---
-        heading = self._estimate_heading_from_compass(readings.compass)
+        heading = self._estimate_heading_from_compass(readings.compass.data.item())
 
         # --- GPS: estimate position and ground velocity/course ---
-        pn, pe, h_gps, Vg, course = self._estimate_gps(readings.gps)
+        pn, pe, h_gps, Vg, course = self._estimate_gps(readings.gps.data)
 
         return EstimatedState(
             roll=roll,

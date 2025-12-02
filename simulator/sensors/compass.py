@@ -31,7 +31,9 @@ class Compass(Sensor):
     def __init__(
         self, params: CompassParams, state: AircraftState, name: str = "hdg"
     ) -> None:
-        super().__init__(params, state, name=name)
+        super().__init__(
+            params, state, name=name, reading_names=["heading"], reading_units=["deg"]
+        )
 
         self.params = params
 

@@ -1,4 +1,3 @@
-
 import numpy as np
 
 from dataclasses import dataclass, field
@@ -28,7 +27,7 @@ class GyroParams(SensorParams):
     offset : numpy.ndarray, optional
         3 size array with gyroscope's constant bias for each axis in deg/s, by default np.zeros(3)
     """
-    
+
     sample_rate: float = 80.0  # Hz
     reading_delay: float = 0.0  # seconds
     full_scale: float = 350.0
@@ -39,8 +38,16 @@ class GyroParams(SensorParams):
 
 class Gyro(Sensor):
 
-    def __init__(self, params: GyroParams, state: AircraftState, name: str = "gyr") -> None:
-        super().__init__(params, state, name=name)
+    def __init__(
+        self, params: GyroParams, state: AircraftState, name: str = "gyr"
+    ) -> None:
+        super().__init__(
+            params,
+            state,
+            name=name,
+            reading_names=["gyr_x", "gyr_y", "gyr_z"],
+            reading_units=["deg/s", "deg/s", "deg/s"],
+        )
 
         self.params = params
 
@@ -55,9 +62,11 @@ class Gyro(Sensor):
     def get_noisy_value(self, t: float) -> np.ndarray:
         if self.ideal_value is None:
             raise ValueError("Ideal value has not been computed yet.")
-        reading = self.ideal_value + get_white_noise(
-            Nd=self.params.noise_density, fs=self.sample_rate, nlen=3
-        ) + self.params.offset
+        reading = (
+            self.ideal_value
+            + get_white_noise(Nd=self.params.noise_density, fs=self.sample_rate, nlen=3)
+            + self.params.offset
+        )
         reading = saturate(reading, -self.params.full_scale, +self.params.full_scale)
         reading = digitalize(reading, self.params.full_scale, self.params.resolution)
         return reading
