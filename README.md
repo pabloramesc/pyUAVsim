@@ -75,12 +75,13 @@ Uses the estimated state along with mission parameters or joystick/controller in
 - [x] Estimation filters for airtcraft's state estimation
 - [x] Implement all autopilot layers: flight control, path following, path navigator and route manager.
 - [x] Mission parametes (waypoints) support
-- [ ] Add TECS and LQR control
-- [ ] Add PX4 attitude controller
-- [ ] Add control gains auto-tuning method
+- [ ] Add TECS (Total Energy Control System)
+- [ ] Add LQR (Linear-Quadratic Regulator) controller
+- [ ] Add PX4 fixed-wing controller
+- [ ] Add auto-tuning method
 - [ ] Implement Genetic Algorithm optimization
 - [ ] Real-time external joystick/controller and autopilot modes (manual, FBW, auto...) support
-- [ ] Unity 3D visualiztion framework 
+- [ ] Unity or Unreal Engine 3D visualization framework 
 
 ## Tests
 To run all the tests and generate a coverage report in HTML:
